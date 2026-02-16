@@ -7,7 +7,6 @@ const app = {
         path: 'data/projects.json'
     },
     sha: null,
-    gantt: null,
     editorModal: null,
     settingsModal: null,
 
@@ -212,68 +211,114 @@ const app = {
     },
 
     renderGantt: function() {
-    const container = document.getElementById('gantt-chart');
-    if (!container) return;
+        const container = document.getElementById('gantt-chart');
+        if (!container) return;
 
-    if (this.data.length === 0) {
-        container.innerHTML = "<p class='text-center p-3'>Nessun progetto da visualizzare</p>";
-        return;
-    }
+        if (this.data.length === 0) {
+            container.innerHTML = "<p class='text-center p-3'>Nessun progetto da visualizzare</p>";
+            return;
+        }
 
-    // Trova date min e max
-    let minDate = null, maxDate = null;
-    this.data.forEach(p => {
-        const start = new Date(p.devStart);
-        const end = new Date(p.devEnd);
-        if (!minDate || start < minDate) minDate = start;
-        if (!maxDate || end > maxDate) maxDate = end;
-    });
+        let minDate = null, maxDate = null;
+        this.data.forEach(p => {
+            const start = new Date(p.devStart);
+            const end = new Date(p.devEnd);
+            if (!minDate || start < minDate) minDate = start;
+            if (!maxDate || end > maxDate) maxDate = end;
+        });
 
-    // Aggiungi margine
-    minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-    maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+        minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+        maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
 
-    const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
-    
-    // Genera intestazione mesi
-    let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
-    
-    let currentMonth = new Date(minDate);
-    while (currentMonth <= maxDate) {
-        const monthName = dayjs(currentMonth).format('MMM YYYY');
-        const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-        const widthPercent = (daysInMonth / totalDays) * 100;
-        html += `<div class="gantt-month" style="width: ${widthPercent}%">${monthName}</div>`;
-        currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
-    }
-    html += '</div></div></div>';
-
-    // Genera righe progetti
-    html += '<div class="gantt-body">';
-    this.data.forEach(p => {
-        const start = new Date(p.devStart);
-        const end = new Date(p.devEnd);
-        const daysFromStart = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
-        const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
         
-        const leftPercent = (daysFromStart / totalDays) * 100;
-        const widthPercent = (duration / totalDays) * 100;
+        let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
+        
+        let currentMonth = new Date(minDate);
+        while (currentMonth <= maxDate) {
+            const monthName = dayjs(currentMonth).format('MMM YYYY');
+            const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+            const widthPercent = (daysInMonth / totalDays) * 100;
+            html += `<div class="gantt-month" style="width: ${widthPercent}%">${monthName}</div>`;
+            currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+        }
+        html += '</div></div></div>';
 
-        html += `
-            <div class="gantt-row">
-                <div class="gantt-project-col">
-                    <strong>${p.nome}</strong><br>
-                    <small class="text-muted">${dayjs(start).format('DD/MM')} - ${dayjs(end).format('DD/MM')}</small>
+        html += '<div class="gantt-body">';
+        this.data.forEach(p => {
+            const start = new Date(p.devStart);
+            const end = new Date(p.devEnd);
+            const daysFromStart = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
+            const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            
+            const leftPercent = (daysFromStart / totalDays) * 100;
+            const widthPercent = (duration / totalDays) * 100;
+
+            html += `
+                <div class="gantt-row">
+                    <div class="gantt-project-col">
+                        <strong>${p.nome}</strong><br>
+                        <small class="text-muted">${dayjs(start).format('DD/MM')} - ${dayjs(end).format('DD/MM')}</small>
+                    </div>
+                    <div class="gantt-timeline-col">
+                        <div class="gantt-bar" style="left: ${leftPercent}%; width: ${widthPercent}%;" title="${p.nome}: ${dayjs(start).format('DD/MM/YYYY')} - ${dayjs(end).format('DD/MM/YYYY')}">
+                            <span>${p.nome}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="gantt-timeline-col">
-                    <div class="gantt-bar" style="left: ${leftPercent}%; width: ${widthPercent}%;" title="${p.nome}: ${dayjs(start).format('DD/MM/YYYY')} - ${dayjs(end).format('DD/MM/YYYY')}">
-                        <span>${p.nome}</span>
+            `;
+        });
+        html += '</div></div>';
+        
+        container.innerHTML = html;
+    },
+
+    renderCalendar: function() {
+        const container = document.getElementById('calendarContainer');
+        if (!container) return;
+
+        const groups = {};
+        this.data.forEach(p => {
+            if (p.dataProd) {
+                const m = dayjs(p.dataProd).format('MMMM YYYY');
+                if(!groups[m]) groups[m] = [];
+                groups[m].push(p);
+            }
+        });
+
+        container.innerHTML = Object.keys(groups).sort().map(month => `
+            <div class="col-md-4 mb-4">
+                <div class="card cal-month-card shadow-sm h-100">
+                    <div class="card-header bg-white fw-bold text-uppercase text-primary">${month}</div>
+                    <div class="card-body">
+                        ${groups[month].map(p => `
+                            <div class="cal-event-item">
+                                <span class="cal-event-date">${dayjs(p.dataProd).format('DD/MM')}</span>
+                                <span>${p.nome}</span>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
             </div>
-        `;
-    });
-    html += '</div></div>';
-    
-    container.innerHTML = html;
-}
+        `).join('');
+    },
+
+    formatDate: function(d) {
+        if (!d) return 'N/A';
+        return dayjs(d).format('DD/MM/YY');
+    },
+
+    showAlert: function(msg, type = 'info', timeout = 0) {
+        const div = document.getElementById('alertArea');
+        if (!div) return;
+        div.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${msg}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>`;
+        if (timeout) setTimeout(() => { div.innerHTML = ''; }, timeout);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    app.init();
+});
