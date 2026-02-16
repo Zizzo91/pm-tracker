@@ -1,0 +1,27 @@
+body {
+    font-size: 0.9rem;
+}
+.gantt .bar-label {
+    fill: #fff;
+    font-weight: bold;
+}
+.gantt .bar-progress {
+    fill: #0d6efd; /* Bootstrap Primary */
+}
+/* Calendar Card Stile */
+.cal-month-card {
+    border-left: 5px solid #0d6efd;
+}
+.cal-event-item {
+    border-bottom: 1px solid #eee;
+    padding: 5px 0;
+}
+.cal-event-date {
+    font-weight: bold;
+    color: #dc3545;
+    width: 60px;
+    display: inline-block;
+}
+/* Utilità */
+.cursor-pointer { cursor: pointer; }
+.text-xs { font-size: 0.75rem; }

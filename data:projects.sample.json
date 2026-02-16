@@ -1,0 +1,26 @@
+[
+  {
+    "id": "17075800001",
+    "nome": "Portale Telemetria F1 2026",
+    "fornitori": ["AWS Cloud", "Ferrari Data Team"],
+    "dataStima": "2026-02-01",
+    "dataIA": "2026-02-05",
+    "devStart": "2026-02-10",
+    "devEnd": "2026-03-20",
+    "dataTest": "2026-03-25",
+    "dataProd": "2026-04-01",
+    "jira": "https://jira.example.com/browse/F1-2026"
+  },
+  {
+    "id": "17075800002",
+    "nome": "App Sciatori Alpinisti",
+    "fornitori": ["Dolomiti Superski"],
+    "dataStima": "2026-01-10",
+    "dataIA": "2026-01-15",
+    "devStart": "2026-01-20",
+    "devEnd": "2026-02-28",
+    "dataTest": "2026-03-05",
+    "dataProd": "2026-03-10",
+    "jira": "https://jira.example.com/browse/SKI-001"
+  }
+]
