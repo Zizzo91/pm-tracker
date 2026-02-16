@@ -6,7 +6,7 @@ const app = {
         token: '',
         path: 'data/projects.json'
     },
-    sha: null, // SHA del file per update GitHub
+    sha: null,
     gantt: null,
     editorModal: null,
     settingsModal: null,
@@ -15,7 +15,6 @@ const app = {
         this.editorModal = new bootstrap.Modal(document.getElementById('editorModal'));
         this.settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
         
-        // Carica config da LocalStorage
         const savedCfg = localStorage.getItem('pm_tracker_config');
         if (savedCfg) {
             this.config = JSON.parse(savedCfg);
@@ -50,7 +49,6 @@ const app = {
         this.showAlert('Caricamento dati...', 'info');
 
         try {
-            // Timestamp per cache busting
             const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}?t=${new Date().getTime()}`;
             
             const response = await fetch(url, {
@@ -63,9 +61,8 @@ const app = {
             if (!response.ok) throw new Error(`Errore GitHub: ${response.status}`);
 
             const json = await response.json();
-            this.sha = json.sha; // Importante per il salvataggio
+            this.sha = json.sha;
             
-            // Decodifica Base64 (gestisce caratteri UTF8 come accenti italiani)
             const content = decodeURIComponent(escape(atob(json.content)));
             this.data = JSON.parse(content);
             
@@ -81,7 +78,6 @@ const app = {
     },
 
     saveProject: async function() {
-        // Validazione Date Rigida
         const dates = {
             stima: document.getElementById('p_stima').value,
             ia: document.getElementById('p_ia').value,
@@ -91,7 +87,6 @@ const app = {
             prod: document.getElementById('p_prod').value
         };
 
-        // Check sequenza
         if (dates.stima > dates.ia || dates.ia > dates.devStart || 
             dates.devStart > dates.devEnd || dates.devEnd > dates.test || 
             dates.test > dates.prod) {
@@ -101,7 +96,7 @@ const app = {
 
         const id = document.getElementById('p_id').value;
         const newProj = {
-            id: id || Date.now().toString(), // ID semplice basato su timestamp
+            id: id || Date.now().toString(),
             nome: document.getElementById('p_nome').value,
             fornitori: document.getElementById('p_fornitori').value.split(',').map(s => s.trim()),
             dataStima: dates.stima,
@@ -114,11 +109,9 @@ const app = {
         };
 
         if (id) {
-            // Update
             const idx = this.data.findIndex(p => p.id === id);
             this.data[idx] = newProj;
         } else {
-            // Insert
             this.data.push(newProj);
         }
 
@@ -136,7 +129,7 @@ const app = {
             const body = {
                 message: `Update data via PM Tracker webapp - ${new Date().toISOString()}`,
                 content: content,
-                sha: this.sha // Obbligatorio per sovrascrivere
+                sha: this.sha
             };
 
             const response = await fetch(url, {
@@ -148,16 +141,20 @@ const app = {
                 body: JSON.stringify(body)
             });
 
-            if (!response.ok) throw new Error('Salvataggio fallito');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Salvataggio fallito');
+            }
             
             const resJson = await response.json();
-            this.sha = resJson.content.sha; // Aggiorna SHA
+            this.sha = resJson.content.sha;
             
-            this.loadData(); // Ricarica tutto per sicurezza UI
+            this.loadData();
             this.showAlert('Dati salvati su GitHub!', 'success');
 
         } catch (e) {
-            alert("Errore salvataggio: " + e.message);
+            console.error('Errore sync:', e);
+            this.showAlert(`Errore salvataggio: ${e.message}`, 'danger');
         }
     },
 
@@ -192,11 +189,11 @@ const app = {
 
     renderTable: function() {
         const tbody = document.getElementById('projectsTableBody');
-        const filter = document.getElementById('searchInput').value.toLowerCase();
+        const filter = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
         
         tbody.innerHTML = this.data
             .filter(p => p.nome.toLowerCase().includes(filter))
-            .sort((a,b) => new Date(a.dataProd) - new Date(b.dataProd)) // Ordina per rilascio
+            .sort((a,b) => new Date(a.dataProd) - new Date(b.dataProd))
             .map(p => `
             <tr>
                 <td><strong>${p.nome}</strong><br><a href="${p.jira}" target="_blank" class="text-xs text-decoration-none">Jira 🔗</a></td>
@@ -215,39 +212,48 @@ const app = {
     },
 
     renderGantt: function() {
-        // Mappa i dati per Frappe Gantt
+        const container = document.getElementById('gantt-chart');
+        if (!container) return;
+
         const tasks = this.data.map(p => ({
             id: p.id,
             name: p.nome,
             start: p.devStart,
             end: p.devEnd,
-            progress: 100, // Default visuale
+            progress: 100,
             dependencies: ""
         }));
 
         if (tasks.length > 0) {
-            this.gantt = new Gantt("#gantt-chart", tasks, {
-                view_mode: 'Month',
-                language: 'it',
-                date_format: 'YYYY-MM-DD',
-                bar_height: 30,
-                padding: 18
-            });
+            try {
+                this.gantt = new Gantt("#gantt-chart", tasks, {
+                    view_mode: 'Month',
+                    language: 'it',
+                    date_format: 'YYYY-MM-DD',
+                    bar_height: 30,
+                    padding: 18
+                });
+            } catch(e) {
+                container.innerHTML = `<p class='text-center p-3 text-danger'>Errore rendering Gantt: ${e.message}</p>`;
+            }
         } else {
-            document.getElementById('gantt-chart').innerHTML = "<p class='text-center p-3'>Nessun dato per il Gantt</p>";
+            container.innerHTML = "<p class='text-center p-3'>Nessun dato per il Gantt</p>";
         }
     },
 
     renderCalendar: function() {
-        // Raggruppa per Mese/Anno di PROD
+        const container = document.getElementById('calendarContainer');
+        if (!container) return;
+
         const groups = {};
         this.data.forEach(p => {
-            const m = dayjs(p.dataProd).format('MMMM YYYY'); // Es: Marzo 2026
-            if(!groups[m]) groups[m] = [];
-            groups[m].push(p);
+            if (p.dataProd) {
+                const m = dayjs(p.dataProd).format('MMMM YYYY');
+                if(!groups[m]) groups[m] = [];
+                groups[m].push(p);
+            }
         });
 
-        const container = document.getElementById('calendarContainer');
         container.innerHTML = Object.keys(groups).sort().map(month => `
             <div class="col-md-4 mb-4">
                 <div class="card cal-month-card shadow-sm h-100">
@@ -266,11 +272,13 @@ const app = {
     },
 
     formatDate: function(d) {
+        if (!d) return 'N/A';
         return dayjs(d).format('DD/MM/YY');
     },
 
     showAlert: function(msg, type = 'info', timeout = 0) {
         const div = document.getElementById('alertArea');
+        if (!div) return;
         div.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
             ${msg}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
