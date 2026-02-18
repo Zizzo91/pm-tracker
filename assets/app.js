@@ -303,23 +303,20 @@ const app = {
         }
     },
 
-    // ── Gantt sort helper ─────────────────────────────────────────────────
+    // ── Sort helper (condiviso da Tabella e Gantt) ───────────────────────────
 
     /**
-     * Ordina i progetti per il Gantt secondo la modalità scelta.
+     * Ordina i progetti secondo la modalità scelta.
      * Per le modalità "_inprogress_first" la logica è:
      *   - Gruppo 0: dataProd > oggi (non ancora rilasciati in prod) → ordinati per la data-chiave ASC
      *   - Gruppo 1: dataProd <= oggi (già rilasciati in prod)       → ordinati per la data-chiave ASC
-     * Questo garantisce che i progetti ancora in corso stiano sempre sopra.
      */
     _sortGantt: function(data, mode) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Helper: ritorna la data come oggetto Date (o epoch 0 se assente)
         const d = (val) => val ? new Date(val) : new Date(0);
 
-        // Helper: true se il progetto NON è ancora stato rilasciato in prod
         const inProgress = (p) => {
             const prod = p.dataProd ? new Date(p.dataProd) : null;
             return !prod || prod > today;
@@ -329,7 +326,6 @@ const app = {
 
         switch (mode) {
 
-            // ── Rilascio Prod ────────────────────────────────────────────────
             case 'prod_inprogress_first':
                 sorted.sort((a, b) => {
                     const ia = inProgress(a) ? 0 : 1;
@@ -347,7 +343,6 @@ const app = {
                 sorted.sort((a, b) => d(b.dataProd) - d(a.dataProd));
                 break;
 
-            // ── Inizio Sviluppo ──────────────────────────────────────────────
             case 'devStart_inprogress_first':
                 sorted.sort((a, b) => {
                     const ia = inProgress(a) ? 0 : 1;
@@ -365,7 +360,6 @@ const app = {
                 sorted.sort((a, b) => d(b.devStart) - d(a.devStart));
                 break;
 
-            // ── Fine Sviluppo ────────────────────────────────────────────────
             case 'devEnd_inprogress_first':
                 sorted.sort((a, b) => {
                     const ia = inProgress(a) ? 0 : 1;
@@ -375,7 +369,6 @@ const app = {
                 });
                 break;
 
-            // ── Rilascio Test ────────────────────────────────────────────────
             case 'test_inprogress_first':
                 sorted.sort((a, b) => {
                     const ia = inProgress(a) ? 0 : 1;
@@ -385,7 +378,6 @@ const app = {
                 });
                 break;
 
-            // ── Alfabetico ───────────────────────────────────────────────────
             case 'alpha_asc':
                 sorted.sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
                 break;
@@ -394,7 +386,6 @@ const app = {
                 sorted.sort((a, b) => b.nome.localeCompare(a.nome, 'it'));
                 break;
 
-            // default: nessun ordinamento aggiuntivo
             default:
                 break;
         }
@@ -405,14 +396,23 @@ const app = {
     // ── Render Table ─────────────────────────────────────────────────────────
 
     renderTable: function() {
-        const tbody  = document.getElementById('projectsTableBody');
-        const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
-        const filt   = document.getElementById('tableFornitoreFilter')?.value || '';
+        const tbody    = document.getElementById('projectsTableBody');
+        const search   = (document.getElementById('searchInput')?.value || '').toLowerCase();
+        const filt     = document.getElementById('tableFornitoreFilter')?.value || '';
+        const sortMode = document.getElementById('tableSortSelect')?.value || 'prod_inprogress_first';
 
-        tbody.innerHTML = this.data
-            .filter(p => p.nome.toLowerCase().includes(search) && (!filt || (p.fornitori && p.fornitori.includes(filt))))
-            .sort((a, b) => new Date(a.dataProd) - new Date(b.dataProd))
-            .map(p => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let filtered = this.data
+            .filter(p => p.nome.toLowerCase().includes(search) && (!filt || (p.fornitori && p.fornitori.includes(filt))));
+
+        filtered = this._sortGantt(filtered, sortMode);
+
+        tbody.innerHTML = filtered.map(p => {
+                const isPast = p.dataProd && new Date(p.dataProd) <= today;
+                const rowCls = isPast ? 'class="table-secondary opacity-75"' : '';
+
                 const fornitoriBadges = p.fornitori.map(f => `<span class="badge bg-secondary me-1">${f}</span>`).join('');
                 const extraRows = [];
                 if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">\u23f1\ufe0f ${p.stimaGgu} gg/u</span>`);
@@ -424,9 +424,10 @@ const app = {
                 const jiraHtml = this.jiraLinksHtml(links);
 
                 return `
-                <tr>
+                <tr ${rowCls}>
                     <td>
                         <strong>${p.nome}</strong>
+                        ${isPast ? '<span class="badge bg-success ms-1">✅ Rilasciato</span>' : ''}
                         ${jiraHtml ? `<div class="mt-1">${jiraHtml}</div>` : ''}
                         ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
                     </td>
@@ -504,7 +505,6 @@ const app = {
             const widthPct = Math.max(pct(p.devEnd) - leftPct, 0.5);
             const fornitoriHtml = (p.fornitori || []).map(f => `<span class="gantt-supplier-badge">${f}</span>`).join('');
 
-            // Classe CSS aggiuntiva per progetti già rilasciati in prod
             const isPast = p.dataProd && new Date(p.dataProd) <= today;
             const rowCls = isPast ? ' gantt-row--released' : '';
 
