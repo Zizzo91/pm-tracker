@@ -219,66 +219,108 @@ const app = {
             return;
         }
 
-        // Calcola min/max considerando devStart e devEnd di tutti i progetti
+        // Calcola min/max considerando devStart, devEnd e dataProd di tutti i progetti
         let minDate = null, maxDate = null;
         this.data.forEach(p => {
-            const start = new Date(p.devStart);
-            const end = new Date(p.devEnd);
+            const start  = new Date(p.devStart);
+            const devEnd = new Date(p.devEnd);
+            const prod   = new Date(p.dataProd);
+            const ia     = new Date(p.dataIA);
+            const test   = new Date(p.dataTest);
+
+            if (!minDate || ia < minDate)    minDate = ia;
             if (!minDate || start < minDate) minDate = start;
-            if (!maxDate || end > maxDate) maxDate = end;
+            if (!maxDate || prod > maxDate)  maxDate = prod;
+            if (!maxDate || devEnd > maxDate) maxDate = devEnd;
+            if (!maxDate || test > maxDate)  maxDate = test;
         });
 
-        // minDate: inizio del mese del devStart più vecchio
+        // Snap ai mesi
         minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-        // maxDate: fine del mese del devEnd più recente
-        // Se minDate e maxDate sono nello stesso mese, espandi di un mese in più per leggibilità
         let maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
-        if (maxMonth <= minDate || (maxDate.getFullYear() === new Date(minDate).getFullYear() && maxDate.getMonth() === new Date(minDate).getMonth())) {
+        // Almeno 2 mesi visibili
+        if (maxMonth <= minDate) {
+            maxMonth = new Date(minDate.getFullYear(), minDate.getMonth() + 2, 0);
+        }
+        // Se maxDate cade nell'ultimo giorno del mese espandiamo di un mese ulteriore per dare respiro
+        const lastDayOfMaxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+        if (maxDate.getTime() === lastDayOfMaxMonth.getTime()) {
             maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 2, 0);
         }
         maxDate = maxMonth;
 
         const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
-        
+
+        // Helper: calcola la posizione % di una data
+        const pct = (date) => {
+            const d = Math.ceil((new Date(date) - minDate) / (1000 * 60 * 60 * 24));
+            return Math.min(Math.max((d / totalDays) * 100, 0), 100);
+        };
+
+        // Intestazione mesi
         let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
-        
         let currentMonth = new Date(minDate);
         while (currentMonth <= maxDate) {
-            const monthName = dayjs(currentMonth).format('MMM YYYY');
-            const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+            const monthName    = dayjs(currentMonth).format('MMM YYYY');
+            const daysInMonth  = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
             const widthPercent = (daysInMonth / totalDays) * 100;
-            html += `<div class="gantt-month" style="width: ${widthPercent}%">${monthName}</div>`;
+            html += `<div class="gantt-month" style="width: ${widthPercent.toFixed(2)}%">${monthName}</div>`;
             currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
         }
         html += '</div></div></div>';
 
+        // Righe progetto
         html += '<div class="gantt-body">';
         this.data.forEach(p => {
-            const start = new Date(p.devStart);
-            const end = new Date(p.devEnd);
-            const daysFromStart = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
-            // Durata minima visiva: almeno 1% della larghezza totale
-            const duration = Math.max(Math.ceil((end - start) / (1000 * 60 * 60 * 24)), Math.ceil(totalDays * 0.01));
-            
-            const leftPercent = (daysFromStart / totalDays) * 100;
-            const widthPercent = (duration / totalDays) * 100;
+            const start    = new Date(p.devStart);
+            const end      = new Date(p.devEnd);
+            const leftPct  = pct(start);
+            const durationDays = Math.max(Math.ceil((end - start) / (1000 * 60 * 60 * 24)), Math.ceil(totalDays * 0.01));
+            const widthPct = Math.max((durationDays / totalDays) * 100, 0.5);
+
+            // Milestone: IA, Test, Prod
+            const milestones = [
+                { date: p.dataIA,   cls: 'ms-ia',   icon: '🤖', label: `Consegna IA: ${dayjs(p.dataIA).format('DD/MM/YYYY')}` },
+                { date: p.dataTest, cls: 'ms-test',  icon: '🧪', label: `Rilascio Test: ${dayjs(p.dataTest).format('DD/MM/YYYY')}` },
+                { date: p.dataProd, cls: 'ms-prod',  icon: '🚀', label: `Rilascio Prod: ${dayjs(p.dataProd).format('DD/MM/YYYY')}` }
+            ];
+
+            const milestonesHtml = milestones.map(m => {
+                const pos = pct(m.date);
+                return `<div class="gantt-milestone ${m.cls}" style="left: ${pos.toFixed(2)}%" title="${m.label}">
+                    <span class="ms-icon">${m.icon}</span>
+                    <span class="ms-line"></span>
+                </div>`;
+            }).join('');
 
             html += `
                 <div class="gantt-row">
                     <div class="gantt-project-col">
                         <strong>${p.nome}</strong><br>
-                        <small class="text-muted">${dayjs(start).format('DD/MM')} - ${dayjs(new Date(p.devEnd)).format('DD/MM')}</small>
+                        <small class="text-muted">${dayjs(start).format('DD/MM')} - ${dayjs(end).format('DD/MM')}</small>
                     </div>
-                    <div class="gantt-timeline-col">
-                        <div class="gantt-bar" style="left: ${leftPercent}%; width: ${widthPercent}%;" title="${p.nome}: ${dayjs(start).format('DD/MM/YYYY')} - ${dayjs(new Date(p.devEnd)).format('DD/MM/YYYY')}">
-                            <span>${p.nome}</span>
+                    <div class="gantt-timeline-col" style="position:relative;">
+                        <div class="gantt-bar" style="left: ${leftPct.toFixed(2)}%; width: ${widthPct.toFixed(2)}%;" title="Sviluppo: ${dayjs(start).format('DD/MM/YYYY')} - ${dayjs(end).format('DD/MM/YYYY')}">
+                            <span>⚙️ Sviluppo</span>
                         </div>
+                        ${milestonesHtml}
                     </div>
                 </div>
             `;
         });
-        html += '</div></div>';
-        
+        html += '</div>';
+
+        // Legenda
+        html += `
+        <div class="gantt-legend">
+            <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
+            <div class="gantt-legend-item"><span class="legend-ms">🤖</span> Consegna IA</div>
+            <div class="gantt-legend-item"><span class="legend-ms">🧪</span> Rilascio Test</div>
+            <div class="gantt-legend-item"><span class="legend-ms">🚀</span> Rilascio Prod</div>
+        </div>
+        `;
+
+        html += '</div>'; // chiude .gantt-custom
         container.innerHTML = html;
     },
 
