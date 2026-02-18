@@ -13,6 +13,12 @@ const app = {
     init: function() {
         this.editorModal = new bootstrap.Modal(document.getElementById('editorModal'));
         this.settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+
+        // Calcolo automatico costo al cambio di gg/u o RC
+        ['p_stimaGgu', 'p_rcFornitore'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', () => this.calcCosto());
+        });
         
         const savedCfg = localStorage.getItem('pm_tracker_config');
         if (savedCfg) {
@@ -20,6 +26,19 @@ const app = {
             this.loadData();
         } else {
             this.showSettings();
+        }
+    },
+
+    // Calcola e aggiorna il campo costo in tempo reale
+    calcCosto: function() {
+        const ggu = parseFloat(document.getElementById('p_stimaGgu').value);
+        const rc  = parseFloat(document.getElementById('p_rcFornitore').value);
+        const out = document.getElementById('p_stimaCosto');
+        if (!isNaN(ggu) && !isNaN(rc) && ggu >= 0 && rc >= 0) {
+            const costo = ggu * rc;
+            out.value = '€ ' + costo.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        } else {
+            out.value = '';
         }
     },
 
@@ -117,20 +136,29 @@ const app = {
             return;
         }
 
+        const stimaGgu    = parseFloat(document.getElementById('p_stimaGgu').value);
+        const rcFornitore = parseFloat(document.getElementById('p_rcFornitore').value);
+
         const id = document.getElementById('p_id').value;
         const newProj = {
-            id:        id || Date.now().toString(),
-            nome:      document.getElementById('p_nome').value,
-            fornitori: document.getElementById('p_fornitori').value.split(',').map(s => s.trim()),
-            dataStima: dates.stima,
-            dataIA:    dates.ia,
-            devStart:  dates.devStart,
-            devEnd:    dates.devEnd,
-            dataTest:  dates.test,
-            dataProd:  dates.prod,
-            dataUAT:   dates.uat,
-            dataBS:    dates.bs,
-            jira:      document.getElementById('p_jira').value
+            id:                  id || Date.now().toString(),
+            nome:                document.getElementById('p_nome').value,
+            fornitori:           document.getElementById('p_fornitori').value.split(',').map(s => s.trim()),
+            dataStima:           dates.stima,
+            dataIA:              dates.ia,
+            devStart:            dates.devStart,
+            devEnd:              dates.devEnd,
+            dataTest:            dates.test,
+            dataProd:            dates.prod,
+            dataUAT:             dates.uat,
+            dataBS:              dates.bs,
+            jira:                document.getElementById('p_jira').value,
+            // Campi opzionali aggiuntivi
+            dataScadenzaStima:   document.getElementById('p_dataScadenzaStima').value || null,
+            dataConfigSistema:   document.getElementById('p_dataConfigSistema').value || null,
+            stimaGgu:            isNaN(stimaGgu)    ? null : stimaGgu,
+            rcFornitore:         isNaN(rcFornitore) ? null : rcFornitore,
+            stimaCosto:          (!isNaN(stimaGgu) && !isNaN(rcFornitore)) ? stimaGgu * rcFornitore : null
         };
 
         if (id) {
@@ -186,21 +214,28 @@ const app = {
     openModal: function(id = null) {
         document.getElementById('projectForm').reset();
         document.getElementById('dateValidationMsg').innerText = "";
+        document.getElementById('p_stimaCosto').value = "";
         
         if (id) {
             const p = this.data.find(x => x.id === id);
-            document.getElementById('p_id').value       = p.id;
-            document.getElementById('p_nome').value     = p.nome;
-            document.getElementById('p_fornitori').value = p.fornitori.join(', ');
-            document.getElementById('p_stima').value    = p.dataStima;
-            document.getElementById('p_ia').value       = p.dataIA;
-            document.getElementById('p_devStart').value = p.devStart;
-            document.getElementById('p_devEnd').value   = p.devEnd;
-            document.getElementById('p_test').value     = p.dataTest;
-            document.getElementById('p_prod').value     = p.dataProd;
-            document.getElementById('p_uat').value      = p.dataUAT  || '';
-            document.getElementById('p_bs').value       = p.dataBS   || '';
-            document.getElementById('p_jira').value     = p.jira;
+            document.getElementById('p_id').value                = p.id;
+            document.getElementById('p_nome').value              = p.nome;
+            document.getElementById('p_fornitori').value         = p.fornitori.join(', ');
+            document.getElementById('p_stima').value             = p.dataStima;
+            document.getElementById('p_ia').value                = p.dataIA;
+            document.getElementById('p_devStart').value          = p.devStart;
+            document.getElementById('p_devEnd').value            = p.devEnd;
+            document.getElementById('p_test').value              = p.dataTest;
+            document.getElementById('p_prod').value              = p.dataProd;
+            document.getElementById('p_uat').value               = p.dataUAT  || '';
+            document.getElementById('p_bs').value                = p.dataBS   || '';
+            document.getElementById('p_jira').value              = p.jira     || '';
+            // Campi opzionali aggiuntivi
+            document.getElementById('p_dataScadenzaStima').value = p.dataScadenzaStima || '';
+            document.getElementById('p_dataConfigSistema').value = p.dataConfigSistema || '';
+            document.getElementById('p_stimaGgu').value          = p.stimaGgu    != null ? p.stimaGgu    : '';
+            document.getElementById('p_rcFornitore').value       = p.rcFornitore != null ? p.rcFornitore : '';
+            this.calcCosto();
         } else {
             document.getElementById('p_id').value = "";
         }
@@ -227,21 +262,36 @@ const app = {
                 return matchName && matchSupplier;
             })
             .sort((a,b) => new Date(a.dataProd) - new Date(b.dataProd))
-            .map(p => `
-            <tr>
-                <td><strong>${p.nome}</strong><br><a href="${p.jira}" target="_blank" class="text-xs text-decoration-none">Jira \ud83d\udd17</a></td>
-                <td>${p.fornitori.map(f => `<span class="badge bg-secondary me-1">${f}</span>`).join('')}</td>
-                <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
-                <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
-                <td class="small">${this.formatDate(p.devStart)} \u279d ${this.formatDate(p.devEnd)}</td>
-                <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
-                <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="app.openModal('${p.id}')">✏️</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="app.deleteProject('${p.id}')">🗑️</button>
-                </td>
-            </tr>
-        `).join('');
+            .map(p => {
+                // Badge fornitori
+                const fornitoriBadges = p.fornitori.map(f => `<span class="badge bg-secondary me-1">${f}</span>`).join('');
+
+                // Righe opzionali da mostrare solo se presenti
+                const extraRows = [];
+                if (p.dataScadenzaStima) extraRows.push(`<span class="badge bg-light text-dark border me-1" title="Scadenza stima fornitore">📅 Scad. Stima: ${this.formatDate(p.dataScadenzaStima)}</span>`);
+                if (p.dataConfigSistema) extraRows.push(`<span class="badge bg-light text-dark border me-1" title="Data config sistema">🔧 Config: ${this.formatDate(p.dataConfigSistema)}</span>`);
+                if (p.stimaGgu != null)  extraRows.push(`<span class="badge bg-info text-dark me-1" title="Stima fornitore in gg/u">⏱️ ${p.stimaGgu} gg/u</span>`);
+                if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1" title="Stima costo">💰 € ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
+
+                return `
+                <tr>
+                    <td>
+                        <strong>${p.nome}</strong><br>
+                        <a href="${p.jira}" target="_blank" class="text-xs text-decoration-none">Jira 🔗</a>
+                        ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
+                    </td>
+                    <td>${fornitoriBadges}</td>
+                    <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
+                    <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
+                    <td class="small">${this.formatDate(p.devStart)} ➝ ${this.formatDate(p.devEnd)}</td>
+                    <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
+                    <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="app.openModal('${p.id}')">✏️</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="app.deleteProject('${p.id}')">🗑️</button>
+                    </td>
+                </tr>
+            `;}).join('');
     },
 
     renderGantt: function() {
@@ -399,7 +449,9 @@ const app = {
             { key: 'dataUAT',  label: '\ud83d\udc65 UAT',                  badge: 'bg-info' },
             { key: 'dataBS',   label: '\ud83d\udcbc Business Simulation',  badge: 'bg-dark' },
             { key: 'dataTest', label: '\ud83e\uddea Rilascio Test',        badge: 'bg-warning text-dark' },
-            { key: 'dataProd', label: '\ud83d\ude80 Rilascio Prod',        badge: 'bg-success' }
+            { key: 'dataProd', label: '\ud83d\ude80 Rilascio Prod',        badge: 'bg-success' },
+            { key: 'dataScadenzaStima', label: '\ud83d\udcc5 Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
+            { key: 'dataConfigSistema', label: '\ud83d\udd27 Config Sistema',         badge: 'bg-light text-dark border' }
         ];
 
         const events = [];
@@ -411,7 +463,7 @@ const app = {
                         date:      dayjs(dateVal),
                         sortKey:   dateVal,
                         nome:      p.nome,
-                        fornitori: p.fornitori || [],  // <-- portato nell'evento
+                        fornitori: p.fornitori || [],
                         label:     m.label,
                         badge:     m.badge
                     });
