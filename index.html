@@ -88,7 +88,22 @@
 
         <!-- Tab 3: Calendario -->
         <div class="tab-pane fade" id="calendarView">
-            <div class="d-flex justify-content-end mb-3">
+            <div class="d-flex justify-content-end mb-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 small fw-semibold">🏷️ Milestone:</label>
+                    <select id="calendarMilestoneFilter" class="form-select form-select-sm" style="min-width:210px" onchange="app.renderCalendar()">
+                        <option value="">Tutte le milestone</option>
+                        <option value="dataIA">🤖 Consegna IA</option>
+                        <option value="devStart">▶️ Inizio Sviluppo</option>
+                        <option value="devEnd">⏹️ Fine Sviluppo</option>
+                        <option value="dataUAT">👥 UAT</option>
+                        <option value="dataBS">💼 Business Simulation</option>
+                        <option value="dataTest">🧪 Rilascio Test</option>
+                        <option value="dataProd">🚀 Rilascio Prod</option>
+                        <option value="dataScadenzaStima">📥 Scad. Stima Fornitore</option>
+                        <option value="dataConfigSistema">🔧 Config Sistema</option>
+                    </select>
+                </div>
                 <div class="d-flex align-items-center gap-2">
                     <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
                     <select id="calendarFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderCalendar()">
@@ -240,6 +255,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=9"></script>
+<script src="assets/app.js?v=10"></script>
 </body>
 </html>
