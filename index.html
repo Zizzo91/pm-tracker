@@ -187,10 +187,12 @@
 
                     <div id="dateValidationMsg" class="text-danger mt-2 small"></div>
 
-                    <div class="mb-3 mt-3">
-                        <label class="form-label">Link Jira</label>
-                        <input type="url" class="form-control" id="p_jira" placeholder="https://...">
+                    <!-- Link Jira multipli (fino a 10) -->
+                    <h6 class="mt-4 border-bottom pb-2">Link Jira <span class="text-muted fw-normal small">(opzionali, fino a 10)</span></h6>
+                    <div id="jiraLinksContainer">
+                        <!-- I campi vengono generati dinamicamente da app.js -->
                     </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="app.addJiraField()" id="addJiraBtn">+ Aggiungi Link Jira</button>
                 </form>
             </div>
             <div class="modal-footer">
@@ -238,6 +240,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=8"></script>
+<script src="assets/app.js?v=9"></script>
 </body>
 </html>
