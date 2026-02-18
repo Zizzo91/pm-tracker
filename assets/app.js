@@ -11,6 +11,19 @@ const app = {
     settingsModal: null,
     MAX_JIRA_LINKS: 10,
 
+    // Definizione centralizzata delle milestone (usata da renderCalendar)
+    MILESTONES: [
+        { key: 'dataIA',            label: '\ud83e\udd16 Consegna IA',           badge: 'bg-info text-dark' },
+        { key: 'devStart',          label: '\u25b6\ufe0f Inizio Sviluppo',        badge: 'bg-primary' },
+        { key: 'devEnd',            label: '\u23f9\ufe0f Fine Sviluppo',          badge: 'bg-secondary' },
+        { key: 'dataUAT',           label: '\ud83d\udc65 UAT',                    badge: 'bg-info' },
+        { key: 'dataBS',            label: '\ud83d\udcbc Business Simulation',    badge: 'bg-dark' },
+        { key: 'dataTest',          label: '\ud83e\uddea Rilascio Test',          badge: 'bg-warning text-dark' },
+        { key: 'dataProd',          label: '\ud83d\ude80 Rilascio Prod',          badge: 'bg-success' },
+        { key: 'dataScadenzaStima', label: '\ud83d\udce5 Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
+        { key: 'dataConfigSistema', label: '\ud83d\udd27 Config Sistema',         badge: 'bg-light text-dark border' }
+    ],
+
     init: function() {
         this.editorModal = new bootstrap.Modal(document.getElementById('editorModal'));
         this.settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
@@ -31,10 +44,6 @@ const app = {
 
     // ── Jira helpers ────────────────────────────────────────────────────────
 
-    /**
-     * Returns the last path segment of a URL, used as display label.
-     * e.g. "https://x.atlassian.net/browse/DPS-2407" → "DPS-2407"
-     */
     jiraLabel: function(url) {
         if (!url || !url.trim()) return '';
         try {
@@ -42,13 +51,11 @@ const app = {
             const parts = u.pathname.replace(/\/$/, '').split('/');
             return parts[parts.length - 1] || url;
         } catch (e) {
-            // fallback for non-standard strings
             const parts = url.trim().replace(/\/$/, '').split('/');
             return parts[parts.length - 1] || url;
         }
     },
 
-    /** Build the HTML for Jira badges shown in the table */
     jiraLinksHtml: function(jiraLinks) {
         if (!jiraLinks || jiraLinks.length === 0) return '';
         return jiraLinks
@@ -57,7 +64,6 @@ const app = {
             .join('');
     },
 
-    /** Render dynamic Jira fields inside the modal */
     renderJiraFields: function(links) {
         const container = document.getElementById('jiraLinksContainer');
         container.innerHTML = '';
@@ -87,7 +93,6 @@ const app = {
     },
 
     removeJiraField: function(btn) {
-        const container = document.getElementById('jiraLinksContainer');
         btn.closest('[data-jira-index]').remove();
         this._updateAddJiraBtn();
     },
@@ -219,7 +224,6 @@ const app = {
             dataProd:          dates.prod,
             dataUAT:           dates.uat,
             dataBS:            dates.bs,
-            // Salva come array (retrocompatibile: se c'era campo "jira" stringa lo gestiamo in openModal)
             jiraLinks:         this._getJiraLinksFromModal(),
             dataScadenzaStima: document.getElementById('p_dataScadenzaStima').value || null,
             dataConfigSistema: document.getElementById('p_dataConfigSistema').value || null,
@@ -252,8 +256,6 @@ const app = {
             }
             this.sha = (await response.json()).content.sha;
             this.showAlert('Dati salvati su GitHub! Aggiornamento in corso...', 'success');
-            // ── AUTO-REFRESH ─────────────────────────────────────────────────
-            // Ricarica i dati freschi da GitHub e ri-renderizza tutto
             await this.loadData();
         } catch (e) {
             console.error('Errore sync:', e);
@@ -283,7 +285,6 @@ const app = {
             document.getElementById('p_stimaGgu').value          = p.stimaGgu    != null ? p.stimaGgu    : '';
             document.getElementById('p_rcFornitore').value       = p.rcFornitore != null ? p.rcFornitore : '';
             this.calcCosto();
-            // Retrocompatibilità: vecchio campo "jira" stringa → array
             const links = p.jiraLinks && p.jiraLinks.length > 0
                 ? p.jiraLinks
                 : (p.jira ? [p.jira] : []);
@@ -318,7 +319,6 @@ const app = {
                 if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">\u23f1\ufe0f ${p.stimaGgu} gg/u</span>`);
                 if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1">\ud83d\udcb0 \u20ac ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
 
-                // Retrocompatibilità: supporta sia jiraLinks (array) che jira (stringa)
                 const links = (p.jiraLinks && p.jiraLinks.length > 0)
                     ? p.jiraLinks
                     : (p.jira ? [p.jira] : []);
@@ -409,7 +409,7 @@ const app = {
                 { date: p.dataProd,          cls: 'ms-prod',       icon: '\ud83d\ude80', label: 'Rilascio Prod',         always: true  },
                 { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '\ud83d\udce5', label: 'Scad. Stima Fornitore', always: false },
                 { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '\ud83d\udd27', label: 'Config Sistema',         always: false }
-            ].filter(m => m.date && m.date.trim() !== '' && (m.always || true));
+            ].filter(m => m.date && m.date.trim() !== '');
 
             const dateGroups = {};
             allMilestones.forEach(m => { (dateGroups[m.date] = dateGroups[m.date] || []).push(m); });
@@ -468,32 +468,36 @@ const app = {
     renderCalendar: function() {
         const container = document.getElementById('calendarContainer');
         if (!container) return;
-        const filt = document.getElementById('calendarFornitoreFilter')?.value || '';
 
-        const milestones = [
-            { key: 'dataIA',            label: '\ud83e\udd16 Consegna IA',             badge: 'bg-info text-dark' },
-            { key: 'devStart',          label: '\u25b6\ufe0f Inizio Sviluppo',          badge: 'bg-primary' },
-            { key: 'devEnd',            label: '\u23f9\ufe0f Fine Sviluppo',            badge: 'bg-secondary' },
-            { key: 'dataUAT',           label: '\ud83d\udc65 UAT',                      badge: 'bg-info' },
-            { key: 'dataBS',            label: '\ud83d\udcbc Business Simulation',      badge: 'bg-dark' },
-            { key: 'dataTest',          label: '\ud83e\uddea Rilascio Test',            badge: 'bg-warning text-dark' },
-            { key: 'dataProd',          label: '\ud83d\ude80 Rilascio Prod',            badge: 'bg-success' },
-            { key: 'dataScadenzaStima', label: '\ud83d\udce5 Scad. Stima Fornitore',   badge: 'bg-light text-dark border' },
-            { key: 'dataConfigSistema', label: '\ud83d\udd27 Config Sistema',           badge: 'bg-light text-dark border' }
-        ];
+        const filtFornitore  = document.getElementById('calendarFornitoreFilter')?.value  || '';
+        const filtMilestone  = document.getElementById('calendarMilestoneFilter')?.value  || '';
+
+        // Se il filtro milestone è attivo mostriamo solo quella milestone; altrimenti tutte
+        const activeMilestones = filtMilestone
+            ? this.MILESTONES.filter(m => m.key === filtMilestone)
+            : this.MILESTONES;
 
         const events = [];
         this.data
-            .filter(p => !filt || (p.fornitori && p.fornitori.includes(filt)))
+            .filter(p => !filtFornitore || (p.fornitori && p.fornitori.includes(filtFornitore)))
             .forEach(p => {
-                milestones.forEach(m => {
+                activeMilestones.forEach(m => {
                     const v = p[m.key];
-                    if (v && v.trim() !== '') events.push({ date: dayjs(v), sortKey: v, nome: p.nome, fornitori: p.fornitori || [], label: m.label, badge: m.badge });
+                    if (v && v.trim() !== '') {
+                        events.push({
+                            date:      dayjs(v),
+                            sortKey:   v,
+                            nome:      p.nome,
+                            fornitori: p.fornitori || [],
+                            label:     m.label,
+                            badge:     m.badge
+                        });
+                    }
                 });
             });
 
         if (events.length === 0) {
-            container.innerHTML = "<div class='col-12'><p class='text-center text-muted p-3'>Nessun evento da visualizzare</p></div>";
+            container.innerHTML = "<div class='col-12'><p class='text-center text-muted p-3'>Nessun evento da visualizzare per i filtri selezionati.</p></div>";
             return;
         }
 
