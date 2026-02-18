@@ -78,12 +78,14 @@ const app = {
 
     saveProject: async function() {
         const dates = {
-            stima: document.getElementById('p_stima').value,
-            ia: document.getElementById('p_ia').value,
+            stima:    document.getElementById('p_stima').value,
+            ia:       document.getElementById('p_ia').value,
             devStart: document.getElementById('p_devStart').value,
-            devEnd: document.getElementById('p_devEnd').value,
-            test: document.getElementById('p_test').value,
-            prod: document.getElementById('p_prod').value
+            devEnd:   document.getElementById('p_devEnd').value,
+            test:     document.getElementById('p_test').value,
+            prod:     document.getElementById('p_prod').value,
+            uat:      document.getElementById('p_uat').value  || null,
+            bs:       document.getElementById('p_bs').value   || null
         };
 
         if (dates.stima > dates.ia || dates.ia > dates.devStart || 
@@ -95,16 +97,18 @@ const app = {
 
         const id = document.getElementById('p_id').value;
         const newProj = {
-            id: id || Date.now().toString(),
-            nome: document.getElementById('p_nome').value,
+            id:        id || Date.now().toString(),
+            nome:      document.getElementById('p_nome').value,
             fornitori: document.getElementById('p_fornitori').value.split(',').map(s => s.trim()),
             dataStima: dates.stima,
-            dataIA: dates.ia,
-            devStart: dates.devStart,
-            devEnd: dates.devEnd,
-            dataTest: dates.test,
-            dataProd: dates.prod,
-            jira: document.getElementById('p_jira').value
+            dataIA:    dates.ia,
+            devStart:  dates.devStart,
+            devEnd:    dates.devEnd,
+            dataTest:  dates.test,
+            dataProd:  dates.prod,
+            dataUAT:   dates.uat,
+            dataBS:    dates.bs,
+            jira:      document.getElementById('p_jira').value
         };
 
         if (id) {
@@ -163,16 +167,18 @@ const app = {
         
         if (id) {
             const p = this.data.find(x => x.id === id);
-            document.getElementById('p_id').value = p.id;
-            document.getElementById('p_nome').value = p.nome;
+            document.getElementById('p_id').value       = p.id;
+            document.getElementById('p_nome').value     = p.nome;
             document.getElementById('p_fornitori').value = p.fornitori.join(', ');
-            document.getElementById('p_stima').value = p.dataStima;
-            document.getElementById('p_ia').value = p.dataIA;
+            document.getElementById('p_stima').value    = p.dataStima;
+            document.getElementById('p_ia').value       = p.dataIA;
             document.getElementById('p_devStart').value = p.devStart;
-            document.getElementById('p_devEnd').value = p.devEnd;
-            document.getElementById('p_test').value = p.dataTest;
-            document.getElementById('p_prod').value = p.dataProd;
-            document.getElementById('p_jira').value = p.jira;
+            document.getElementById('p_devEnd').value   = p.devEnd;
+            document.getElementById('p_test').value     = p.dataTest;
+            document.getElementById('p_prod').value     = p.dataProd;
+            document.getElementById('p_uat').value      = p.dataUAT  || '';
+            document.getElementById('p_bs').value       = p.dataBS   || '';
+            document.getElementById('p_jira').value     = p.jira;
         } else {
             document.getElementById('p_id').value = "";
         }
@@ -219,20 +225,22 @@ const app = {
             return;
         }
 
-        // Calcola min/max considerando devStart, devEnd e dataProd di tutti i progetti
+        // Calcola min/max su TUTTE le date rilevanti
         let minDate = null, maxDate = null;
+        const updateRange = (dateStr) => {
+            if (!dateStr) return;
+            const d = new Date(dateStr);
+            if (!minDate || d < minDate) minDate = d;
+            if (!maxDate || d > maxDate) maxDate = d;
+        };
         this.data.forEach(p => {
-            const start  = new Date(p.devStart);
-            const devEnd = new Date(p.devEnd);
-            const prod   = new Date(p.dataProd);
-            const ia     = new Date(p.dataIA);
-            const test   = new Date(p.dataTest);
-
-            if (!minDate || ia < minDate)    minDate = ia;
-            if (!minDate || start < minDate) minDate = start;
-            if (!maxDate || prod > maxDate)  maxDate = prod;
-            if (!maxDate || devEnd > maxDate) maxDate = devEnd;
-            if (!maxDate || test > maxDate)  maxDate = test;
+            updateRange(p.dataIA);
+            updateRange(p.devStart);
+            updateRange(p.devEnd);
+            updateRange(p.dataTest);
+            updateRange(p.dataProd);
+            updateRange(p.dataUAT);
+            updateRange(p.dataBS);
         });
 
         // Snap ai mesi
@@ -249,8 +257,9 @@ const app = {
 
         const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
 
-        const pct = (date) => {
-            const d = Math.ceil((new Date(date) - minDate) / (1000 * 60 * 60 * 24));
+        // Helper posizione %: usa la data esatta (non ceil) per maggiore precisione
+        const pct = (dateStr) => {
+            const d = (new Date(dateStr) - minDate) / (1000 * 60 * 60 * 24);
             return Math.min(Math.max((d / totalDays) * 100, 0), 100);
         };
 
@@ -269,24 +278,28 @@ const app = {
         // Righe progetto
         html += '<div class="gantt-body">';
         this.data.forEach(p => {
-            const start    = new Date(p.devStart);
-            const end      = new Date(p.devEnd);
-            const leftPct  = pct(start);
-            const durationDays = Math.max(Math.ceil((end - start) / (1000 * 60 * 60 * 24)), Math.ceil(totalDays * 0.01));
-            const widthPct = Math.max((durationDays / totalDays) * 100, 0.5);
+            const start   = p.devStart;
+            const end     = p.devEnd;   // la barra finisce esattamente a devEnd
+            const leftPct = pct(start);
+            const endPct  = pct(end);
+            // La barra copre da devStart a devEnd incluso (aggiungiamo 1 giorno per includere il giorno finale)
+            const endPlusOne = dayjs(end).add(1, 'day').format('YYYY-MM-DD');
+            const widthPct = Math.max(pct(endPlusOne) - leftPct, 0.5);
 
-            // Milestone: IA, Test, Prod
-            const milestones = [
-                { date: p.dataIA,   cls: 'ms-ia',   icon: '🤖', label: `Consegna IA: ${dayjs(p.dataIA).format('DD/MM/YYYY')}` },
-                { date: p.dataTest, cls: 'ms-test',  icon: '🧪', label: `Rilascio Test: ${dayjs(p.dataTest).format('DD/MM/YYYY')}` },
-                { date: p.dataProd, cls: 'ms-prod',  icon: '🚀', label: `Rilascio Prod: ${dayjs(p.dataProd).format('DD/MM/YYYY')}` }
-            ];
+            // Definizione milestone — le opzionali compaiono solo se hanno una data
+            const allMilestones = [
+                { date: p.dataIA,   cls: 'ms-ia',   icon: '🤖', label: `Consegna IA`,         always: true  },
+                { date: p.dataUAT,  cls: 'ms-uat',  icon: '👥', label: `UAT`,                 always: false },
+                { date: p.dataBS,   cls: 'ms-bs',   icon: '💼', label: `Business Simulation`, always: false },
+                { date: p.dataTest, cls: 'ms-test', icon: '🧪', label: `Rilascio Test`,       always: true  },
+                { date: p.dataProd, cls: 'ms-prod', icon: '🚀', label: `Rilascio Prod`,       always: true  }
+            ].filter(m => m.always || (m.date && m.date.trim() !== ''));
 
-            const milestonesHtml = milestones.map(m => {
+            const milestonesHtml = allMilestones.map(m => {
+                if (!m.date) return '';
                 const pos = pct(m.date);
-                // Etichetta data sempre visibile sopra l'icona
                 const dateLabel = dayjs(m.date).format('DD/MM');
-                return `<div class="gantt-milestone ${m.cls}" style="left: ${pos.toFixed(2)}%" title="${m.label}">
+                return `<div class="gantt-milestone ${m.cls}" style="left: ${pos.toFixed(2)}%" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
                     <span class="ms-date">${dateLabel}</span>
                     <span class="ms-icon">${m.icon}</span>
                     <span class="ms-line"></span>
@@ -310,11 +323,15 @@ const app = {
         });
         html += '</div>';
 
-        // Legenda
+        // Legenda (mostra UAT/BS solo se almeno un progetto li ha)
+        const hasUAT = this.data.some(p => p.dataUAT && p.dataUAT.trim() !== '');
+        const hasBS  = this.data.some(p => p.dataBS  && p.dataBS.trim()  !== '');
         html += `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
             <div class="gantt-legend-item"><span class="legend-ms">🤖</span> Consegna IA</div>
+            ${hasUAT ? '<div class="gantt-legend-item"><span class="legend-ms">👥</span> UAT</div>' : ''}
+            ${hasBS  ? '<div class="gantt-legend-item"><span class="legend-ms">💼</span> Business Simulation</div>' : ''}
             <div class="gantt-legend-item"><span class="legend-ms">🧪</span> Rilascio Test</div>
             <div class="gantt-legend-item"><span class="legend-ms">🚀</span> Rilascio Prod</div>
         </div>
@@ -329,18 +346,20 @@ const app = {
         if (!container) return;
 
         const milestones = [
-            { key: 'dataIA',   label: '🤖 Consegna IA',    badge: 'bg-info text-dark' },
-            { key: 'devStart', label: '🚀 Inizio Sviluppo', badge: 'bg-primary' },
-            { key: 'devEnd',   label: '🏁 Fine Sviluppo',   badge: 'bg-secondary' },
-            { key: 'dataTest', label: '🧪 Rilascio Test',   badge: 'bg-warning text-dark' },
-            { key: 'dataProd', label: '✅ Rilascio Prod',   badge: 'bg-success' }
+            { key: 'dataIA',   label: '🤖 Consegna IA',         badge: 'bg-info text-dark' },
+            { key: 'devStart', label: '⚙️ Inizio Sviluppo',      badge: 'bg-primary' },
+            { key: 'devEnd',   label: '🏁 Fine Sviluppo',        badge: 'bg-secondary' },
+            { key: 'dataUAT',  label: '👥 UAT',                  badge: 'bg-info' },
+            { key: 'dataBS',   label: '💼 Business Simulation',  badge: 'bg-dark' },
+            { key: 'dataTest', label: '🧪 Rilascio Test',        badge: 'bg-warning text-dark' },
+            { key: 'dataProd', label: '🚀 Rilascio Prod',        badge: 'bg-success' }
         ];
 
         const events = [];
         this.data.forEach(p => {
             milestones.forEach(m => {
                 const dateVal = p[m.key];
-                if (dateVal) {
+                if (dateVal && dateVal.trim() !== '') {
                     events.push({
                         date: dayjs(dateVal),
                         sortKey: dateVal,

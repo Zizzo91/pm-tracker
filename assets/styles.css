@@ -144,7 +144,6 @@ body {
 .gantt-row {
   display: flex;
   border-bottom: 1px solid #dee2e6;
-  /* Altezza maggiorata per ospitare l'etichetta data sopra la milestone */
   min-height: 84px;
 }
 
@@ -167,7 +166,6 @@ body {
   font-size: 0.82rem;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
-  /* Abbassata per fare spazio all'etichetta data sopra */
   top: 32px;
   z-index: 5;
 }
@@ -186,7 +184,6 @@ body {
 /* === GANTT MILESTONES === */
 .gantt-milestone {
   position: absolute;
-  /* Inizia dall'alto per contenere: data (16px) + icona (20px) + linea */
   top: 4px;
   width: 32px;
   height: 76px;
@@ -215,6 +212,8 @@ body {
 
 /* Colore data per tipo milestone */
 .ms-ia   .ms-date { color: #c85a00; }
+.ms-uat  .ms-date { color: #0a6e4e; }
+.ms-bs   .ms-date { color: #5a3e00; }
 .ms-test .ms-date { color: #5a2d91; }
 .ms-prod .ms-date { color: #b02a37; }
 
@@ -233,10 +232,12 @@ body {
 
 /* Colori linea per tipo */
 .ms-ia   .ms-line { background: #fd7e14; }
+.ms-uat  .ms-line { background: #20c997; }
+.ms-bs   .ms-line { background: #a67c00; }
 .ms-test .ms-line { background: #6f42c1; }
 .ms-prod .ms-line { background: #dc3545; }
 
-/* Tooltip descrittivo al hover (es. "Consegna IA: 23/02/2026") */
+/* Tooltip descrittivo al hover */
 .gantt-milestone::after {
   content: attr(title);
   position: absolute;
@@ -299,6 +300,8 @@ body {
   vertical-align: middle;
 }
 .legend-line.ia   { background: #fd7e14; }
+.legend-line.uat  { background: #20c997; }
+.legend-line.bs   { background: #a67c00; }
 .legend-line.test { background: #6f42c1; }
 .legend-line.prod { background: #dc3545; }
 
