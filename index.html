@@ -27,10 +27,10 @@
     <!-- Tabs Nav -->
     <ul class="nav nav-tabs mb-3" id="mainTab" role="tablist">
         <li class="nav-item">
-            <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#listView" type="button">📋 Elenco Progetti</button>
+            <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#listView" type="button">📋 Elenco Progetti</button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="gantt-tab" data-bs-toggle="tab" data-bs-target="#ganttView" type="button">📊 Gantt Sviluppo</button>
+            <button class="nav-link active" id="gantt-tab" data-bs-toggle="tab" data-bs-target="#ganttView" type="button">📊 Gantt Sviluppo</button>
         </li>
         <li class="nav-item">
             <button class="nav-link" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendarView" type="button">📅 Calendario Rilasci</button>
@@ -39,9 +39,9 @@
 
     <!-- Tabs Content -->
     <div class="tab-content" id="mainTabContent">
-        
+
         <!-- Tab 1: Lista -->
-        <div class="tab-pane fade show active" id="listView">
+        <div class="tab-pane fade" id="listView">
             <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
                 <button class="btn btn-success" onclick="app.openModal()">+ Nuovo Progetto</button>
                 <div class="d-flex gap-2">
@@ -72,8 +72,8 @@
             </div>
         </div>
 
-        <!-- Tab 2: Gantt -->
-        <div class="tab-pane fade" id="ganttView">
+        <!-- Tab 2: Gantt (DEFAULT) -->
+        <div class="tab-pane fade show active" id="ganttView">
             <div class="card shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <h6 class="text-muted mb-0">Visualizzazione temporale fase di Sviluppo</h6>
@@ -90,6 +90,14 @@
 
         <!-- Tab 3: Calendario (Lista cronologica) -->
         <div class="tab-pane fade" id="calendarView">
+            <div class="d-flex justify-content-end mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
+                    <select id="calendarFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderCalendar()">
+                        <option value="">Tutti</option>
+                    </select>
+                </div>
+            </div>
             <div class="row" id="calendarContainer">
                 <!-- Generato via JS -->
             </div>
@@ -116,7 +124,7 @@
                         <label class="form-label">Fornitori (separati da virgola) *</label>
                         <input type="text" class="form-control" id="p_fornitori" placeholder="Es: Fornitore A, Fornitore B" required>
                     </div>
-                    
+
                     <h6 class="mt-4 border-bottom pb-2">Timeline (Sequenziale)</h6>
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -236,6 +244,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=6"></script>
+<script src="assets/app.js?v=7"></script>
 </body>
 </html>

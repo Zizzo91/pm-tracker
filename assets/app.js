@@ -19,7 +19,7 @@ const app = {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', () => this.calcCosto());
         });
-        
+
         const savedCfg = localStorage.getItem('pm_tracker_config');
         if (savedCfg) {
             this.config = JSON.parse(savedCfg);
@@ -36,7 +36,7 @@ const app = {
         const out = document.getElementById('p_stimaCosto');
         if (!isNaN(ggu) && !isNaN(rc) && ggu >= 0 && rc >= 0) {
             const costo = ggu * rc;
-            out.value = '€ ' + costo.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            out.value = '\u20ac ' + costo.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         } else {
             out.value = '';
         }
@@ -68,7 +68,7 @@ const app = {
 
         try {
             const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}?t=${new Date().getTime()}`;
-            
+
             const response = await fetch(url, {
                 headers: {
                     'Authorization': `token ${this.config.token}`,
@@ -80,7 +80,7 @@ const app = {
 
             const json = await response.json();
             this.sha = json.sha;
-            
+
             const content = decodeURIComponent(escape(atob(json.content)));
             this.data = JSON.parse(content);
 
@@ -96,13 +96,13 @@ const app = {
         }
     },
 
-    // Raccoglie tutti i fornitori univoci e popola i due <select> filtro
+    // Raccoglie tutti i fornitori univoci e popola i tre <select> filtro
     populateFornitoreFilters: function() {
         const allSuppliers = [...new Set(
             this.data.flatMap(p => p.fornitori || [])
         )].sort();
 
-        ['ganttFornitoreFilter', 'tableFornitoreFilter'].forEach(id => {
+        ['ganttFornitoreFilter', 'tableFornitoreFilter', 'calendarFornitoreFilter'].forEach(id => {
             const sel = document.getElementById(id);
             if (!sel) return;
             const current = sel.value;
@@ -129,8 +129,8 @@ const app = {
             bs:       document.getElementById('p_bs').value   || null
         };
 
-        if (dates.stima > dates.ia || dates.ia > dates.devStart || 
-            dates.devStart > dates.devEnd || dates.devEnd > dates.test || 
+        if (dates.stima > dates.ia || dates.ia > dates.devStart ||
+            dates.devStart > dates.devEnd || dates.devEnd > dates.test ||
             dates.test > dates.prod) {
             document.getElementById('dateValidationMsg').innerText = "ERRORE: La sequenza temporale non \u00e8 rispettata! (Stima < IA < Dev < Test < Prod)";
             return;
@@ -174,7 +174,7 @@ const app = {
 
     syncToGithub: async function() {
         this.showAlert('Salvataggio su GitHub in corso...', 'warning');
-        
+
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(this.data, null, 2))));
             const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}`;
@@ -198,10 +198,10 @@ const app = {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Salvataggio fallito');
             }
-            
+
             const resJson = await response.json();
             this.sha = resJson.content.sha;
-            
+
             this.loadData();
             this.showAlert('Dati salvati su GitHub!', 'success');
 
@@ -215,7 +215,7 @@ const app = {
         document.getElementById('projectForm').reset();
         document.getElementById('dateValidationMsg').innerText = "";
         document.getElementById('p_stimaCosto').value = "";
-        
+
         if (id) {
             const p = this.data.find(x => x.id === id);
             document.getElementById('p_id').value                = p.id;
@@ -257,33 +257,31 @@ const app = {
 
         tbody.innerHTML = this.data
             .filter(p => {
-                const matchName = p.nome.toLowerCase().includes(search);
+                const matchName     = p.nome.toLowerCase().includes(search);
                 const matchSupplier = !filt || (p.fornitori && p.fornitori.includes(filt));
                 return matchName && matchSupplier;
             })
             .sort((a,b) => new Date(a.dataProd) - new Date(b.dataProd))
             .map(p => {
-                // Badge fornitori
                 const fornitoriBadges = p.fornitori.map(f => `<span class="badge bg-secondary me-1">${f}</span>`).join('');
 
-                // Righe opzionali da mostrare solo se presenti
                 const extraRows = [];
-                if (p.dataScadenzaStima) extraRows.push(`<span class="badge bg-light text-dark border me-1" title="Scadenza stima fornitore">📅 Scad. Stima: ${this.formatDate(p.dataScadenzaStima)}</span>`);
-                if (p.dataConfigSistema) extraRows.push(`<span class="badge bg-light text-dark border me-1" title="Data config sistema">🔧 Config: ${this.formatDate(p.dataConfigSistema)}</span>`);
-                if (p.stimaGgu != null)  extraRows.push(`<span class="badge bg-info text-dark me-1" title="Stima fornitore in gg/u">⏱️ ${p.stimaGgu} gg/u</span>`);
-                if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1" title="Stima costo">💰 € ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
+                if (p.dataScadenzaStima) extraRows.push(`<span class="badge bg-light text-dark border me-1" title="Scadenza stima fornitore">\ud83d\udcc5 Scad. Stima: ${this.formatDate(p.dataScadenzaStima)}</span>`);
+                if (p.dataConfigSistema) extraRows.push(`<span class="badge bg-light text-dark border me-1" title="Data config sistema">\ud83d\udd27 Config: ${this.formatDate(p.dataConfigSistema)}</span>`);
+                if (p.stimaGgu != null)  extraRows.push(`<span class="badge bg-info text-dark me-1" title="Stima fornitore in gg/u">\u23f1\ufe0f ${p.stimaGgu} gg/u</span>`);
+                if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1" title="Stima costo">\ud83d\udcb0 \u20ac ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
 
                 return `
                 <tr>
                     <td>
                         <strong>${p.nome}</strong><br>
-                        <a href="${p.jira}" target="_blank" class="text-xs text-decoration-none">Jira 🔗</a>
+                        <a href="${p.jira}" target="_blank" class="text-xs text-decoration-none">Jira \ud83d\udd17</a>
                         ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
                     </td>
                     <td>${fornitoriBadges}</td>
                     <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
                     <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
-                    <td class="small">${this.formatDate(p.devStart)} ➝ ${this.formatDate(p.devEnd)}</td>
+                    <td class="small">${this.formatDate(p.devStart)} \u279d ${this.formatDate(p.devEnd)}</td>
                     <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
                     <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
                     <td>
@@ -340,7 +338,6 @@ const app = {
             return Math.min(Math.max((d / totalDays) * 100, 0), 100);
         };
 
-        // Intestazione mesi
         let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
         let currentMonth = new Date(minDate);
         while (currentMonth <= maxDate) {
@@ -352,7 +349,6 @@ const app = {
         }
         html += '</div></div></div>';
 
-        // Righe progetto
         html += '<div class="gantt-body">';
         data.forEach(p => {
             const start    = p.devStart;
@@ -360,12 +356,10 @@ const app = {
             const leftPct  = pct(start);
             const widthPct = Math.max(pct(end) - leftPct, 0.5);
 
-            // Badge fornitori per la card
             const fornitoriHtml = (p.fornitori || []).map(f =>
                 `<span class="gantt-supplier-badge">${f}</span>`
             ).join('');
 
-            // Milestone attive
             const allMilestones = [
                 { date: p.dataIA,   cls: 'ms-ia',        icon: '\ud83e\udd16', label: 'Consegna IA',         always: true  },
                 { date: p.devStart, cls: 'ms-dev-start', icon: '\u25b6\ufe0f',  label: 'Inizio Sviluppo',     always: true  },
@@ -376,7 +370,6 @@ const app = {
                 { date: p.dataProd, cls: 'ms-prod',      icon: '\ud83d\ude80', label: 'Rilascio Prod',       always: true  }
             ].filter(m => m.date && (m.always || m.date.trim() !== ''));
 
-            // Offset milestone coincidenti
             const dateGroups = {};
             allMilestones.forEach(m => {
                 if (!dateGroups[m.date]) dateGroups[m.date] = [];
@@ -442,34 +435,40 @@ const app = {
         const container = document.getElementById('calendarContainer');
         if (!container) return;
 
+        // Filtro fornitore calendario
+        const fSel = document.getElementById('calendarFornitoreFilter');
+        const filt = fSel ? fSel.value : '';
+
         const milestones = [
-            { key: 'dataIA',   label: '\ud83e\udd16 Consegna IA',         badge: 'bg-info text-dark' },
-            { key: 'devStart', label: '\u25b6\ufe0f Inizio Sviluppo',      badge: 'bg-primary' },
-            { key: 'devEnd',   label: '\u23f9\ufe0f Fine Sviluppo',        badge: 'bg-secondary' },
-            { key: 'dataUAT',  label: '\ud83d\udc65 UAT',                  badge: 'bg-info' },
-            { key: 'dataBS',   label: '\ud83d\udcbc Business Simulation',  badge: 'bg-dark' },
-            { key: 'dataTest', label: '\ud83e\uddea Rilascio Test',        badge: 'bg-warning text-dark' },
-            { key: 'dataProd', label: '\ud83d\ude80 Rilascio Prod',        badge: 'bg-success' },
-            { key: 'dataScadenzaStima', label: '\ud83d\udcc5 Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
-            { key: 'dataConfigSistema', label: '\ud83d\udd27 Config Sistema',         badge: 'bg-light text-dark border' }
+            { key: 'dataIA',            label: '\ud83e\udd16 Consegna IA',             badge: 'bg-info text-dark' },
+            { key: 'devStart',          label: '\u25b6\ufe0f Inizio Sviluppo',          badge: 'bg-primary' },
+            { key: 'devEnd',            label: '\u23f9\ufe0f Fine Sviluppo',            badge: 'bg-secondary' },
+            { key: 'dataUAT',           label: '\ud83d\udc65 UAT',                      badge: 'bg-info' },
+            { key: 'dataBS',            label: '\ud83d\udcbc Business Simulation',      badge: 'bg-dark' },
+            { key: 'dataTest',          label: '\ud83e\uddea Rilascio Test',            badge: 'bg-warning text-dark' },
+            { key: 'dataProd',          label: '\ud83d\ude80 Rilascio Prod',            badge: 'bg-success' },
+            { key: 'dataScadenzaStima', label: '\ud83d\udcc5 Scad. Stima Fornitore',   badge: 'bg-light text-dark border' },
+            { key: 'dataConfigSistema', label: '\ud83d\udd27 Config Sistema',           badge: 'bg-light text-dark border' }
         ];
 
         const events = [];
-        this.data.forEach(p => {
-            milestones.forEach(m => {
-                const dateVal = p[m.key];
-                if (dateVal && dateVal.trim() !== '') {
-                    events.push({
-                        date:      dayjs(dateVal),
-                        sortKey:   dateVal,
-                        nome:      p.nome,
-                        fornitori: p.fornitori || [],
-                        label:     m.label,
-                        badge:     m.badge
-                    });
-                }
+        this.data
+            .filter(p => !filt || (p.fornitori && p.fornitori.includes(filt)))
+            .forEach(p => {
+                milestones.forEach(m => {
+                    const dateVal = p[m.key];
+                    if (dateVal && dateVal.trim() !== '') {
+                        events.push({
+                            date:      dayjs(dateVal),
+                            sortKey:   dateVal,
+                            nome:      p.nome,
+                            fornitori: p.fornitori || [],
+                            label:     m.label,
+                            badge:     m.badge
+                        });
+                    }
+                });
             });
-        });
 
         if (events.length === 0) {
             container.innerHTML = "<div class='col-12'><p class='text-center text-muted p-3'>Nessun evento da visualizzare</p></div>";
