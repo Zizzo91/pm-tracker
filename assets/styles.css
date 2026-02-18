@@ -1,9 +1,5 @@
 /* === RESET E BASE === */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -22,22 +18,9 @@ body {
 }
 
 /* === HEADER === */
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 30px;
-  text-align: center;
-}
-
-.header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
-}
-
-.header p {
-  opacity: 0.9;
-  font-size: 1.1rem;
-}
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+.header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+.header p { opacity: 0.9; font-size: 1.1rem; }
 
 /* === TOOLBAR === */
 .toolbar {
@@ -61,96 +44,47 @@ body {
   font-weight: 500;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
+.btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-secondary:hover { background: #5a6268; }
+.btn-success { background: #28a745; color: white; }
+.btn-success:hover { background: #218838; }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #5a6268;
-}
-
-.btn-success {
-  background: #28a745;
-  color: white;
-}
-
-.btn-success:hover {
-  background: #218838;
-}
-
-/* === FIX MODAL: forza sfondo bianco e testo scuro, ignora dark-mode OS === */
-.modal-dialog,
-.modal-content,
-.modal-body,
-.modal-footer {
+/* === FIX MODAL: forza sfondo bianco e testo scuro === */
+.modal-dialog, .modal-content, .modal-body, .modal-footer {
   background-color: #ffffff !important;
   color: #212529 !important;
   color-scheme: light !important;
 }
-
-.modal-body .form-label,
-.modal-body label,
-.modal-body h6,
-.modal-body p,
-.modal-body small,
-.modal-body .text-muted {
-  color: #495057 !important;
+.modal-body .form-label, .modal-body label, .modal-body h6,
+.modal-body p, .modal-body small, .modal-body .text-muted { color: #495057 !important; }
+.modal .form-control, .modal input[type="text"], .modal input[type="date"],
+.modal input[type="url"], .modal input[type="password"],
+.modal textarea, .modal select {
+  background-color: #ffffff !important; color: #212529 !important;
+  border-color: #dee2e6 !important; opacity: 1 !important;
+  -webkit-text-fill-color: #212529 !important; color-scheme: light !important;
 }
-
-/* Tutti gli input/select/textarea dentro i modal Bootstrap */
-.modal .form-control,
-.modal input[type="text"],
-.modal input[type="date"],
-.modal input[type="url"],
-.modal input[type="password"],
-.modal textarea,
-.modal select {
-  background-color: #ffffff !important;
-  color: #212529 !important;
-  border-color: #dee2e6 !important;
-  opacity: 1 !important;
-  -webkit-text-fill-color: #212529 !important;
-  color-scheme: light !important;
-}
-
-.modal .form-control:focus,
-.modal input:focus,
-.modal textarea:focus {
-  background-color: #ffffff !important;
-  color: #212529 !important;
+.modal .form-control:focus, .modal input:focus, .modal textarea:focus {
+  background-color: #ffffff !important; color: #212529 !important;
   -webkit-text-fill-color: #212529 !important;
   border-color: #667eea !important;
   box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25) !important;
 }
 
 /* === NAV TABS: leggibilità testo === */
-/* Tab NON selezionato: testo bianco su sfondo viola semi-trasparente */
 #mainTab .nav-link {
   color: #ffffff !important;
-  background-color: rgba(255, 255, 255, 0.18) !important;
-  border-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.3) transparent !important;
+  background-color: rgba(255,255,255,0.18) !important;
+  border-color: rgba(255,255,255,0.3) rgba(255,255,255,0.3) transparent !important;
   font-weight: 600;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
-
-/* Tab NON selezionato al hover: leggermente più chiaro */
 #mainTab .nav-link:hover:not(.active) {
-  background-color: rgba(255, 255, 255, 0.32) !important;
+  background-color: rgba(255,255,255,0.32) !important;
   color: #ffffff !important;
 }
-
-/* Tab ATTIVO/SELEZIONATO: testo scuro su sfondo bianco (standard Bootstrap) */
 #mainTab .nav-link.active {
   color: #4a3b8c !important;
   background-color: #ffffff !important;
@@ -166,234 +100,109 @@ body {
   border-radius: 8px;
   background: white;
 }
-
-.gantt-header {
-  display: flex;
-  background: #e9ecef;
-  font-weight: bold;
-  border-bottom: 2px solid #0d6efd;
-}
-
+.gantt-header { display: flex; background: #e9ecef; font-weight: bold; border-bottom: 2px solid #0d6efd; }
 .gantt-project-col {
-  min-width: 200px;
-  width: 200px;
-  padding: 12px;
-  border-right: 1px solid #dee2e6;
-  background: #f8f9fa;
-  display: flex;
-  align-items: center;
+  min-width: 200px; width: 200px; padding: 12px;
+  border-right: 1px solid #dee2e6; background: #f8f9fa;
+  display: flex; align-items: center;
 }
-
-/* Badge fornitore nella colonna progetto del Gantt */
-.gantt-supplier-list {
-  margin-top: 4px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-
+.gantt-supplier-list { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px; }
 .gantt-supplier-badge {
-  display: inline-block;
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 10px;
+  display: inline-block; font-size: 0.68rem; font-weight: 600;
+  padding: 1px 6px; border-radius: 10px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  color: #fff; letter-spacing: 0.02em; white-space: nowrap;
 }
-
-.gantt-timeline-col {
-  flex: 1;
-  min-width: 600px;
-  position: relative;
-}
-
-.gantt-months {
-  display: flex;
-  border-bottom: 1px solid #adb5bd;
-  height: 40px;
-}
-
+.gantt-timeline-col { flex: 1; min-width: 600px; position: relative; }
+.gantt-months { display: flex; border-bottom: 1px solid #adb5bd; height: 40px; }
 .gantt-month {
-  padding: 10px;
-  text-align: center;
+  padding: 10px; text-align: center;
   border-right: 1px solid #dee2e6;
   background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #495057;
+  font-size: 0.85rem; font-weight: 600; color: #495057;
 }
-
-.gantt-body {
-  background: white;
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.gantt-row {
-  display: flex;
-  border-bottom: 1px solid #dee2e6;
-  min-height: 84px;
-}
-
-.gantt-row:hover {
-  background: #f1f3f5;
-}
+.gantt-body { background: white; max-height: 500px; overflow-y: auto; }
+.gantt-row { display: flex; border-bottom: 1px solid #dee2e6; min-height: 84px; }
+.gantt-row:hover { background: #f1f3f5; }
 
 /* Barra sviluppo */
 .gantt-bar {
-  position: absolute;
-  height: 36px;
+  position: absolute; height: 36px;
   background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: white;
-  font-size: 0.82rem;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
-  top: 32px;
-  z-index: 5;
+  border-radius: 6px; display: flex; align-items: center;
+  padding: 0 12px; cursor: pointer; transition: all 0.3s ease;
+  color: white; font-size: 0.82rem; font-weight: 600;
+  box-shadow: 0 2px 8px rgba(13,110,253,0.3); top: 32px; z-index: 5;
 }
-
-.gantt-bar:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.5);
-}
-
-.gantt-bar span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.gantt-bar:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(13,110,253,0.5); }
+.gantt-bar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* === GANTT MILESTONES === */
 .gantt-milestone {
-  position: absolute;
-  top: 4px;
-  width: 32px;
-  height: 76px;
+  position: absolute; top: 4px; width: 32px; height: 76px;
   transform: translateX(-16px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: default;
-  z-index: 10;
+  display: flex; flex-direction: column; align-items: center;
+  cursor: default; z-index: 10;
 }
-
-/* Etichetta data sopra l'icona — sempre visibile */
 .gantt-milestone .ms-date {
-  font-size: 0.62rem;
-  font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
-  color: #343a40;
-  background: rgba(255,255,255,0.92);
-  border-radius: 3px;
-  padding: 1px 3px;
-  margin-bottom: 1px;
-  letter-spacing: 0.01em;
+  font-size: 0.62rem; font-weight: 700; line-height: 1.2;
+  white-space: nowrap; color: #343a40;
+  background: rgba(255,255,255,0.92); border-radius: 3px;
+  padding: 1px 3px; margin-bottom: 1px; letter-spacing: 0.01em;
   box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
 
 /* Colore data per tipo milestone */
-.ms-ia        .ms-date { color: #c85a00; }
-.ms-dev-start .ms-date { color: #1a7a3c; }
-.ms-dev-end   .ms-date { color: #1a4a8a; }
-.ms-uat       .ms-date { color: #0a6e4e; }
-.ms-bs        .ms-date { color: #5a3e00; }
-.ms-test      .ms-date { color: #5a2d91; }
-.ms-prod      .ms-date { color: #b02a37; }
+.ms-ia         .ms-date { color: #c85a00; }
+.ms-dev-start  .ms-date { color: #1a7a3c; }
+.ms-dev-end    .ms-date { color: #1a4a8a; }
+.ms-uat        .ms-date { color: #0a6e4e; }
+.ms-bs         .ms-date { color: #5a3e00; }
+.ms-test       .ms-date { color: #5a2d91; }
+.ms-prod       .ms-date { color: #b02a37; }
+.ms-scad-stima .ms-date { color: #8a5200; }
+.ms-config-sis .ms-date { color: #1a5276; }
 
-.gantt-milestone .ms-icon {
-  font-size: 1rem;
-  line-height: 1.2;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
-}
-
-.gantt-milestone .ms-line {
-  width: 2px;
-  flex: 1;
-  margin-top: 1px;
-  border-radius: 1px;
-}
+.gantt-milestone .ms-icon { font-size: 1rem; line-height: 1.2; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+.gantt-milestone .ms-line { width: 2px; flex: 1; margin-top: 1px; border-radius: 1px; }
 
 /* Colori linea per tipo */
-.ms-ia        .ms-line { background: #fd7e14; }
-.ms-dev-start .ms-line { background: #28a745; }
-.ms-dev-end   .ms-line { background: #0d6efd; }
-.ms-uat       .ms-line { background: #20c997; }
-.ms-bs        .ms-line { background: #a67c00; }
-.ms-test      .ms-line { background: #6f42c1; }
-.ms-prod      .ms-line { background: #dc3545; }
+.ms-ia         .ms-line { background: #fd7e14; }
+.ms-dev-start  .ms-line { background: #28a745; }
+.ms-dev-end    .ms-line { background: #0d6efd; }
+.ms-uat        .ms-line { background: #20c997; }
+.ms-bs         .ms-line { background: #a67c00; }
+.ms-test       .ms-line { background: #6f42c1; }
+.ms-prod       .ms-line { background: #dc3545; }
+.ms-scad-stima .ms-line { background: #e67e22; }
+.ms-config-sis .ms-line { background: #2980b9; }
 
-/* Tooltip descrittivo al hover */
+/* Tooltip al hover */
 .gantt-milestone::after {
-  content: attr(title);
-  position: absolute;
-  bottom: calc(100% + 2px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.82);
-  color: #fff;
-  font-size: 0.68rem;
-  padding: 3px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 100;
+  content: attr(title); position: absolute;
+  bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.82); color: #fff;
+  font-size: 0.68rem; padding: 3px 8px; border-radius: 4px;
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s; z-index: 100;
 }
-.gantt-milestone:hover::after {
-  opacity: 1;
-}
+.gantt-milestone:hover::after { opacity: 1; }
 
 /* === LEGENDA GANTT === */
 .gantt-legend {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  padding: 10px 16px;
-  background: #f8f9fa;
-  border-top: 1px solid #dee2e6;
-  border-radius: 0 0 8px 8px;
-  font-size: 0.78rem;
-  color: #495057;
-  align-items: center;
+  display: flex; gap: 20px; flex-wrap: wrap;
+  padding: 10px 16px; background: #f8f9fa;
+  border-top: 1px solid #dee2e6; border-radius: 0 0 8px 8px;
+  font-size: 0.78rem; color: #495057; align-items: center;
 }
-
-.gantt-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
+.gantt-legend-item { display: flex; align-items: center; gap: 6px; }
 .legend-bar {
-  width: 28px;
-  height: 12px;
-  border-radius: 3px;
+  width: 28px; height: 12px; border-radius: 3px;
   background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-  display: inline-block;
-  box-shadow: 0 1px 3px rgba(13,110,253,0.3);
+  display: inline-block; box-shadow: 0 1px 3px rgba(13,110,253,0.3);
 }
-
-.legend-ms {
-  font-size: 1rem;
-}
-
-.legend-line {
-  display: inline-block;
-  width: 3px;
-  height: 16px;
-  border-radius: 2px;
-  vertical-align: middle;
-}
+.legend-ms { font-size: 1rem; }
+.legend-line { display: inline-block; width: 3px; height: 16px; border-radius: 2px; vertical-align: middle; }
 .legend-line.ia        { background: #fd7e14; }
 .legend-line.dev-start { background: #28a745; }
 .legend-line.dev-end   { background: #0d6efd; }
@@ -401,37 +210,16 @@ body {
 .legend-line.bs        { background: #a67c00; }
 .legend-line.test      { background: #6f42c1; }
 .legend-line.prod      { background: #dc3545; }
+.legend-line.scad-stima { background: #e67e22; }
+.legend-line.config-sis { background: #2980b9; }
 
 /* === CALENDAR CARD === */
-.cal-month-card {
-  border-left: 5px solid #0d6efd;
-}
-
-.cal-event-item {
-  border-bottom: 1px solid #eee;
-  padding: 5px 0;
-}
-
-.cal-event-date {
-  font-weight: bold;
-  color: #dc3545;
-  width: 60px;
-  display: inline-block;
-}
+.cal-month-card { border-left: 5px solid #0d6efd; }
+.cal-event-item { border-bottom: 1px solid #eee; padding: 5px 0; }
+.cal-event-date { font-weight: bold; color: #dc3545; width: 60px; display: inline-block; }
 
 /* === UTILITY === */
-.text-muted {
-  color: #6c757d;
-}
-
-.text-xs {
-  font-size: 0.75rem;
-}
-
-.ms-1 {
-  margin-left: 0.25rem;
-}
-
-.p-3 {
-  padding: 1rem;
-}
+.text-muted { color: #6c757d; }
+.text-xs { font-size: 0.75rem; }
+.ms-1 { margin-left: 0.25rem; }
+.p-3 { padding: 1rem; }

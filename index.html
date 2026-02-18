@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PM Tracker</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles.css">
 </head>
@@ -21,7 +20,6 @@
 </nav>
 
 <div class="container-fluid px-4">
-    <!-- Alert Area -->
     <div id="alertArea"></div>
 
     <!-- Tabs Nav -->
@@ -37,7 +35,6 @@
         </li>
     </ul>
 
-    <!-- Tabs Content -->
     <div class="tab-content" id="mainTabContent">
 
         <!-- Tab 1: Lista -->
@@ -65,9 +62,7 @@
                             <th>Azioni</th>
                         </tr>
                     </thead>
-                    <tbody id="projectsTableBody">
-                        <!-- Righe generate via JS -->
-                    </tbody>
+                    <tbody id="projectsTableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -76,7 +71,10 @@
         <div class="tab-pane fade show active" id="ganttView">
             <div class="card shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <h6 class="text-muted mb-0">Visualizzazione temporale fase di Sviluppo</h6>
+                    <button class="btn btn-success btn-sm" onclick="app.openModal()">+ Nuovo Progetto</button>
+                    <div class="d-flex align-items-center gap-2">
+                        <h6 class="text-muted mb-0 d-none d-md-block">Visualizzazione temporale fase di Sviluppo</h6>
+                    </div>
                     <div class="d-flex align-items-center gap-2">
                         <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
                         <select id="ganttFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderGantt()">
@@ -88,7 +86,7 @@
             </div>
         </div>
 
-        <!-- Tab 3: Calendario (Lista cronologica) -->
+        <!-- Tab 3: Calendario -->
         <div class="tab-pane fade" id="calendarView">
             <div class="d-flex justify-content-end mb-3">
                 <div class="d-flex align-items-center gap-2">
@@ -98,9 +96,7 @@
                     </select>
                 </div>
             </div>
-            <div class="row" id="calendarContainer">
-                <!-- Generato via JS -->
-            </div>
+            <div class="row" id="calendarContainer"></div>
         </div>
     </div>
 </div>
@@ -165,7 +161,6 @@
                         </div>
                     </div>
 
-                    <!-- === CAMPI OPZIONALI AGGIUNTIVI === -->
                     <h6 class="mt-4 border-bottom pb-2">Dati Economici &amp; Operativi <span class="text-muted fw-normal small">(opzionali)</span></h6>
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -239,11 +234,10 @@
     </div>
 </div>
 
-<!-- Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=7"></script>
+<script src="assets/app.js?v=8"></script>
 </body>
 </html>
