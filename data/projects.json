@@ -5,9 +5,9 @@
     "fornitori": [
       "Accenture"
     ],
-    "dataStima": "2026-02-18",
-    "dataIA": "2026-02-23",
-    "devStart": "2026-02-26",
+    "dataStima": "2026-02-11",
+    "dataIA": "2026-02-18",
+    "devStart": "2026-02-19",
     "devEnd": "2026-02-27",
     "dataTest": "2026-02-27",
     "dataProd": "2026-03-10",
