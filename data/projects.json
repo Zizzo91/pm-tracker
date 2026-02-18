@@ -14,5 +14,21 @@
     "dataUAT": "2026-03-06",
     "dataBS": "2026-03-11",
     "jira": "https://telepass.atlassian.net/browse/ZTL-14"
+  },
+  {
+    "id": "1771414171964",
+    "nome": "ZTL",
+    "fornitori": [
+      "Accenture"
+    ],
+    "dataStima": "2026-02-11",
+    "dataIA": "2026-02-19",
+    "devStart": "2026-02-26",
+    "devEnd": "2026-03-06",
+    "dataTest": "2026-03-09",
+    "dataProd": "2026-03-26",
+    "dataUAT": null,
+    "dataBS": null,
+    "jira": "https://telepass.atlassian.net/browse/ZTL-4"
   }
 ]
