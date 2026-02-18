@@ -134,6 +134,30 @@ body {
   box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25) !important;
 }
 
+/* === NAV TABS: leggibilità testo === */
+/* Tab NON selezionato: testo bianco su sfondo viola semi-trasparente */
+#mainTab .nav-link {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.3) transparent !important;
+  font-weight: 600;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Tab NON selezionato al hover: leggermente più chiaro */
+#mainTab .nav-link:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.32) !important;
+  color: #ffffff !important;
+}
+
+/* Tab ATTIVO/SELEZIONATO: testo scuro su sfondo bianco (standard Bootstrap) */
+#mainTab .nav-link.active {
+  color: #4a3b8c !important;
+  background-color: #ffffff !important;
+  border-color: #dee2e6 #dee2e6 #ffffff !important;
+  font-weight: 700;
+}
+
 /* === GANTT CHART === */
 .gantt-custom {
   overflow-x: auto;
