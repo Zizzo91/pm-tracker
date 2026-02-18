@@ -42,9 +42,14 @@
         
         <!-- Tab 1: Lista -->
         <div class="tab-pane fade show active" id="listView">
-            <div class="d-flex justify-content-between mb-3">
+            <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
                 <button class="btn btn-success" onclick="app.openModal()">+ Nuovo Progetto</button>
-                <input type="text" id="searchInput" class="form-control w-25" placeholder="Cerca progetto..." onkeyup="app.renderTable()">
+                <div class="d-flex gap-2">
+                    <select id="tableFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderTable()">
+                        <option value="">Tutti i fornitori</option>
+                    </select>
+                    <input type="text" id="searchInput" class="form-control form-control-sm" style="min-width:180px" placeholder="Cerca progetto..." onkeyup="app.renderTable()">
+                </div>
             </div>
             <div class="table-responsive bg-white shadow-sm rounded">
                 <table class="table table-hover align-middle mb-0">
@@ -70,7 +75,15 @@
         <!-- Tab 2: Gantt -->
         <div class="tab-pane fade" id="ganttView">
             <div class="card shadow-sm p-3">
-                <h6 class="text-muted">Visualizzazione temporale fase di Sviluppo</h6>
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h6 class="text-muted mb-0">Visualizzazione temporale fase di Sviluppo</h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
+                        <select id="ganttFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderGantt()">
+                            <option value="">Tutti</option>
+                        </select>
+                    </div>
+                </div>
                 <div id="gantt-chart"></div>
             </div>
         </div>
@@ -198,6 +211,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=4"></script>
+<script src="assets/app.js?v=5"></script>
 </body>
 </html>

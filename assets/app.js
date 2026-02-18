@@ -64,7 +64,8 @@ const app = {
             
             const content = decodeURIComponent(escape(atob(json.content)));
             this.data = JSON.parse(content);
-            
+
+            this.populateFornitoreFilters();
             this.renderTable();
             this.renderGantt();
             this.renderCalendar();
@@ -74,6 +75,29 @@ const app = {
             console.error(error);
             this.showAlert(`Impossibile caricare i dati: ${error.message}`, 'danger');
         }
+    },
+
+    // Raccoglie tutti i fornitori univoci e popola i due <select> filtro
+    populateFornitoreFilters: function() {
+        const allSuppliers = [...new Set(
+            this.data.flatMap(p => p.fornitori || [])
+        )].sort();
+
+        ['ganttFornitoreFilter', 'tableFornitoreFilter'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            const current = sel.value;
+            // Mantieni solo la prima option ("Tutti")
+            while (sel.options.length > 1) sel.remove(1);
+            allSuppliers.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f;
+                opt.textContent = f;
+                sel.appendChild(opt);
+            });
+            // Ripristina selezione precedente se ancora valida
+            if (current && allSuppliers.includes(current)) sel.value = current;
+        });
     },
 
     saveProject: async function() {
@@ -193,11 +217,17 @@ const app = {
     },
 
     renderTable: function() {
-        const tbody = document.getElementById('projectsTableBody');
-        const filter = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
-        
+        const tbody  = document.getElementById('projectsTableBody');
+        const search = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
+        const fSel   = document.getElementById('tableFornitoreFilter');
+        const filt   = fSel ? fSel.value : '';
+
         tbody.innerHTML = this.data
-            .filter(p => p.nome.toLowerCase().includes(filter))
+            .filter(p => {
+                const matchName = p.nome.toLowerCase().includes(search);
+                const matchSupplier = !filt || (p.fornitori && p.fornitori.includes(filt));
+                return matchName && matchSupplier;
+            })
             .sort((a,b) => new Date(a.dataProd) - new Date(b.dataProd))
             .map(p => `
             <tr>
@@ -220,8 +250,15 @@ const app = {
         const container = document.getElementById('gantt-chart');
         if (!container) return;
 
-        if (this.data.length === 0) {
-            container.innerHTML = "<p class='text-center p-3'>Nessun progetto da visualizzare</p>";
+        // Leggi filtro fornitore
+        const fSel  = document.getElementById('ganttFornitoreFilter');
+        const filt  = fSel ? fSel.value : '';
+        const data  = filt
+            ? this.data.filter(p => p.fornitori && p.fornitori.includes(filt))
+            : this.data;
+
+        if (data.length === 0) {
+            container.innerHTML = "<p class='text-center p-3 text-muted'>Nessun progetto da visualizzare per il fornitore selezionato.</p>";
             return;
         }
 
@@ -232,7 +269,7 @@ const app = {
             if (!minDate || d < minDate) minDate = d;
             if (!maxDate || d > maxDate) maxDate = d;
         };
-        this.data.forEach(p => {
+        data.forEach(p => {
             updateRange(p.dataIA);
             updateRange(p.devStart);
             updateRange(p.devEnd);
@@ -270,14 +307,19 @@ const app = {
 
         // Righe progetto
         html += '<div class="gantt-body">';
-        this.data.forEach(p => {
+        data.forEach(p => {
             const start      = p.devStart;
             const end        = p.devEnd;
             const leftPct    = pct(start);
             const endPlusOne = dayjs(end).add(1, 'day').format('YYYY-MM-DD');
             const widthPct   = Math.max(pct(endPlusOne) - leftPct, 0.5);
 
-            // Elenco milestone attive
+            // Badge fornitori per la card
+            const fornitoriHtml = (p.fornitori || []).map(f =>
+                `<span class="gantt-supplier-badge">${f}</span>`
+            ).join('');
+
+            // Milestone attive
             const allMilestones = [
                 { date: p.dataIA,   cls: 'ms-ia',        icon: '\ud83e\udd16', label: 'Consegna IA',         always: true  },
                 { date: p.devStart, cls: 'ms-dev-start', icon: '\u25b6\ufe0f',  label: 'Inizio Sviluppo',     always: true  },
@@ -288,26 +330,22 @@ const app = {
                 { date: p.dataProd, cls: 'ms-prod',      icon: '\ud83d\ude80', label: 'Rilascio Prod',       always: true  }
             ].filter(m => m.date && (m.always || m.date.trim() !== ''));
 
-            // Calcola offset per milestone con stessa data
-            // Raggruppa per data, poi assegna offset orizzontale: -18px / 0 / +18px...
+            // Offset milestone coincidenti
             const dateGroups = {};
             allMilestones.forEach(m => {
                 if (!dateGroups[m.date]) dateGroups[m.date] = [];
                 dateGroups[m.date].push(m);
             });
             allMilestones.forEach(m => {
-                const group  = dateGroups[m.date];
-                const idx    = group.indexOf(m);
-                const count  = group.length;
-                // offset centrato: es. 2 elementi -> -18, +18 | 3 elementi -> -18, 0, +18
-                const step   = 20; // px tra le icone
-                m.offsetPx   = (idx - (count - 1) / 2) * step;
+                const group = dateGroups[m.date];
+                const idx   = group.indexOf(m);
+                const count = group.length;
+                m.offsetPx  = (idx - (count - 1) / 2) * 20;
             });
 
             const milestonesHtml = allMilestones.map(m => {
-                const pos       = pct(m.date);
-                const dateLabel = dayjs(m.date).format('DD/MM');
-                // transform: translateX combina il centramento base (-16px) con l'offset di gruppo
+                const pos        = pct(m.date);
+                const dateLabel  = dayjs(m.date).format('DD/MM');
                 const translateX = (-16 + m.offsetPx).toFixed(0);
                 return `<div class="gantt-milestone ${m.cls}" style="left: ${pos.toFixed(2)}%; transform: translateX(${translateX}px);" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
                     <span class="ms-date">${dateLabel}</span>
@@ -319,7 +357,10 @@ const app = {
             html += `
                 <div class="gantt-row">
                     <div class="gantt-project-col">
-                        <strong>${p.nome}</strong>
+                        <div>
+                            <strong>${p.nome}</strong>
+                            <div class="gantt-supplier-list">${fornitoriHtml}</div>
+                        </div>
                     </div>
                     <div class="gantt-timeline-col" style="position:relative;">
                         <div class="gantt-bar" style="left: ${leftPct.toFixed(2)}%; width: ${widthPct.toFixed(2)}%;" title="Sviluppo: ${dayjs(start).format('DD/MM/YYYY')} - ${dayjs(end).format('DD/MM/YYYY')}">
@@ -332,8 +373,8 @@ const app = {
         });
         html += '</div>';
 
-        const hasUAT = this.data.some(p => p.dataUAT && p.dataUAT.trim() !== '');
-        const hasBS  = this.data.some(p => p.dataBS  && p.dataBS.trim()  !== '');
+        const hasUAT = data.some(p => p.dataUAT && p.dataUAT.trim() !== '');
+        const hasBS  = data.some(p => p.dataBS  && p.dataBS.trim()  !== '');
         html += `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
