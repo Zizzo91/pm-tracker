@@ -91,7 +91,7 @@ const app = {
         if (dates.stima > dates.ia || dates.ia > dates.devStart || 
             dates.devStart > dates.devEnd || dates.devEnd > dates.test || 
             dates.test > dates.prod) {
-            document.getElementById('dateValidationMsg').innerText = "ERRORE: La sequenza temporale non è rispettata! (Stima < IA < Dev < Test < Prod)";
+            document.getElementById('dateValidationMsg').innerText = "ERRORE: La sequenza temporale non \u00e8 rispettata! (Stima < IA < Dev < Test < Prod)";
             return;
         }
 
@@ -201,11 +201,11 @@ const app = {
             .sort((a,b) => new Date(a.dataProd) - new Date(b.dataProd))
             .map(p => `
             <tr>
-                <td><strong>${p.nome}</strong><br><a href="${p.jira}" target="_blank" class="text-xs text-decoration-none">Jira 🔗</a></td>
+                <td><strong>${p.nome}</strong><br><a href="${p.jira}" target="_blank" class="text-xs text-decoration-none">Jira \ud83d\udd17</a></td>
                 <td>${p.fornitori.map(f => `<span class="badge bg-secondary me-1">${f}</span>`).join('')}</td>
                 <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
                 <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
-                <td class="small">${this.formatDate(p.devStart)} ➝ ${this.formatDate(p.devEnd)}</td>
+                <td class="small">${this.formatDate(p.devStart)} \u279d ${this.formatDate(p.devEnd)}</td>
                 <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
                 <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
                 <td>
@@ -225,7 +225,6 @@ const app = {
             return;
         }
 
-        // Calcola min/max su TUTTE le date rilevanti
         let minDate = null, maxDate = null;
         const updateRange = (dateStr) => {
             if (!dateStr) return;
@@ -243,16 +242,11 @@ const app = {
             updateRange(p.dataBS);
         });
 
-        // Snap ai mesi
         minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
         let maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
-        if (maxMonth <= minDate) {
-            maxMonth = new Date(minDate.getFullYear(), minDate.getMonth() + 2, 0);
-        }
+        if (maxMonth <= minDate) maxMonth = new Date(minDate.getFullYear(), minDate.getMonth() + 2, 0);
         const lastDayOfMaxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
-        if (maxDate.getTime() === lastDayOfMaxMonth.getTime()) {
-            maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 2, 0);
-        }
+        if (maxDate.getTime() === lastDayOfMaxMonth.getTime()) maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 2, 0);
         maxDate = maxMonth;
 
         const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
@@ -266,10 +260,10 @@ const app = {
         let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
         let currentMonth = new Date(minDate);
         while (currentMonth <= maxDate) {
-            const monthName    = dayjs(currentMonth).format('MMM YYYY');
-            const daysInMonth  = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-            const widthPercent = (daysInMonth / totalDays) * 100;
-            html += `<div class="gantt-month" style="width: ${widthPercent.toFixed(2)}%">${monthName}</div>`;
+            const monthName   = dayjs(currentMonth).format('MMM YYYY');
+            const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+            const widthPct    = (daysInMonth / totalDays) * 100;
+            html += `<div class="gantt-month" style="width: ${widthPct.toFixed(2)}%">${monthName}</div>`;
             currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
         }
         html += '</div></div></div>';
@@ -283,22 +277,39 @@ const app = {
             const endPlusOne = dayjs(end).add(1, 'day').format('YYYY-MM-DD');
             const widthPct   = Math.max(pct(endPlusOne) - leftPct, 0.5);
 
-            // Milestone — devStart e devEnd inclusi sulla timeline, opzionali filtrate
+            // Elenco milestone attive
             const allMilestones = [
-                { date: p.dataIA,   cls: 'ms-ia',        icon: '🤖', label: 'Consegna IA',         always: true  },
-                { date: p.devStart, cls: 'ms-dev-start', icon: '▶️',  label: 'Inizio Sviluppo',     always: true  },
-                { date: p.devEnd,   cls: 'ms-dev-end',   icon: '⏹️',  label: 'Fine Sviluppo',       always: true  },
-                { date: p.dataUAT,  cls: 'ms-uat',       icon: '👥', label: 'UAT',                 always: false },
-                { date: p.dataBS,   cls: 'ms-bs',        icon: '💼', label: 'Business Simulation', always: false },
-                { date: p.dataTest, cls: 'ms-test',      icon: '🧪', label: 'Rilascio Test',       always: true  },
-                { date: p.dataProd, cls: 'ms-prod',      icon: '🚀', label: 'Rilascio Prod',       always: true  }
-            ].filter(m => m.always || (m.date && m.date.trim() !== ''));
+                { date: p.dataIA,   cls: 'ms-ia',        icon: '\ud83e\udd16', label: 'Consegna IA',         always: true  },
+                { date: p.devStart, cls: 'ms-dev-start', icon: '\u25b6\ufe0f',  label: 'Inizio Sviluppo',     always: true  },
+                { date: p.devEnd,   cls: 'ms-dev-end',   icon: '\u23f9\ufe0f',  label: 'Fine Sviluppo',       always: true  },
+                { date: p.dataUAT,  cls: 'ms-uat',       icon: '\ud83d\udc65', label: 'UAT',                 always: false },
+                { date: p.dataBS,   cls: 'ms-bs',        icon: '\ud83d\udcbc', label: 'Business Simulation', always: false },
+                { date: p.dataTest, cls: 'ms-test',      icon: '\ud83e\uddea', label: 'Rilascio Test',       always: true  },
+                { date: p.dataProd, cls: 'ms-prod',      icon: '\ud83d\ude80', label: 'Rilascio Prod',       always: true  }
+            ].filter(m => m.date && (m.always || m.date.trim() !== ''));
+
+            // Calcola offset per milestone con stessa data
+            // Raggruppa per data, poi assegna offset orizzontale: -18px / 0 / +18px...
+            const dateGroups = {};
+            allMilestones.forEach(m => {
+                if (!dateGroups[m.date]) dateGroups[m.date] = [];
+                dateGroups[m.date].push(m);
+            });
+            allMilestones.forEach(m => {
+                const group  = dateGroups[m.date];
+                const idx    = group.indexOf(m);
+                const count  = group.length;
+                // offset centrato: es. 2 elementi -> -18, +18 | 3 elementi -> -18, 0, +18
+                const step   = 20; // px tra le icone
+                m.offsetPx   = (idx - (count - 1) / 2) * step;
+            });
 
             const milestonesHtml = allMilestones.map(m => {
-                if (!m.date) return '';
                 const pos       = pct(m.date);
                 const dateLabel = dayjs(m.date).format('DD/MM');
-                return `<div class="gantt-milestone ${m.cls}" style="left: ${pos.toFixed(2)}%" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
+                // transform: translateX combina il centramento base (-16px) con l'offset di gruppo
+                const translateX = (-16 + m.offsetPx).toFixed(0);
+                return `<div class="gantt-milestone ${m.cls}" style="left: ${pos.toFixed(2)}%; transform: translateX(${translateX}px);" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
                     <span class="ms-date">${dateLabel}</span>
                     <span class="ms-icon">${m.icon}</span>
                     <span class="ms-line"></span>
@@ -312,7 +323,7 @@ const app = {
                     </div>
                     <div class="gantt-timeline-col" style="position:relative;">
                         <div class="gantt-bar" style="left: ${leftPct.toFixed(2)}%; width: ${widthPct.toFixed(2)}%;" title="Sviluppo: ${dayjs(start).format('DD/MM/YYYY')} - ${dayjs(end).format('DD/MM/YYYY')}">
-                            <span>⚙️ Sviluppo</span>
+                            <span>\u2699\ufe0f Sviluppo</span>
                         </div>
                         ${milestonesHtml}
                     </div>
@@ -321,19 +332,18 @@ const app = {
         });
         html += '</div>';
 
-        // Legenda dinamica
         const hasUAT = this.data.some(p => p.dataUAT && p.dataUAT.trim() !== '');
         const hasBS  = this.data.some(p => p.dataBS  && p.dataBS.trim()  !== '');
         html += `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">🤖</span> Consegna IA</div>
-            <div class="gantt-legend-item"><span class="legend-ms">▶️</span> Inizio Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">⏹️</span> Fine Sviluppo</div>
-            ${hasUAT ? '<div class="gantt-legend-item"><span class="legend-ms">👥</span> UAT</div>' : ''}
-            ${hasBS  ? '<div class="gantt-legend-item"><span class="legend-ms">💼</span> Business Simulation</div>' : ''}
-            <div class="gantt-legend-item"><span class="legend-ms">🧪</span> Rilascio Test</div>
-            <div class="gantt-legend-item"><span class="legend-ms">🚀</span> Rilascio Prod</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\ud83e\udd16</span> Consegna IA</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\u25b6\ufe0f</span> Inizio Sviluppo</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\u23f9\ufe0f</span> Fine Sviluppo</div>
+            ${hasUAT ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udc65</span> UAT</div>' : ''}
+            ${hasBS  ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udcbc</span> Business Simulation</div>' : ''}
+            <div class="gantt-legend-item"><span class="legend-ms">\ud83e\uddea</span> Rilascio Test</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\ud83d\ude80</span> Rilascio Prod</div>
         </div>
         `;
 
@@ -346,13 +356,13 @@ const app = {
         if (!container) return;
 
         const milestones = [
-            { key: 'dataIA',   label: '🤖 Consegna IA',         badge: 'bg-info text-dark' },
-            { key: 'devStart', label: '▶️ Inizio Sviluppo',      badge: 'bg-primary' },
-            { key: 'devEnd',   label: '⏹️ Fine Sviluppo',        badge: 'bg-secondary' },
-            { key: 'dataUAT',  label: '👥 UAT',                  badge: 'bg-info' },
-            { key: 'dataBS',   label: '💼 Business Simulation',  badge: 'bg-dark' },
-            { key: 'dataTest', label: '🧪 Rilascio Test',        badge: 'bg-warning text-dark' },
-            { key: 'dataProd', label: '🚀 Rilascio Prod',        badge: 'bg-success' }
+            { key: 'dataIA',   label: '\ud83e\udd16 Consegna IA',         badge: 'bg-info text-dark' },
+            { key: 'devStart', label: '\u25b6\ufe0f Inizio Sviluppo',      badge: 'bg-primary' },
+            { key: 'devEnd',   label: '\u23f9\ufe0f Fine Sviluppo',        badge: 'bg-secondary' },
+            { key: 'dataUAT',  label: '\ud83d\udc65 UAT',                  badge: 'bg-info' },
+            { key: 'dataBS',   label: '\ud83d\udcbc Business Simulation',  badge: 'bg-dark' },
+            { key: 'dataTest', label: '\ud83e\uddea Rilascio Test',        badge: 'bg-warning text-dark' },
+            { key: 'dataProd', label: '\ud83d\ude80 Rilascio Prod',        badge: 'bg-success' }
         ];
 
         const events = [];
