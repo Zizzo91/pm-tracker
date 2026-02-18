@@ -26,7 +26,6 @@ body {
 .cursor-pointer { cursor: pointer; }
 .text-xs { font-size: 0.75rem; }
 
-
 /* Custom Gantt Styles */
 .gantt-custom {
     width: 100%;
