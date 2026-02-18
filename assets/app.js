@@ -277,30 +277,68 @@ const app = {
         const container = document.getElementById('calendarContainer');
         if (!container) return;
 
-        const groups = {};
+        // Definizione milestone da mostrare: { campo, etichetta, classe badge Bootstrap }
+        const milestones = [
+            { key: 'dataIA',   label: '🤖 Consegna IA',    badge: 'bg-info text-dark' },
+            { key: 'devStart', label: '🚀 Inizio Sviluppo', badge: 'bg-primary' },
+            { key: 'devEnd',   label: '🏁 Fine Sviluppo',   badge: 'bg-secondary' },
+            { key: 'dataTest', label: '🧪 Rilascio Test',   badge: 'bg-warning text-dark' },
+            { key: 'dataProd', label: '✅ Rilascio Prod',   badge: 'bg-success' }
+        ];
+
+        // Costruisce un array piatto di eventi {date, sortKey, nome, label, badge}
+        const events = [];
         this.data.forEach(p => {
-            if (p.dataProd) {
-                const m = dayjs(p.dataProd).format('MMMM YYYY');
-                if(!groups[m]) groups[m] = [];
-                groups[m].push(p);
-            }
+            milestones.forEach(m => {
+                const dateVal = p[m.key];
+                if (dateVal) {
+                    events.push({
+                        date: dayjs(dateVal),
+                        sortKey: dateVal,
+                        nome: p.nome,
+                        label: m.label,
+                        badge: m.badge
+                    });
+                }
+            });
         });
 
-        container.innerHTML = Object.keys(groups).sort().map(month => `
-            <div class="col-md-4 mb-4">
-                <div class="card cal-month-card shadow-sm h-100">
-                    <div class="card-header bg-white fw-bold text-uppercase text-primary">${month}</div>
-                    <div class="card-body">
-                        ${groups[month].map(p => `
-                            <div class="cal-event-item">
-                                <span class="cal-event-date">${dayjs(p.dataProd).format('DD/MM')}</span>
-                                <span>${p.nome}</span>
-                            </div>
-                        `).join('')}
+        if (events.length === 0) {
+            container.innerHTML = "<div class='col-12'><p class='text-center text-muted p-3'>Nessun evento da visualizzare</p></div>";
+            return;
+        }
+
+        // Raggruppa per mese (chiave: 'YYYY-MM' per ordinamento corretto)
+        const groups = {};
+        events.forEach(ev => {
+            const key = ev.date.format('YYYY-MM');
+            if (!groups[key]) groups[key] = { label: ev.date.format('MMMM YYYY'), events: [] };
+            groups[key].events.push(ev);
+        });
+
+        // Ordina i mesi e gli eventi interni per data
+        container.innerHTML = Object.keys(groups).sort().map(monthKey => {
+            const group = groups[monthKey];
+            const sortedEvents = group.events.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+            return `
+                <div class="col-md-4 mb-4">
+                    <div class="card cal-month-card shadow-sm h-100">
+                        <div class="card-header bg-white fw-bold text-uppercase text-primary">${group.label}</div>
+                        <div class="card-body">
+                            ${sortedEvents.map(ev => `
+                                <div class="cal-event-item d-flex align-items-start gap-2 mb-2">
+                                    <span class="cal-event-date">${ev.date.format('DD/MM')}</span>
+                                    <div>
+                                        <span class="badge ${ev.badge} me-1">${ev.label}</span>
+                                        <span class="small">${ev.nome}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     },
 
     formatDate: function(d) {
