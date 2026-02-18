@@ -238,11 +238,9 @@ const app = {
         // Snap ai mesi
         minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
         let maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
-        // Almeno 2 mesi visibili
         if (maxMonth <= minDate) {
             maxMonth = new Date(minDate.getFullYear(), minDate.getMonth() + 2, 0);
         }
-        // Se maxDate cade nell'ultimo giorno del mese espandiamo di un mese ulteriore per dare respiro
         const lastDayOfMaxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
         if (maxDate.getTime() === lastDayOfMaxMonth.getTime()) {
             maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 2, 0);
@@ -251,7 +249,6 @@ const app = {
 
         const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
 
-        // Helper: calcola la posizione % di una data
         const pct = (date) => {
             const d = Math.ceil((new Date(date) - minDate) / (1000 * 60 * 60 * 24));
             return Math.min(Math.max((d / totalDays) * 100, 0), 100);
@@ -287,7 +284,10 @@ const app = {
 
             const milestonesHtml = milestones.map(m => {
                 const pos = pct(m.date);
+                // Etichetta data sempre visibile sopra l'icona
+                const dateLabel = dayjs(m.date).format('DD/MM');
                 return `<div class="gantt-milestone ${m.cls}" style="left: ${pos.toFixed(2)}%" title="${m.label}">
+                    <span class="ms-date">${dateLabel}</span>
                     <span class="ms-icon">${m.icon}</span>
                     <span class="ms-line"></span>
                 </div>`;
