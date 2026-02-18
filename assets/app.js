@@ -308,7 +308,6 @@ const app = {
             const start    = p.devStart;
             const end      = p.devEnd;
             const leftPct  = pct(start);
-            // La barra termina esattamente sulla posizione di devEnd (= milestone Fine Sviluppo)
             const widthPct = Math.max(pct(end) - leftPct, 0.5);
 
             // Badge fornitori per la card
@@ -409,11 +408,12 @@ const app = {
                 const dateVal = p[m.key];
                 if (dateVal && dateVal.trim() !== '') {
                     events.push({
-                        date: dayjs(dateVal),
-                        sortKey: dateVal,
-                        nome: p.nome,
-                        label: m.label,
-                        badge: m.badge
+                        date:      dayjs(dateVal),
+                        sortKey:   dateVal,
+                        nome:      p.nome,
+                        fornitori: p.fornitori || [],  // <-- portato nell'evento
+                        label:     m.label,
+                        badge:     m.badge
                     });
                 }
             });
@@ -439,15 +439,20 @@ const app = {
                     <div class="card cal-month-card shadow-sm h-100">
                         <div class="card-header bg-white fw-bold text-uppercase text-primary">${group.label}</div>
                         <div class="card-body">
-                            ${sortedEvents.map(ev => `
+                            ${sortedEvents.map(ev => {
+                                const supplierBadges = ev.fornitori
+                                    .map(f => `<span class="gantt-supplier-badge">${f}</span>`)
+                                    .join('');
+                                return `
                                 <div class="cal-event-item d-flex align-items-start gap-2 mb-2">
                                     <span class="cal-event-date">${ev.date.format('DD/MM')}</span>
                                     <div>
                                         <span class="badge ${ev.badge} me-1">${ev.label}</span>
-                                        <span class="small">${ev.nome}</span>
+                                        <span class="small fw-semibold">${ev.nome}</span>
+                                        ${supplierBadges ? `<span class="cal-supplier-list ms-1">${supplierBadges}</span>` : ''}
                                     </div>
-                                </div>
-                            `).join('')}
+                                </div>`;
+                            }).join('')}
                         </div>
                     </div>
                 </div>
