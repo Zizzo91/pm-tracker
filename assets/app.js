@@ -9,6 +9,7 @@ const app = {
     sha: null,
     editorModal: null,
     settingsModal: null,
+    MAX_JIRA_LINKS: 10,
 
     init: function() {
         this.editorModal = new bootstrap.Modal(document.getElementById('editorModal'));
@@ -27,6 +28,88 @@ const app = {
             this.showSettings();
         }
     },
+
+    // ── Jira helpers ────────────────────────────────────────────────────────
+
+    /**
+     * Returns the last path segment of a URL, used as display label.
+     * e.g. "https://x.atlassian.net/browse/DPS-2407" → "DPS-2407"
+     */
+    jiraLabel: function(url) {
+        if (!url || !url.trim()) return '';
+        try {
+            const u = new URL(url.trim());
+            const parts = u.pathname.replace(/\/$/, '').split('/');
+            return parts[parts.length - 1] || url;
+        } catch (e) {
+            // fallback for non-standard strings
+            const parts = url.trim().replace(/\/$/, '').split('/');
+            return parts[parts.length - 1] || url;
+        }
+    },
+
+    /** Build the HTML for Jira badges shown in the table */
+    jiraLinksHtml: function(jiraLinks) {
+        if (!jiraLinks || jiraLinks.length === 0) return '';
+        return jiraLinks
+            .filter(u => u && u.trim())
+            .map(u => `<a href="${u}" target="_blank" class="badge bg-primary text-decoration-none me-1 mb-1" title="${u}">${this.jiraLabel(u)} \ud83d\udd17</a>`)
+            .join('');
+    },
+
+    /** Render dynamic Jira fields inside the modal */
+    renderJiraFields: function(links) {
+        const container = document.getElementById('jiraLinksContainer');
+        container.innerHTML = '';
+        const items = (links && links.length > 0) ? links : [''];
+        items.forEach((url, i) => this._appendJiraField(url, i));
+        this._updateAddJiraBtn();
+    },
+
+    _appendJiraField: function(value, index) {
+        const container = document.getElementById('jiraLinksContainer');
+        const wrap = document.createElement('div');
+        wrap.className = 'd-flex align-items-center gap-2 mb-2';
+        wrap.dataset.jiraIndex = index;
+        wrap.innerHTML = `
+            <input type="url" class="form-control jira-link-input" placeholder="https://..." value="${value ? value.replace(/"/g, '&quot;') : ''}">
+            <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0" onclick="app.removeJiraField(this)" title="Rimuovi">&times;</button>
+        `;
+        container.appendChild(wrap);
+    },
+
+    addJiraField: function() {
+        const container = document.getElementById('jiraLinksContainer');
+        const count = container.querySelectorAll('.jira-link-input').length;
+        if (count >= this.MAX_JIRA_LINKS) return;
+        this._appendJiraField('', count);
+        this._updateAddJiraBtn();
+    },
+
+    removeJiraField: function(btn) {
+        const container = document.getElementById('jiraLinksContainer');
+        btn.closest('[data-jira-index]').remove();
+        this._updateAddJiraBtn();
+    },
+
+    _updateAddJiraBtn: function() {
+        const container = document.getElementById('jiraLinksContainer');
+        const btn = document.getElementById('addJiraBtn');
+        if (!btn) return;
+        const count = container.querySelectorAll('.jira-link-input').length;
+        btn.disabled = count >= this.MAX_JIRA_LINKS;
+        btn.textContent = count >= this.MAX_JIRA_LINKS
+            ? `Limite raggiunto (${this.MAX_JIRA_LINKS})`
+            : '+ Aggiungi Link Jira';
+    },
+
+    _getJiraLinksFromModal: function() {
+        return Array.from(document.querySelectorAll('.jira-link-input'))
+            .map(el => el.value.trim())
+            .filter(v => v !== '');
+    },
+
+    // ── Config ──────────────────────────────────────────────────────────────
 
     calcCosto: function() {
         const ggu = parseFloat(document.getElementById('p_stimaGgu').value);
@@ -58,6 +141,8 @@ const app = {
         this.settingsModal.hide();
         this.loadData();
     },
+
+    // ── Data ─────────────────────────────────────────────────────────────────
 
     loadData: async function() {
         if (!this.config.token) return;
@@ -134,7 +219,8 @@ const app = {
             dataProd:          dates.prod,
             dataUAT:           dates.uat,
             dataBS:            dates.bs,
-            jira:              document.getElementById('p_jira').value,
+            // Salva come array (retrocompatibile: se c'era campo "jira" stringa lo gestiamo in openModal)
+            jiraLinks:         this._getJiraLinksFromModal(),
             dataScadenzaStima: document.getElementById('p_dataScadenzaStima').value || null,
             dataConfigSistema: document.getElementById('p_dataConfigSistema').value || null,
             stimaGgu:          isNaN(stimaGgu)    ? null : stimaGgu,
@@ -165,8 +251,10 @@ const app = {
                 throw new Error(err.message || 'Salvataggio fallito');
             }
             this.sha = (await response.json()).content.sha;
-            this.loadData();
-            this.showAlert('Dati salvati su GitHub!', 'success');
+            this.showAlert('Dati salvati su GitHub! Aggiornamento in corso...', 'success');
+            // ── AUTO-REFRESH ─────────────────────────────────────────────────
+            // Ricarica i dati freschi da GitHub e ri-renderizza tutto
+            await this.loadData();
         } catch (e) {
             console.error('Errore sync:', e);
             this.showAlert(`Errore salvataggio: ${e.message}`, 'danger');
@@ -190,14 +278,19 @@ const app = {
             document.getElementById('p_prod').value              = p.dataProd;
             document.getElementById('p_uat').value               = p.dataUAT  || '';
             document.getElementById('p_bs').value                = p.dataBS   || '';
-            document.getElementById('p_jira').value              = p.jira     || '';
             document.getElementById('p_dataScadenzaStima').value = p.dataScadenzaStima || '';
             document.getElementById('p_dataConfigSistema').value = p.dataConfigSistema || '';
             document.getElementById('p_stimaGgu').value          = p.stimaGgu    != null ? p.stimaGgu    : '';
             document.getElementById('p_rcFornitore').value       = p.rcFornitore != null ? p.rcFornitore : '';
             this.calcCosto();
+            // Retrocompatibilità: vecchio campo "jira" stringa → array
+            const links = p.jiraLinks && p.jiraLinks.length > 0
+                ? p.jiraLinks
+                : (p.jira ? [p.jira] : []);
+            this.renderJiraFields(links);
         } else {
             document.getElementById('p_id').value = '';
+            this.renderJiraFields([]);
         }
         this.editorModal.show();
     },
@@ -208,6 +301,8 @@ const app = {
             await this.syncToGithub();
         }
     },
+
+    // ── Render Table ─────────────────────────────────────────────────────────
 
     renderTable: function() {
         const tbody  = document.getElementById('projectsTableBody');
@@ -222,11 +317,18 @@ const app = {
                 const extraRows = [];
                 if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">\u23f1\ufe0f ${p.stimaGgu} gg/u</span>`);
                 if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1">\ud83d\udcb0 \u20ac ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
+
+                // Retrocompatibilità: supporta sia jiraLinks (array) che jira (stringa)
+                const links = (p.jiraLinks && p.jiraLinks.length > 0)
+                    ? p.jiraLinks
+                    : (p.jira ? [p.jira] : []);
+                const jiraHtml = this.jiraLinksHtml(links);
+
                 return `
                 <tr>
                     <td>
-                        <strong>${p.nome}</strong><br>
-                        <a href="${p.jira}" target="_blank" class="text-xs text-decoration-none">Jira \ud83d\udd17</a>
+                        <strong>${p.nome}</strong>
+                        ${jiraHtml ? `<div class="mt-1">${jiraHtml}</div>` : ''}
                         ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
                     </td>
                     <td>${fornitoriBadges}</td>
@@ -236,12 +338,14 @@ const app = {
                     <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
                     <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="app.openModal('${p.id}')">✏️</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="app.deleteProject('${p.id}')">🗑️</button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="app.openModal('${p.id}')">\u270f\ufe0f</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="app.deleteProject('${p.id}')">\ud83d\uddd1\ufe0f</button>
                     </td>
                 </tr>`;
             }).join('');
     },
+
+    // ── Render Gantt ─────────────────────────────────────────────────────────
 
     renderGantt: function() {
         const container = document.getElementById('gantt-chart');
@@ -280,7 +384,6 @@ const app = {
             return Math.min(Math.max((days / totalDays) * 100, 0), 100);
         };
 
-        // Intestazione mesi
         let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
         let cur = new Date(minDate);
         while (cur <= maxDate) {
@@ -308,7 +411,6 @@ const app = {
                 { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '\ud83d\udd27', label: 'Config Sistema',         always: false }
             ].filter(m => m.date && m.date.trim() !== '' && (m.always || true));
 
-            // Offset milestone coincidenti
             const dateGroups = {};
             allMilestones.forEach(m => { (dateGroups[m.date] = dateGroups[m.date] || []).push(m); });
             allMilestones.forEach(m => {
@@ -360,6 +462,8 @@ const app = {
         html += '</div>';
         container.innerHTML = html;
     },
+
+    // ── Render Calendar ──────────────────────────────────────────────────────
 
     renderCalendar: function() {
         const container = document.getElementById('calendarContainer');
