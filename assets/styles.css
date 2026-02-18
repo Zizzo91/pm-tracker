@@ -160,6 +160,26 @@ body {
   align-items: center;
 }
 
+/* Badge fornitore nella colonna progetto del Gantt */
+.gantt-supplier-list {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.gantt-supplier-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 .gantt-timeline-col {
   flex: 1;
   min-width: 600px;
