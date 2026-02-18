@@ -75,11 +75,28 @@
                     <div class="d-flex align-items-center gap-2">
                         <h6 class="text-muted mb-0 d-none d-md-block">Visualizzazione temporale fase di Sviluppo</h6>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
-                        <select id="ganttFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderGantt()">
-                            <option value="">Tutti</option>
-                        </select>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="d-flex align-items-center gap-1">
+                            <label class="form-label mb-0 small fw-semibold">🔄 Ordina:</label>
+                            <select id="ganttSortSelect" class="form-select form-select-sm" style="min-width:220px" onchange="app.renderGantt()">
+                                <option value="prod_inprogress_first">🚀 Prod: in corso prima, poi passate</option>
+                                <option value="prod_asc">📅 Rilascio Prod (prima → ultima)</option>
+                                <option value="prod_desc">📅 Rilascio Prod (ultima → prima)</option>
+                                <option value="devStart_inprogress_first">▶️ Dev Start: in corso prima, poi passate</option>
+                                <option value="devStart_asc">📅 Inizio Sviluppo (prima → ultima)</option>
+                                <option value="devStart_desc">📅 Inizio Sviluppo (ultima → prima)</option>
+                                <option value="devEnd_inprogress_first">⏹️ Dev End: in corso prima, poi passate</option>
+                                <option value="test_inprogress_first">🧪 Rilascio Test: in corso prima</option>
+                                <option value="alpha_asc">🔤 Ordine Alfabetico (A → Z)</option>
+                                <option value="alpha_desc">🔤 Ordine Alfabetico (Z → A)</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
+                            <select id="ganttFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderGantt()">
+                                <option value="">Tutti</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div id="gantt-chart"></div>
@@ -255,6 +272,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=10"></script>
+<script src="assets/app.js?v=11"></script>
 </body>
 </html>
