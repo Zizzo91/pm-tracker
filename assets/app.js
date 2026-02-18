@@ -87,7 +87,6 @@ const app = {
             const sel = document.getElementById(id);
             if (!sel) return;
             const current = sel.value;
-            // Mantieni solo la prima option ("Tutti")
             while (sel.options.length > 1) sel.remove(1);
             allSuppliers.forEach(f => {
                 const opt = document.createElement('option');
@@ -95,7 +94,6 @@ const app = {
                 opt.textContent = f;
                 sel.appendChild(opt);
             });
-            // Ripristina selezione precedente se ancora valida
             if (current && allSuppliers.includes(current)) sel.value = current;
         });
     },
@@ -250,7 +248,6 @@ const app = {
         const container = document.getElementById('gantt-chart');
         if (!container) return;
 
-        // Leggi filtro fornitore
         const fSel  = document.getElementById('ganttFornitoreFilter');
         const filt  = fSel ? fSel.value : '';
         const data  = filt
@@ -308,11 +305,11 @@ const app = {
         // Righe progetto
         html += '<div class="gantt-body">';
         data.forEach(p => {
-            const start      = p.devStart;
-            const end        = p.devEnd;
-            const leftPct    = pct(start);
-            const endPlusOne = dayjs(end).add(1, 'day').format('YYYY-MM-DD');
-            const widthPct   = Math.max(pct(endPlusOne) - leftPct, 0.5);
+            const start    = p.devStart;
+            const end      = p.devEnd;
+            const leftPct  = pct(start);
+            // La barra termina esattamente sulla posizione di devEnd (= milestone Fine Sviluppo)
+            const widthPct = Math.max(pct(end) - leftPct, 0.5);
 
             // Badge fornitori per la card
             const fornitoriHtml = (p.fornitori || []).map(f =>
