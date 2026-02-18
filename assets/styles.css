@@ -1,114 +1,76 @@
-body {
-    font-size: 0.9rem;
-}
-.gantt .bar-label {
-    fill: #fff;
-    font-weight: bold;
-}
-.gantt .bar-progress {
-    fill: #0d6efd; /* Bootstrap Primary */
-}
-/* Calendar Card Stile */
-.cal-month-card {
-    border-left: 5px solid #0d6efd;
-}
-.cal-event-item {
-    border-bottom: 1px solid #eee;
-    padding: 5px 0;
-}
-.cal-event-date {
-    font-weight: bold;
-    color: #dc3545;
-    width: 60px;
-    display: inline-block;
-}
-/* Utilità */
-.cursor-pointer { cursor: pointer; }
-.text-xs { font-size: 0.75rem; }
-
-/* Custom Gantt Styles */
-.gantt-custom {
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    background: white;
+/* === GANTT MILESTONES === */
+.gantt-milestone {
+  position: absolute;
+  top: 6px;
+  width: 26px;
+  height: 46px;
+  transform: translateX(-13px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
 }
 
-.gantt-header {
-    display: flex;
-    border-bottom: 2px solid #0d6efd;
-    background: #f8f9fa;
+.gantt-milestone .ms-icon {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
-.gantt-project-col {
-    width: 250px;
-    min-width: 250px;
-    padding: 12px;
-    border-right: 1px solid #dee2e6;
-    font-weight: bold;
+.gantt-milestone .ms-line {
+  width: 2px;
+  flex: 1;
+  margin-top: 2px;
 }
 
-.gantt-timeline-col {
-    flex: 1;
-    position: relative;
+/* Colori per tipo */
+.ms-ia    .ms-line { background: #fd7e14; }
+.ms-test  .ms-line { background: #6f42c1; }
+.ms-prod  .ms-line { background: #dc3545; }
+
+/* Tooltip nativo potenziato */
+.gantt-milestone[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.gantt-months {
-    display: flex;
-    height: 40px;
+/* === LEGENDA GANTT === */
+.gantt-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  border-radius: 0 0 8px 8px;
+  font-size: 0.78rem;
+  color: #495057;
 }
 
-.gantt-month {
-    border-right: 1px solid #dee2e6;
-    padding: 10px;
-    text-align: center;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #495057;
-    background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+.gantt-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.gantt-body {
-    max-height: 500px;
-    overflow-y: auto;
+.legend-bar {
+  width: 28px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  display: inline-block;
 }
 
-.gantt-row {
-    display: flex;
-    border-bottom: 1px solid #e9ecef;
-    min-height: 60px;
-    transition: background 0.2s;
-}
-
-.gantt-row:hover {
-    background: #f8f9fa;
-}
-
-.gantt-bar {
-    position: absolute;
-    height: 32px;
-    top: 14px;
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-    border-radius: 6px;
-    color: white;
-    font-size: 0.75rem;
-    display: flex;
-    align-items: center;
-    padding: 0 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.gantt-bar:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.gantt-bar span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 600;
+.legend-ms {
+  font-size: 0.9rem;
 }
