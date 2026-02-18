@@ -50,7 +50,10 @@
     "dataProd": "2026-02-24",
     "dataUAT": null,
     "dataBS": null,
-    "jira": "https://telepass.atlassian.net/browse/DPS-2407",
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/DPS-2407",
+      "https://telepass.atlassian.net/browse/DPS-2408"
+    ],
     "dataScadenzaStima": null,
     "dataConfigSistema": null,
     "stimaGgu": 14,
