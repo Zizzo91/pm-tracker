@@ -89,26 +89,49 @@ body {
   background: #218838;
 }
 
-/* === FIX INPUT MODAL (override dark-mode / browser defaults) === */
-#editorModal input,
-#editorModal textarea,
-#editorModal select,
-#settingsModal input,
-#settingsModal textarea,
-#settingsModal select {
+/* === FIX MODAL: forza sfondo bianco e testo scuro, ignora dark-mode OS === */
+.modal-dialog,
+.modal-content,
+.modal-body,
+.modal-footer {
   background-color: #ffffff !important;
   color: #212529 !important;
-  opacity: 1 !important;
-  -webkit-text-fill-color: #212529 !important;
+  color-scheme: light !important;
 }
 
-#editorModal input:disabled,
-#editorModal textarea:disabled,
-#settingsModal input:disabled,
-#settingsModal textarea:disabled {
-  background-color: #e9ecef !important;
-  color: #6c757d !important;
-  -webkit-text-fill-color: #6c757d !important;
+.modal-body .form-label,
+.modal-body label,
+.modal-body h6,
+.modal-body p,
+.modal-body small,
+.modal-body .text-muted {
+  color: #495057 !important;
+}
+
+/* Tutti gli input/select/textarea dentro i modal Bootstrap */
+.modal .form-control,
+.modal input[type="text"],
+.modal input[type="date"],
+.modal input[type="url"],
+.modal input[type="password"],
+.modal textarea,
+.modal select {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+  border-color: #dee2e6 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #212529 !important;
+  color-scheme: light !important;
+}
+
+.modal .form-control:focus,
+.modal input:focus,
+.modal textarea:focus {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+  -webkit-text-fill-color: #212529 !important;
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25) !important;
 }
 
 /* === GANTT CHART === */
@@ -350,120 +373,6 @@ body {
   color: #dc3545;
   width: 60px;
   display: inline-block;
-}
-
-/* === MODAL === */
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
-}
-
-.modal.show {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  animation: modalFadeIn 0.3s ease;
-}
-
-@keyframes modalFadeIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px 30px;
-  border-radius: 12px 12px 0 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.close-btn {
-  background: rgba(255,255,255,0.2);
-  border: none;
-  color: white;
-  font-size: 1.5rem;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.close-btn:hover {
-  background: rgba(255,255,255,0.3);
-  transform: rotate(90deg);
-}
-
-.modal-body {
-  padding: 30px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #495057;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #dee2e6;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-  background-color: #ffffff;
-  color: #212529;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-.modal-footer {
-  padding: 20px 30px;
-  background: #f8f9fa;
-  border-radius: 0 0 12px 12px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
 }
 
 /* === UTILITY === */
