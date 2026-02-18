@@ -147,7 +147,7 @@ const app = {
         this.loadData();
     },
 
-    // ── Data ─────────────────────────────────────────────────────────────────
+    // ── Data ──────────────────────────────────────────────────────────────
 
     loadData: async function() {
         if (!this.config.token) return;
@@ -303,6 +303,105 @@ const app = {
         }
     },
 
+    // ── Gantt sort helper ─────────────────────────────────────────────────
+
+    /**
+     * Ordina i progetti per il Gantt secondo la modalità scelta.
+     * Per le modalità "_inprogress_first" la logica è:
+     *   - Gruppo 0: dataProd > oggi (non ancora rilasciati in prod) → ordinati per la data-chiave ASC
+     *   - Gruppo 1: dataProd <= oggi (già rilasciati in prod)       → ordinati per la data-chiave ASC
+     * Questo garantisce che i progetti ancora in corso stiano sempre sopra.
+     */
+    _sortGantt: function(data, mode) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Helper: ritorna la data come oggetto Date (o epoch 0 se assente)
+        const d = (val) => val ? new Date(val) : new Date(0);
+
+        // Helper: true se il progetto NON è ancora stato rilasciato in prod
+        const inProgress = (p) => {
+            const prod = p.dataProd ? new Date(p.dataProd) : null;
+            return !prod || prod > today;
+        };
+
+        const sorted = [...data];
+
+        switch (mode) {
+
+            // ── Rilascio Prod ────────────────────────────────────────────────
+            case 'prod_inprogress_first':
+                sorted.sort((a, b) => {
+                    const ia = inProgress(a) ? 0 : 1;
+                    const ib = inProgress(b) ? 0 : 1;
+                    if (ia !== ib) return ia - ib;
+                    return d(a.dataProd) - d(b.dataProd);
+                });
+                break;
+
+            case 'prod_asc':
+                sorted.sort((a, b) => d(a.dataProd) - d(b.dataProd));
+                break;
+
+            case 'prod_desc':
+                sorted.sort((a, b) => d(b.dataProd) - d(a.dataProd));
+                break;
+
+            // ── Inizio Sviluppo ──────────────────────────────────────────────
+            case 'devStart_inprogress_first':
+                sorted.sort((a, b) => {
+                    const ia = inProgress(a) ? 0 : 1;
+                    const ib = inProgress(b) ? 0 : 1;
+                    if (ia !== ib) return ia - ib;
+                    return d(a.devStart) - d(b.devStart);
+                });
+                break;
+
+            case 'devStart_asc':
+                sorted.sort((a, b) => d(a.devStart) - d(b.devStart));
+                break;
+
+            case 'devStart_desc':
+                sorted.sort((a, b) => d(b.devStart) - d(a.devStart));
+                break;
+
+            // ── Fine Sviluppo ────────────────────────────────────────────────
+            case 'devEnd_inprogress_first':
+                sorted.sort((a, b) => {
+                    const ia = inProgress(a) ? 0 : 1;
+                    const ib = inProgress(b) ? 0 : 1;
+                    if (ia !== ib) return ia - ib;
+                    return d(a.devEnd) - d(b.devEnd);
+                });
+                break;
+
+            // ── Rilascio Test ────────────────────────────────────────────────
+            case 'test_inprogress_first':
+                sorted.sort((a, b) => {
+                    const ia = inProgress(a) ? 0 : 1;
+                    const ib = inProgress(b) ? 0 : 1;
+                    if (ia !== ib) return ia - ib;
+                    return d(a.dataTest) - d(b.dataTest);
+                });
+                break;
+
+            // ── Alfabetico ───────────────────────────────────────────────────
+            case 'alpha_asc':
+                sorted.sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+                break;
+
+            case 'alpha_desc':
+                sorted.sort((a, b) => b.nome.localeCompare(a.nome, 'it'));
+                break;
+
+            // default: nessun ordinamento aggiuntivo
+            default:
+                break;
+        }
+
+        return sorted;
+    },
+
     // ── Render Table ─────────────────────────────────────────────────────────
 
     renderTable: function() {
@@ -351,8 +450,11 @@ const app = {
         const container = document.getElementById('gantt-chart');
         if (!container) return;
 
-        const filt = document.getElementById('ganttFornitoreFilter')?.value || '';
-        const data = filt ? this.data.filter(p => p.fornitori && p.fornitori.includes(filt)) : this.data;
+        const filt     = document.getElementById('ganttFornitoreFilter')?.value || '';
+        const sortMode = document.getElementById('ganttSortSelect')?.value || 'prod_inprogress_first';
+
+        let data = filt ? this.data.filter(p => p.fornitori && p.fornitori.includes(filt)) : [...this.data];
+        data = this._sortGantt(data, sortMode);
 
         if (data.length === 0) {
             container.innerHTML = "<p class='text-center p-3 text-muted'>Nessun progetto da visualizzare per il fornitore selezionato.</p>";
@@ -394,10 +496,17 @@ const app = {
         }
         html += '</div></div></div><div class="gantt-body">';
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         data.forEach(p => {
             const leftPct  = pct(p.devStart);
             const widthPct = Math.max(pct(p.devEnd) - leftPct, 0.5);
             const fornitoriHtml = (p.fornitori || []).map(f => `<span class="gantt-supplier-badge">${f}</span>`).join('');
+
+            // Classe CSS aggiuntiva per progetti già rilasciati in prod
+            const isPast = p.dataProd && new Date(p.dataProd) <= today;
+            const rowCls = isPast ? ' gantt-row--released' : '';
 
             const allMilestones = [
                 { date: p.dataIA,            cls: 'ms-ia',         icon: '\ud83e\udd16', label: 'Consegna IA',           always: true  },
@@ -428,7 +537,7 @@ const app = {
             }).join('');
 
             html += `
-                <div class="gantt-row">
+                <div class="gantt-row${rowCls}">
                     <div class="gantt-project-col"><div><strong>${p.nome}</strong><div class="gantt-supplier-list">${fornitoriHtml}</div></div></div>
                     <div class="gantt-timeline-col" style="position:relative;">
                         <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;" title="Sviluppo: ${dayjs(p.devStart).format('DD/MM/YYYY')} - ${dayjs(p.devEnd).format('DD/MM/YYYY')}">
@@ -472,7 +581,6 @@ const app = {
         const filtFornitore  = document.getElementById('calendarFornitoreFilter')?.value  || '';
         const filtMilestone  = document.getElementById('calendarMilestoneFilter')?.value  || '';
 
-        // Se il filtro milestone è attivo mostriamo solo quella milestone; altrimenti tutte
         const activeMilestones = filtMilestone
             ? this.MILESTONES.filter(m => m.key === filtMilestone)
             : this.MILESTONES;
