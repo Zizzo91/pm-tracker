@@ -219,6 +219,7 @@ const app = {
             return;
         }
 
+        // Calcola min/max considerando devStart e devEnd di tutti i progetti
         let minDate = null, maxDate = null;
         this.data.forEach(p => {
             const start = new Date(p.devStart);
@@ -227,8 +228,15 @@ const app = {
             if (!maxDate || end > maxDate) maxDate = end;
         });
 
+        // minDate: inizio del mese del devStart più vecchio
         minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-        maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+        // maxDate: fine del mese del devEnd più recente
+        // Se minDate e maxDate sono nello stesso mese, espandi di un mese in più per leggibilità
+        let maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+        if (maxMonth <= minDate || (maxDate.getFullYear() === new Date(minDate).getFullYear() && maxDate.getMonth() === new Date(minDate).getMonth())) {
+            maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 2, 0);
+        }
+        maxDate = maxMonth;
 
         const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
         
@@ -249,7 +257,8 @@ const app = {
             const start = new Date(p.devStart);
             const end = new Date(p.devEnd);
             const daysFromStart = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
-            const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            // Durata minima visiva: almeno 1% della larghezza totale
+            const duration = Math.max(Math.ceil((end - start) / (1000 * 60 * 60 * 24)), Math.ceil(totalDays * 0.01));
             
             const leftPercent = (daysFromStart / totalDays) * 100;
             const widthPercent = (duration / totalDays) * 100;
@@ -258,10 +267,10 @@ const app = {
                 <div class="gantt-row">
                     <div class="gantt-project-col">
                         <strong>${p.nome}</strong><br>
-                        <small class="text-muted">${dayjs(start).format('DD/MM')} - ${dayjs(end).format('DD/MM')}</small>
+                        <small class="text-muted">${dayjs(start).format('DD/MM')} - ${dayjs(new Date(p.devEnd)).format('DD/MM')}</small>
                     </div>
                     <div class="gantt-timeline-col">
-                        <div class="gantt-bar" style="left: ${leftPercent}%; width: ${widthPercent}%;" title="${p.nome}: ${dayjs(start).format('DD/MM/YYYY')} - ${dayjs(end).format('DD/MM/YYYY')}">
+                        <div class="gantt-bar" style="left: ${leftPercent}%; width: ${widthPercent}%;" title="${p.nome}: ${dayjs(start).format('DD/MM/YYYY')} - ${dayjs(new Date(p.devEnd)).format('DD/MM/YYYY')}">
                             <span>${p.nome}</span>
                         </div>
                     </div>
@@ -277,7 +286,6 @@ const app = {
         const container = document.getElementById('calendarContainer');
         if (!container) return;
 
-        // Definizione milestone da mostrare: { campo, etichetta, classe badge Bootstrap }
         const milestones = [
             { key: 'dataIA',   label: '🤖 Consegna IA',    badge: 'bg-info text-dark' },
             { key: 'devStart', label: '🚀 Inizio Sviluppo', badge: 'bg-primary' },
@@ -286,7 +294,6 @@ const app = {
             { key: 'dataProd', label: '✅ Rilascio Prod',   badge: 'bg-success' }
         ];
 
-        // Costruisce un array piatto di eventi {date, sortKey, nome, label, badge}
         const events = [];
         this.data.forEach(p => {
             milestones.forEach(m => {
@@ -308,7 +315,6 @@ const app = {
             return;
         }
 
-        // Raggruppa per mese (chiave: 'YYYY-MM' per ordinamento corretto)
         const groups = {};
         events.forEach(ev => {
             const key = ev.date.format('YYYY-MM');
@@ -316,7 +322,6 @@ const app = {
             groups[key].events.push(ev);
         });
 
-        // Ordina i mesi e gli eventi interni per data
         container.innerHTML = Object.keys(groups).sort().map(monthKey => {
             const group = groups[monthKey];
             const sortedEvents = group.events.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
