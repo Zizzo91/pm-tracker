@@ -257,7 +257,6 @@ const app = {
 
         const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
 
-        // Helper posizione %: usa la data esatta (non ceil) per maggiore precisione
         const pct = (dateStr) => {
             const d = (new Date(dateStr) - minDate) / (1000 * 60 * 60 * 24);
             return Math.min(Math.max((d / totalDays) * 100, 0), 100);
@@ -278,26 +277,26 @@ const app = {
         // Righe progetto
         html += '<div class="gantt-body">';
         this.data.forEach(p => {
-            const start   = p.devStart;
-            const end     = p.devEnd;   // la barra finisce esattamente a devEnd
-            const leftPct = pct(start);
-            const endPct  = pct(end);
-            // La barra copre da devStart a devEnd incluso (aggiungiamo 1 giorno per includere il giorno finale)
+            const start      = p.devStart;
+            const end        = p.devEnd;
+            const leftPct    = pct(start);
             const endPlusOne = dayjs(end).add(1, 'day').format('YYYY-MM-DD');
-            const widthPct = Math.max(pct(endPlusOne) - leftPct, 0.5);
+            const widthPct   = Math.max(pct(endPlusOne) - leftPct, 0.5);
 
-            // Definizione milestone — le opzionali compaiono solo se hanno una data
+            // Milestone — devStart e devEnd inclusi sulla timeline, opzionali filtrate
             const allMilestones = [
-                { date: p.dataIA,   cls: 'ms-ia',   icon: '🤖', label: `Consegna IA`,         always: true  },
-                { date: p.dataUAT,  cls: 'ms-uat',  icon: '👥', label: `UAT`,                 always: false },
-                { date: p.dataBS,   cls: 'ms-bs',   icon: '💼', label: `Business Simulation`, always: false },
-                { date: p.dataTest, cls: 'ms-test', icon: '🧪', label: `Rilascio Test`,       always: true  },
-                { date: p.dataProd, cls: 'ms-prod', icon: '🚀', label: `Rilascio Prod`,       always: true  }
+                { date: p.dataIA,   cls: 'ms-ia',        icon: '🤖', label: 'Consegna IA',         always: true  },
+                { date: p.devStart, cls: 'ms-dev-start', icon: '▶️',  label: 'Inizio Sviluppo',     always: true  },
+                { date: p.devEnd,   cls: 'ms-dev-end',   icon: '⏹️',  label: 'Fine Sviluppo',       always: true  },
+                { date: p.dataUAT,  cls: 'ms-uat',       icon: '👥', label: 'UAT',                 always: false },
+                { date: p.dataBS,   cls: 'ms-bs',        icon: '💼', label: 'Business Simulation', always: false },
+                { date: p.dataTest, cls: 'ms-test',      icon: '🧪', label: 'Rilascio Test',       always: true  },
+                { date: p.dataProd, cls: 'ms-prod',      icon: '🚀', label: 'Rilascio Prod',       always: true  }
             ].filter(m => m.always || (m.date && m.date.trim() !== ''));
 
             const milestonesHtml = allMilestones.map(m => {
                 if (!m.date) return '';
-                const pos = pct(m.date);
+                const pos       = pct(m.date);
                 const dateLabel = dayjs(m.date).format('DD/MM');
                 return `<div class="gantt-milestone ${m.cls}" style="left: ${pos.toFixed(2)}%" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
                     <span class="ms-date">${dateLabel}</span>
@@ -309,8 +308,7 @@ const app = {
             html += `
                 <div class="gantt-row">
                     <div class="gantt-project-col">
-                        <strong>${p.nome}</strong><br>
-                        <small class="text-muted">${dayjs(start).format('DD/MM')} - ${dayjs(end).format('DD/MM')}</small>
+                        <strong>${p.nome}</strong>
                     </div>
                     <div class="gantt-timeline-col" style="position:relative;">
                         <div class="gantt-bar" style="left: ${leftPct.toFixed(2)}%; width: ${widthPct.toFixed(2)}%;" title="Sviluppo: ${dayjs(start).format('DD/MM/YYYY')} - ${dayjs(end).format('DD/MM/YYYY')}">
@@ -323,13 +321,15 @@ const app = {
         });
         html += '</div>';
 
-        // Legenda (mostra UAT/BS solo se almeno un progetto li ha)
+        // Legenda dinamica
         const hasUAT = this.data.some(p => p.dataUAT && p.dataUAT.trim() !== '');
         const hasBS  = this.data.some(p => p.dataBS  && p.dataBS.trim()  !== '');
         html += `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
             <div class="gantt-legend-item"><span class="legend-ms">🤖</span> Consegna IA</div>
+            <div class="gantt-legend-item"><span class="legend-ms">▶️</span> Inizio Sviluppo</div>
+            <div class="gantt-legend-item"><span class="legend-ms">⏹️</span> Fine Sviluppo</div>
             ${hasUAT ? '<div class="gantt-legend-item"><span class="legend-ms">👥</span> UAT</div>' : ''}
             ${hasBS  ? '<div class="gantt-legend-item"><span class="legend-ms">💼</span> Business Simulation</div>' : ''}
             <div class="gantt-legend-item"><span class="legend-ms">🧪</span> Rilascio Test</div>
@@ -337,7 +337,7 @@ const app = {
         </div>
         `;
 
-        html += '</div>'; // chiude .gantt-custom
+        html += '</div>';
         container.innerHTML = html;
     },
 
@@ -347,8 +347,8 @@ const app = {
 
         const milestones = [
             { key: 'dataIA',   label: '🤖 Consegna IA',         badge: 'bg-info text-dark' },
-            { key: 'devStart', label: '⚙️ Inizio Sviluppo',      badge: 'bg-primary' },
-            { key: 'devEnd',   label: '🏁 Fine Sviluppo',        badge: 'bg-secondary' },
+            { key: 'devStart', label: '▶️ Inizio Sviluppo',      badge: 'bg-primary' },
+            { key: 'devEnd',   label: '⏹️ Fine Sviluppo',        badge: 'bg-secondary' },
             { key: 'dataUAT',  label: '👥 UAT',                  badge: 'bg-info' },
             { key: 'dataBS',   label: '💼 Business Simulation',  badge: 'bg-dark' },
             { key: 'dataTest', label: '🧪 Rilascio Test',        badge: 'bg-warning text-dark' },
