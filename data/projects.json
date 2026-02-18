@@ -35,5 +35,26 @@
     "dataUAT": null,
     "dataBS": null,
     "jira": "https://telepass.atlassian.net/browse/ZTL-4"
+  },
+  {
+    "id": "1771428352503",
+    "nome": "Iban Revolut",
+    "fornitori": [
+      "Engineering"
+    ],
+    "dataStima": "",
+    "dataIA": "",
+    "devStart": "2026-01-12",
+    "devEnd": "2026-01-19",
+    "dataTest": "2026-01-19",
+    "dataProd": "2026-02-24",
+    "dataUAT": null,
+    "dataBS": null,
+    "jira": "https://telepass.atlassian.net/browse/DPS-2407",
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 14,
+    "rcFornitore": 360,
+    "stimaCosto": 5040
   }
 ]
