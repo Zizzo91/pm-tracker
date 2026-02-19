@@ -18,7 +18,8 @@
     "dataConfigSistema": "2026-02-28",
     "stimaGgu": 10,
     "rcFornitore": 390,
-    "stimaCosto": 3900
+    "stimaCosto": 3900,
+    "owners": []
   },
   {
     "id": "1771414171964",
@@ -34,13 +35,17 @@
     "dataProd": "2026-04-26",
     "dataUAT": null,
     "dataBS": null,
-    "jira": "https://telepass.atlassian.net/browse/ZTL-4"
+    "jira": "https://telepass.atlassian.net/browse/ZTL-4",
+    "owners": []
   },
   {
     "id": "1771428352503",
     "nome": "Iban Revolut",
     "fornitori": [
       "Engineering"
+    ],
+    "owners": [
+      "Simone"
     ],
     "dataStima": "",
     "dataIA": "",
