@@ -32,6 +32,10 @@
     "fornitori": [
       "Accenture"
     ],
+    "owners": [
+      "Andrea",
+      "Michele"
+    ],
     "dataStima": "2026-03-11",
     "dataIA": "2026-03-19",
     "devStart": "2026-03-26",
@@ -40,8 +44,14 @@
     "dataProd": "2026-04-26",
     "dataUAT": null,
     "dataBS": null,
-    "jira": "https://telepass.atlassian.net/browse/ZTL-4",
-    "owners": []
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/ZTL-4"
+    ],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": null,
+    "rcFornitore": null,
+    "stimaCosto": null
   },
   {
     "id": "1771428352503",
