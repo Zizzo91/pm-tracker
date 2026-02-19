@@ -60,6 +60,9 @@
                     <select id="tableFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderTable()">
                         <option value="">Tutti i fornitori</option>
                     </select>
+                    <select id="tableOwnerFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderTable()">
+                        <option value="">Tutti gli owner</option>
+                    </select>
                     <input type="text" id="searchInput" class="form-control form-control-sm" style="min-width:180px" placeholder="Cerca progetto..." onkeyup="app.renderTable()">
                 </div>
             </div>
@@ -68,7 +71,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>Progetto</th>
-                            <th>Fornitori</th>
+                            <th>Fornitori / Owner</th>
                             <th>Stima</th>
                             <th>IA</th>
                             <th>Sviluppo (Start-End)</th>
@@ -112,6 +115,12 @@
                                 <option value="">Tutti</option>
                             </select>
                         </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <label class="form-label mb-0 small fw-semibold">👤 Owner:</label>
+                            <select id="ganttOwnerFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderGantt()">
+                                <option value="">Tutti</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div id="gantt-chart"></div>
@@ -142,6 +151,12 @@
                         <option value="">Tutti</option>
                     </select>
                 </div>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 small fw-semibold">👤 Owner:</label>
+                    <select id="calendarOwnerFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderCalendar()">
+                        <option value="">Tutti</option>
+                    </select>
+                </div>
             </div>
             <div class="row" id="calendarContainer"></div>
         </div>
@@ -163,9 +178,15 @@
                         <label class="form-label">Nome Progetto *</label>
                         <input type="text" class="form-control" id="p_nome" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Fornitori (separati da virgola) *</label>
-                        <input type="text" class="form-control" id="p_fornitori" placeholder="Es: Fornitore A, Fornitore B" required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fornitori (separati da virgola) *</label>
+                            <input type="text" class="form-control" id="p_fornitori" placeholder="Es: Fornitore A, Fornitore B" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Owner (separati da virgola) *</label>
+                            <input type="text" class="form-control" id="p_owners" placeholder="Es: Marco, Sara" required>
+                        </div>
                     </div>
 
                     <h6 class="mt-4 border-bottom pb-2">Timeline (Sequenziale)</h6>
@@ -208,7 +229,7 @@
                         </div>
                     </div>
 
-                    <h6 class="mt-4 border-bottom pb-2">Dati Economici &amp; Operativi <span class="text-muted fw-normal small">(opzionali)</span></h6>
+                    <h6 class="mt-4 border-bottom pb-2">Dati Economici & Operativi <span class="text-muted fw-normal small">(opzionali)</span></h6>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label small">📅 Data entro cui avere la stima dal fornitore</label>
@@ -244,7 +265,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="btn btn-primary" onclick="app.saveProject()">Salva &amp; Pubblica</button>
+                <button type="button" class="btn btn-primary" onclick="app.saveProject()">Salva & Pubblica</button>
             </div>
         </div>
     </div>
@@ -287,6 +308,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=12"></script>
+<script src="assets/app.js?v=13"></script>
 </body>
 </html>
