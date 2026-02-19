@@ -5,6 +5,10 @@
     "fornitori": [
       "Engineering"
     ],
+    "owners": [
+      "Simone",
+      "Flavia"
+    ],
     "dataStima": "2026-03-11",
     "dataIA": "2026-03-18",
     "devStart": "2026-03-19",
@@ -13,13 +17,14 @@
     "dataProd": "2026-04-10",
     "dataUAT": "2026-04-06",
     "dataBS": "2026-04-11",
-    "jira": "https://telepass.atlassian.net/browse/ZTL-14",
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/ZTL-14"
+    ],
     "dataScadenzaStima": "2026-02-18",
     "dataConfigSistema": "2026-02-28",
     "stimaGgu": 10,
     "rcFornitore": 390,
-    "stimaCosto": 3900,
-    "owners": []
+    "stimaCosto": 3900
   },
   {
     "id": "1771414171964",
