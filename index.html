@@ -189,15 +189,15 @@
                         </div>
                     </div>
 
-                    <h6 class="mt-4 border-bottom pb-2">Timeline (Sequenziale)</h6>
+                    <h6 class="mt-4 border-bottom pb-2">Timeline</h6>
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label small">1. Stima Pianificazione</label>
                             <input type="date" class="form-control" id="p_stima" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small">2. Condivisione IA</label>
-                            <input type="date" class="form-control" id="p_ia" required>
+                            <label class="form-label small">2. Condivisione IA <span class="text-muted">(opzionale)</span></label>
+                            <input type="date" class="form-control" id="p_ia">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">3. Start Sviluppo</label>
@@ -229,7 +229,7 @@
                         </div>
                     </div>
 
-                    <h6 class="mt-4 border-bottom pb-2">Dati Economici & Operativi <span class="text-muted fw-normal small">(opzionali)</span></h6>
+                    <h6 class="mt-4 border-bottom pb-2">Dati Economici &amp; Operativi <span class="text-muted fw-normal small">(opzionali)</span></h6>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label small">📅 Data entro cui avere la stima dal fornitore</label>
@@ -265,7 +265,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="btn btn-primary" onclick="app.saveProject()">Salva & Pubblica</button>
+                <button type="button" class="btn btn-primary" onclick="app.saveProject()">Salva &amp; Pubblica</button>
             </div>
         </div>
     </div>
@@ -308,6 +308,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=13"></script>
+<script src="assets/app.js?v=14"></script>
 </body>
 </html>
