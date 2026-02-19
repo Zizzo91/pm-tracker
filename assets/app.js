@@ -12,15 +12,15 @@ const app = {
     MAX_JIRA_LINKS: 10,
 
     MILESTONES: [
-        { key: 'dataIA',            label: '🤖 Consegna IA',            badge: 'bg-info text-dark' },
-        { key: 'devStart',          label: '▶️ Inizio Sviluppo',         badge: 'bg-primary' },
-        { key: 'devEnd',            label: '⏹️ Fine Sviluppo',           badge: 'bg-secondary' },
-        { key: 'dataUAT',           label: '👥 UAT',                    badge: 'bg-info' },
-        { key: 'dataBS',            label: '💼 Business Simulation',    badge: 'bg-dark' },
-        { key: 'dataTest',          label: '🧪 Rilascio Test',          badge: 'bg-warning text-dark' },
-        { key: 'dataProd',          label: '🚀 Rilascio Prod',          badge: 'bg-success' },
-        { key: 'dataScadenzaStima',  label: '📥 Scad. Stima Fornitore',  badge: 'bg-light text-dark border' },
-        { key: 'dataConfigSistema',  label: '🔧 Config Sistema',         badge: 'bg-light text-dark border' }
+        { key: 'dataIA',            label: '\ud83e\udd16 Consegna IA',           badge: 'bg-info text-dark' },
+        { key: 'devStart',          label: '\u25b6\ufe0f Inizio Sviluppo',        badge: 'bg-primary' },
+        { key: 'devEnd',            label: '\u23f9\ufe0f Fine Sviluppo',          badge: 'bg-secondary' },
+        { key: 'dataUAT',           label: '\ud83d\udc65 UAT',                    badge: 'bg-info' },
+        { key: 'dataBS',            label: '\ud83d\udcbc Business Simulation',    badge: 'bg-dark' },
+        { key: 'dataTest',          label: '\ud83e\uddea Rilascio Test',          badge: 'bg-warning text-dark' },
+        { key: 'dataProd',          label: '\ud83d\ude80 Rilascio Prod',          badge: 'bg-success' },
+        { key: 'dataScadenzaStima', label: '\ud83d\udce5 Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
+        { key: 'dataConfigSistema', label: '\ud83d\udd27 Config Sistema',         badge: 'bg-light text-dark border' }
     ],
 
     init: function() {
@@ -49,8 +49,7 @@ const app = {
     },
 
     normalizeProject: function(p) {
-        // Supporto per legacy "owner" (stringa) trasformato in "owners" (array)
-        const owners = this.csvToArray(p.owners || p.owner);
+        const owners    = this.csvToArray(p.owners || p.owner);
         const fornitori = this.csvToArray(p.fornitori);
         return { ...p, owners, fornitori };
     },
@@ -71,7 +70,7 @@ const app = {
         if (!jiraLinks || jiraLinks.length === 0) return '';
         return jiraLinks
             .filter(u => u && u.trim())
-            .map(u => `<a href="${u}" target="_blank" class="badge bg-primary text-decoration-none me-1 mb-1" title="${u}">${this.jiraLabel(u)} 🔗</a>`)
+            .map(u => `<a href="${u}" target="_blank" class="badge bg-primary text-decoration-none me-1 mb-1" title="${u}">${this.jiraLabel(u)} \ud83d\udd17</a>`)
             .join('');
     },
 
@@ -114,8 +113,8 @@ const app = {
         if (!btn) return;
         const count = container.querySelectorAll('.jira-link-input').length;
         btn.disabled = count >= this.MAX_JIRA_LINKS;
-        btn.textContent = count >= this.MAX_JIRA_LINKS 
-            ? `Limite raggiunto (${this.MAX_JIRA_LINKS})` 
+        btn.textContent = count >= this.MAX_JIRA_LINKS
+            ? `Limite raggiunto (${this.MAX_JIRA_LINKS})`
             : '+ Aggiungi Link Jira';
     },
 
@@ -130,7 +129,7 @@ const app = {
         const rc  = parseFloat(document.getElementById('p_rcFornitore').value);
         const out = document.getElementById('p_stimaCosto');
         if (!isNaN(ggu) && !isNaN(rc) && ggu >= 0 && rc >= 0) {
-            out.value = '€ ' + (ggu * rc).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            out.value = '\u20ac ' + (ggu * rc).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         } else {
             out.value = '';
         }
@@ -171,10 +170,8 @@ const app = {
             const json = await response.json();
             this.sha  = json.sha;
             this.data = JSON.parse(decodeURIComponent(escape(atob(json.content)))).map(p => this.normalizeProject(p));
-            
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
-            
             this.renderTable();
             this.renderGantt();
             this.renderCalendar();
@@ -203,7 +200,7 @@ const app = {
     },
 
     populateOwnerFilters: function() {
-        const allOwners = [...new Set(this.data.flatMap(p => p.owners || []))].sort((a,b) => a.localeCompare(b, 'it'));
+        const allOwners = [...new Set(this.data.flatMap(p => p.owners || []))].sort((a, b) => a.localeCompare(b, 'it'));
         ['ganttOwnerFilter', 'tableOwnerFilter', 'calendarOwnerFilter'].forEach(id => {
             const sel = document.getElementById(id);
             if (!sel) return;
@@ -222,7 +219,8 @@ const app = {
     saveProject: async function() {
         const dates = {
             stima:    document.getElementById('p_stima').value,
-            ia:       document.getElementById('p_ia').value,
+            // IA è opzionale e senza vincoli di posizione nella sequenza
+            ia:       document.getElementById('p_ia').value || null,
             devStart: document.getElementById('p_devStart').value,
             devEnd:   document.getElementById('p_devEnd').value,
             test:     document.getElementById('p_test').value,
@@ -230,18 +228,24 @@ const app = {
             uat:      document.getElementById('p_uat').value  || null,
             bs:       document.getElementById('p_bs').value   || null
         };
-        if (dates.stima > dates.ia || dates.ia > dates.devStart ||
-            dates.devStart > dates.devEnd || dates.devEnd > dates.test ||
-            dates.test > dates.prod) {
-            document.getElementById('dateValidationMsg').innerText = 'ERRORE: La sequenza temporale non è rispettata! (Stima < IA < Dev < Test < Prod)';
+
+        // Sequenza obbligatoria: Stima ≤ DevStart ≤ DevEnd ≤ Test ≤ Prod
+        // La data IA è libera (opzionale, nessun vincolo di ordine)
+        if (dates.stima > dates.devStart ||
+            dates.devStart > dates.devEnd ||
+            dates.devEnd   > dates.test   ||
+            dates.test     > dates.prod) {
+            document.getElementById('dateValidationMsg').innerText =
+                'ERRORE: La sequenza temporale non \u00e8 rispettata! (Stima \u2264 Dev Start \u2264 Dev End \u2264 Test \u2264 Prod)';
             return;
         }
+
         const stimaGgu    = parseFloat(document.getElementById('p_stimaGgu').value);
         const rcFornitore = parseFloat(document.getElementById('p_rcFornitore').value);
         const id = document.getElementById('p_id').value;
-        
+
         const fornitori = document.getElementById('p_fornitori').value.split(',').map(s => s.trim()).filter(Boolean);
-        const owners = document.getElementById('p_owners').value.split(',').map(s => s.trim()).filter(Boolean);
+        const owners    = document.getElementById('p_owners').value.split(',').map(s => s.trim()).filter(Boolean);
 
         const newProj = {
             id:                id || Date.now().toString(),
@@ -304,15 +308,15 @@ const app = {
             document.getElementById('p_id').value                = p.id;
             document.getElementById('p_nome').value              = p.nome;
             document.getElementById('p_fornitori').value         = (p.fornitori || []).join(', ');
-            document.getElementById('p_owners').value            = (p.owners || p.owner ? this.csvToArray(p.owners || p.owner) : []).join(', ');
-            document.getElementById('p_stima').value             = p.dataStima;
-            document.getElementById('p_ia').value                = p.dataIA;
-            document.getElementById('p_devStart').value          = p.devStart;
-            document.getElementById('p_devEnd').value            = p.devEnd;
-            document.getElementById('p_test').value              = p.dataTest;
-            document.getElementById('p_prod').value              = p.dataProd;
-            document.getElementById('p_uat').value               = p.dataUAT  || '';
-            document.getElementById('p_bs').value                = p.dataBS   || '';
+            document.getElementById('p_owners').value            = this.csvToArray(p.owners || p.owner).join(', ');
+            document.getElementById('p_stima').value             = p.dataStima    || '';
+            document.getElementById('p_ia').value                = p.dataIA       || '';
+            document.getElementById('p_devStart').value          = p.devStart     || '';
+            document.getElementById('p_devEnd').value            = p.devEnd       || '';
+            document.getElementById('p_test').value              = p.dataTest     || '';
+            document.getElementById('p_prod').value              = p.dataProd     || '';
+            document.getElementById('p_uat').value               = p.dataUAT      || '';
+            document.getElementById('p_bs').value                = p.dataBS       || '';
             document.getElementById('p_dataScadenzaStima').value = p.dataScadenzaStima || '';
             document.getElementById('p_dataConfigSistema').value = p.dataConfigSistema || '';
             document.getElementById('p_stimaGgu').value          = p.stimaGgu    != null ? p.stimaGgu    : '';
@@ -410,51 +414,50 @@ const app = {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        let filtered = this.data.filter(p => 
-            p.nome.toLowerCase().includes(search) && 
+        let filtered = this.data.filter(p =>
+            p.nome.toLowerCase().includes(search) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
-            (!filtOwn || (p.owners && p.owners.includes(filtOwn)))
+            (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
         );
-
         filtered = this._sortGantt(filtered, sortMode);
 
         tbody.innerHTML = filtered.map(p => {
-                const isPast = p.dataProd && new Date(p.dataProd) <= today;
-                const rowCls = isPast ? 'class="table-secondary opacity-75"' : '';
+            const isPast = p.dataProd && new Date(p.dataProd) <= today;
+            const rowCls = isPast ? 'class="table-secondary opacity-75"' : '';
 
-                const fornBadge = p.fornitori.map(f => `<span class="badge bg-secondary me-1">${f}</span>`).join('');
-                const ownBadge = (p.owners || []).map(o => `<span class="badge bg-info text-dark me-1">${o}</span>`).join('');
-                
-                const extraRows = [];
-                if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">⏱️ ${p.stimaGgu} gg/u</span>`);
-                if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1">💰 € ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
+            const fornBadge = p.fornitori.map(f => `<span class="badge bg-secondary me-1">${f}</span>`).join('');
+            const ownBadge  = (p.owners || []).map(o => `<span class="badge bg-info text-dark me-1">${o}</span>`).join('');
 
-                const links = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
-                const jiraHtml = this.jiraLinksHtml(links);
+            const extraRows = [];
+            if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">\u23f1\ufe0f ${p.stimaGgu} gg/u</span>`);
+            if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1">\ud83d\udcb0 \u20ac ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
 
-                return `
-                <tr ${rowCls}>
-                    <td>
-                        <strong>${p.nome}</strong>
-                        ${isPast ? '<span class="badge bg-success ms-1">✅ Rilasciato</span>' : ''}
-                        ${jiraHtml ? `<div class="mt-1">${jiraHtml}</div>` : ''}
-                        ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
-                    </td>
-                    <td>
-                        <div>${fornBadge}</div>
-                        <div class="mt-1">${ownBadge}</div>
-                    </td>
-                    <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
-                    <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
-                    <td class="small">${this.formatDate(p.devStart)} ➔ ${this.formatDate(p.devEnd)}</td>
-                    <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
-                    <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="app.openModal('${p.id}')">📝</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="app.deleteProject('${p.id}')">🗑️</button>
-                    </td>
-                </tr>`;
-            }).join('');
+            const links = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+            const jiraHtml = this.jiraLinksHtml(links);
+
+            return `
+            <tr ${rowCls}>
+                <td>
+                    <strong>${p.nome}</strong>
+                    ${isPast ? '<span class="badge bg-success ms-1">\u2705 Rilasciato</span>' : ''}
+                    ${jiraHtml ? `<div class="mt-1">${jiraHtml}</div>` : ''}
+                    ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
+                </td>
+                <td>
+                    <div>${fornBadge}</div>
+                    ${ownBadge ? `<div class="mt-1">${ownBadge}</div>` : ''}
+                </td>
+                <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
+                <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
+                <td class="small">${this.formatDate(p.devStart)} \u279d ${this.formatDate(p.devEnd)}</td>
+                <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
+                <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="app.openModal('${p.id}')">✏️</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="app.deleteProject('${p.id}')">🗑️</button>
+                </td>
+            </tr>`;
+        }).join('');
     },
 
     renderGantt: function() {
@@ -465,9 +468,9 @@ const app = {
         const filtOwn  = document.getElementById('ganttOwnerFilter')?.value || '';
         const sortMode = document.getElementById('ganttSortSelect')?.value || 'prod_inprogress_first';
 
-        let data = this.data.filter(p => 
+        let data = this.data.filter(p =>
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
-            (!filtOwn || (p.owners && p.owners.includes(filtOwn)))
+            (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
         );
         data = this._sortGantt(data, sortMode);
 
@@ -484,7 +487,7 @@ const app = {
             if (!maxDate || dt > maxDate) maxDate = dt;
         };
         data.forEach(p => {
-            [p.dataIA, p.devStart, p.devEnd, p.dataTest, p.dataProd, 
+            [p.dataIA, p.devStart, p.devEnd, p.dataTest, p.dataProd,
              p.dataUAT, p.dataBS, p.dataScadenzaStima, p.dataConfigSistema].forEach(updateRange);
         });
 
@@ -515,25 +518,25 @@ const app = {
         data.forEach(p => {
             const leftPct  = pct(p.devStart);
             const widthPct = Math.max(pct(p.devEnd) - leftPct, 0.5);
-            
+
             const badgesHtml = [
                 ...(p.fornitori || []).map(f => `<span class="gantt-supplier-badge">${f}</span>`),
-                ...(p.owners || []).map(o => `<span class="gantt-supplier-badge bg-info text-dark">${o}</span>`)
+                ...(p.owners    || []).map(o => `<span class="gantt-supplier-badge bg-info text-dark">${o}</span>`)
             ].join('');
 
             const isPast = p.dataProd && new Date(p.dataProd) <= today;
             const rowCls = isPast ? ' gantt-row--released' : '';
 
             const allMilestones = [
-                { date: p.dataIA,            cls: 'ms-ia',         icon: '🤖', label: 'Consegna IA',           always: true  },
-                { date: p.devStart,          cls: 'ms-dev-start',  icon: '▶️',  label: 'Inizio Sviluppo',      always: true  },
-                { date: p.devEnd,            cls: 'ms-dev-end',    icon: '⏹️',  label: 'Fine Sviluppo',        always: true  },
-                { date: p.dataUAT,           cls: 'ms-uat',        icon: '👥', label: 'UAT',                   always: false },
-                { date: p.dataBS,            cls: 'ms-bs',         icon: '💼', label: 'Business Simulation',   always: false },
-                { date: p.dataTest,          cls: 'ms-test',       icon: '🧪', label: 'Rilascio Test',         always: true  },
-                { date: p.dataProd,          cls: 'ms-prod',       icon: '🚀', label: 'Rilascio Prod',         always: true  },
-                { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '📥', label: 'Scad. Stima Fornitore',  always: false },
-                { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '🔧', label: 'Config Sistema',        always: false }
+                { date: p.dataIA,            cls: 'ms-ia',         icon: '\ud83e\udd16', label: 'Consegna IA',           always: true  },
+                { date: p.devStart,          cls: 'ms-dev-start',  icon: '\u25b6\ufe0f',  label: 'Inizio Sviluppo',       always: true  },
+                { date: p.devEnd,            cls: 'ms-dev-end',    icon: '\u23f9\ufe0f',  label: 'Fine Sviluppo',         always: true  },
+                { date: p.dataUAT,           cls: 'ms-uat',        icon: '\ud83d\udc65', label: 'UAT',                   always: false },
+                { date: p.dataBS,            cls: 'ms-bs',         icon: '\ud83d\udcbc', label: 'Business Simulation',   always: false },
+                { date: p.dataTest,          cls: 'ms-test',       icon: '\ud83e\uddea', label: 'Rilascio Test',         always: true  },
+                { date: p.dataProd,          cls: 'ms-prod',       icon: '\ud83d\ude80', label: 'Rilascio Prod',         always: true  },
+                { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '\ud83d\udce5', label: 'Scad. Stima Fornitore', always: false },
+                { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '\ud83d\udd27', label: 'Config Sistema',        always: false }
             ].filter(m => m.date && m.date.trim() !== '');
 
             const dateGroups = {};
@@ -557,7 +560,7 @@ const app = {
                     <div class="gantt-project-col"><div><strong>${p.nome}</strong><div class="gantt-supplier-list">${badgesHtml}</div></div></div>
                     <div class="gantt-timeline-col" style="position:relative;">
                         <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;" title="Sviluppo: ${dayjs(p.devStart).format('DD/MM/YYYY')} - ${dayjs(p.devEnd).format('DD/MM/YYYY')}">
-                            <span>⚙️ Sviluppo</span>
+                            <span>\u2699\ufe0f Sviluppo</span>
                         </div>
                         ${milestonesHtml}
                     </div>
@@ -565,23 +568,23 @@ const app = {
         });
         html += '</div>';
 
-        const hasUAT = data.some(p => p.dataUAT && p.dataUAT.trim() !== '');
-        const hasBS  = data.some(p => p.dataBS && p.dataBS.trim() !== '');
+        const hasUAT       = data.some(p => p.dataUAT           && p.dataUAT.trim()           !== '');
+        const hasBS        = data.some(p => p.dataBS            && p.dataBS.trim()            !== '');
         const hasScadStima = data.some(p => p.dataScadenzaStima && p.dataScadenzaStima.trim() !== '');
         const hasConfigSis = data.some(p => p.dataConfigSistema && p.dataConfigSistema.trim() !== '');
 
         html += `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">🤖</span> Consegna IA</div>
-            <div class="gantt-legend-item"><span class="legend-ms">▶️</span> Inizio Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">⏹️</span> Fine Sviluppo</div>
-            ${hasUAT ? '<div class="gantt-legend-item"><span class="legend-ms">👥</span> UAT</div>' : ''}
-            ${hasBS  ? '<div class="gantt-legend-item"><span class="legend-ms">💼</span> Business Simulation</div>' : ''}
-            <div class="gantt-legend-item"><span class="legend-ms">🧪</span> Rilascio Test</div>
-            <div class="gantt-legend-item"><span class="legend-ms">🚀</span> Rilascio Prod</div>
-            ${hasScadStima ? '<div class="gantt-legend-item"><span class="legend-ms">📥</span> Scad. Stima Fornitore</div>' : ''}
-            ${hasConfigSis ? '<div class="gantt-legend-item"><span class="legend-ms">🔧</span> Config Sistema</div>' : ''}
+            <div class="gantt-legend-item"><span class="legend-ms">\ud83e\udd16</span> Consegna IA</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\u25b6\ufe0f</span> Inizio Sviluppo</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\u23f9\ufe0f</span> Fine Sviluppo</div>
+            ${hasUAT       ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udc65</span> UAT</div>'                       : ''}
+            ${hasBS        ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udcbc</span> Business Simulation</div>'        : ''}
+            <div class="gantt-legend-item"><span class="legend-ms">\ud83e\uddea</span> Rilascio Test</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\ud83d\ude80</span> Rilascio Prod</div>
+            ${hasScadStima ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udce5</span> Scad. Stima Fornitore</div>'     : ''}
+            ${hasConfigSis ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udd27</span> Config Sistema</div>'            : ''}
         </div>`;
 
         html += '</div>';
@@ -593,18 +596,18 @@ const app = {
         if (!container) return;
 
         const filtForn = document.getElementById('calendarFornitoreFilter')?.value || '';
-        const filtOwn  = document.getElementById('calendarOwnerFilter')?.value || '';
+        const filtOwn  = document.getElementById('calendarOwnerFilter')?.value    || '';
         const filtMile = document.getElementById('calendarMilestoneFilter')?.value || '';
 
-        const activeMilestones = filtMile 
+        const activeMilestones = filtMile
             ? this.MILESTONES.filter(m => m.key === filtMile)
             : this.MILESTONES;
 
         const events = [];
         this.data
-            .filter(p => 
+            .filter(p =>
                 (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
-                (!filtOwn  || (p.owners && p.owners.includes(filtOwn)))
+                (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
             )
             .forEach(p => {
                 activeMilestones.forEach(m => {
@@ -615,7 +618,7 @@ const app = {
                             sortKey:   v,
                             nome:      p.nome,
                             fornitori: p.fornitori || [],
-                            owners:    p.owners || [],
+                            owners:    p.owners    || [],
                             label:     m.label,
                             badge:     m.badge
                         });
@@ -645,7 +648,7 @@ const app = {
                         <div class="card-body">
                             ${sorted.map(ev => {
                                 const fb = ev.fornitori.map(f => `<span class="gantt-supplier-badge">${f}</span>`).join('');
-                                const ob = ev.owners.map(o => `<span class="gantt-supplier-badge bg-info text-dark">${o}</span>`).join('');
+                                const ob = ev.owners.map(o    => `<span class="gantt-supplier-badge bg-info text-dark">${o}</span>`).join('');
                                 return `
                                 <div class="cal-event-item d-flex align-items-start gap-2 mb-2">
                                     <span class="cal-event-date">${ev.date.format('DD/MM')}</span>
@@ -670,7 +673,7 @@ const app = {
         const div = document.getElementById('alertArea');
         if (!div) return;
         div.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
-            ${msg}<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>`;
+            ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
         if (timeout) setTimeout(() => { div.innerHTML = ''; }, timeout);
     }
 };
