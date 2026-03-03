@@ -134,34 +134,37 @@
 
         <!-- Tab 3: Calendario -->
         <div class="tab-pane fade" id="calendarView">
-            <div class="d-flex justify-content-end mb-3 flex-wrap gap-2">
-                <div class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 small fw-semibold">🏷️ Milestone:</label>
-                    <select id="calendarMilestoneFilter" class="form-select form-select-sm" style="min-width:210px" onchange="app.renderCalendar()">
-                        <option value="">Tutte le milestone</option>
-                        <option value="dataIA">🤖 Consegna IA</option>
-                        <option value="devStart">▶️ Inizio Sviluppo</option>
-                        <option value="devEnd">⏹️ Fine Sviluppo</option>
-                        <option value="dataUAT">👥 UAT</option>
-                        <option value="dataBS">💼 Business Simulation</option>
-                        <option value="dataTest">🧪 Rilascio Test</option>
-                        <option value="dataProd">🚀 Rilascio Prod</option>
-                        <option value="dataScadenzaStima">📥 Scad. Stima Fornitore</option>
-                        <option value="dataConfigSistema">🔧 Config Sistema</option>
-                        <option value="custom">⭐ Milestone Personalizzate</option>
-                    </select>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
-                    <select id="calendarFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderCalendar()">
-                        <option value="">Tutti</option>
-                    </select>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 small fw-semibold">👤 Owner:</label>
-                    <select id="calendarOwnerFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderCalendar()">
-                        <option value="">Tutti</option>
-                    </select>
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <button class="btn btn-primary btn-sm" onclick="app.openReminderModal()">+ Nuovo Promemoria</button>
+                <div class="d-flex justify-content-end flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label mb-0 small fw-semibold">🏷️ Milestone:</label>
+                        <select id="calendarMilestoneFilter" class="form-select form-select-sm" style="min-width:210px" onchange="app.renderCalendar()">
+                            <option value="">Tutte le milestone</option>
+                            <option value="dataIA">🤖 Consegna IA</option>
+                            <option value="devStart">▶️ Inizio Sviluppo</option>
+                            <option value="devEnd">⏹️ Fine Sviluppo</option>
+                            <option value="dataUAT">👥 UAT</option>
+                            <option value="dataBS">💼 Business Simulation</option>
+                            <option value="dataTest">🧪 Rilascio Test</option>
+                            <option value="dataProd">🚀 Rilascio Prod</option>
+                            <option value="dataScadenzaStima">📥 Scad. Stima Fornitore</option>
+                            <option value="dataConfigSistema">🔧 Config Sistema</option>
+                            <option value="custom">⭐ Milestone Personalizzate</option>
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
+                        <select id="calendarFornitoreFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderCalendar()">
+                            <option value="">Tutti</option>
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="form-label mb-0 small fw-semibold">👤 Owner:</label>
+                        <select id="calendarOwnerFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderCalendar()">
+                            <option value="">Tutti</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="row" id="calendarContainer"></div>
@@ -169,7 +172,7 @@
     </div>
 </div>
 
-<!-- Modal Editor -->
+<!-- Modal Editor Progetto -->
 <div class="modal fade" id="editorModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -288,6 +291,39 @@
     </div>
 </div>
 
+<!-- Modal Editor Promemoria -->
+<div class="modal fade" id="reminderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-dark">
+                <h5 class="modal-title">Gestione Promemoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reminderForm">
+                    <input type="hidden" id="r_id">
+                    <div class="mb-3">
+                        <label class="form-label">Attività / Scadenza *</label>
+                        <input type="text" class="form-control" id="r_text" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data *</label>
+                        <input type="date" class="form-control" id="r_date" required>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="r_done">
+                        <label class="form-check-label" for="r_done">Completato</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="app.saveReminder()">Salva Promemoria</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Configurazione -->
 <div class="modal fade" id="settingsModal" tabindex="-1">
     <div class="modal-dialog">
@@ -325,6 +361,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=18"></script>
+<script src="assets/app.js?v=19"></script>
 </body>
 </html>
