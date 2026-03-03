@@ -32,10 +32,10 @@
             <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#listView" type="button">📋 Elenco Progetti</button>
         </li>
         <li class="nav-item">
-            <button class="nav-link active" id="gantt-tab" data-bs-toggle="tab" data-bs-target="#ganttView" type="button">📊 Gantt Sviluppo</button>
+            <button class="nav-link" id="gantt-tab" data-bs-toggle="tab" data-bs-target="#ganttView" type="button">📊 Gantt Sviluppo</button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendarView" type="button">📅 Calendario Rilasci</button>
+            <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendarView" type="button">📅 Calendario Rilasci</button>
         </li>
     </ul>
 
@@ -90,8 +90,8 @@
             </div>
         </div>
 
-        <!-- Tab 2: Gantt (DEFAULT) -->
-        <div class="tab-pane fade show active" id="ganttView">
+        <!-- Tab 2: Gantt -->
+        <div class="tab-pane fade" id="ganttView">
             <div class="card shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <button class="btn btn-success btn-sm" onclick="app.openModal()">+ Nuovo Progetto</button>
@@ -132,9 +132,15 @@
             </div>
         </div>
 
-        <!-- Tab 3: Calendario -->
-        <div class="tab-pane fade" id="calendarView">
+        <!-- Tab 3: Calendario (DEFAULT) -->
+        <div class="tab-pane fade show active" id="calendarView">
             <div class="d-flex justify-content-end mb-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2 me-auto">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="cal_show_hidden" onchange="app.renderCalendar()">
+                        <label class="form-check-label small fw-semibold text-muted" for="cal_show_hidden">Mostra nascoste manualmente</label>
+                    </div>
+                </div>
                 <div class="d-flex align-items-center gap-2">
                     <label class="form-label mb-0 small fw-semibold">🏷️ Milestone:</label>
                     <select id="calendarMilestoneFilter" class="form-select form-select-sm" style="min-width:210px" onchange="app.renderCalendar()">
@@ -360,6 +366,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=19"></script>
+<script src="assets/app.js?v=20"></script>
 </body>
 </html>
