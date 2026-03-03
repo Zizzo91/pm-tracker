@@ -9,6 +9,7 @@ const app = {
     sha: null,
     editorModal: null,
     settingsModal: null,
+    reminderModal: null,
     MAX_JIRA_LINKS: 10,
     MAX_CUSTOM_MILESTONES: 5,
 
@@ -34,6 +35,7 @@ const app = {
         try {
             this.editorModal = new bootstrap.Modal(document.getElementById('editorModal'));
             this.settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+            this.reminderModal = new bootstrap.Modal(document.getElementById('reminderModal'));
 
             ['p_stimaGgu', 'p_rcFornitore'].forEach(id => {
                 const el = document.getElementById(id);
@@ -61,6 +63,7 @@ const app = {
     },
 
     normalizeProject: function(p) {
+        if (p.isReminder) return p;
         const owners    = this.csvToArray(p.owners || p.owner);
         const fornitori = this.csvToArray(p.fornitori);
         const customMilestones = Array.isArray(p.customMilestones) ? p.customMilestones : [];
@@ -70,7 +73,7 @@ const app = {
 
     isAutoStale: function(p) {
         try {
-            if (p.hidden) return false;
+            if (p.isReminder || p.hidden) return false;
             if (!p.dataProd || p.dataProd.trim() === '') return false;
             const prodDate = new Date(p.dataProd);
             if (isNaN(prodDate.getTime())) return false;
@@ -306,7 +309,7 @@ const app = {
 
     populateFornitoreFilters: function() {
         try {
-            const allSuppliers = [...new Set(this.data.flatMap(p => p.fornitori || []))].sort();
+            const allSuppliers = [...new Set(this.data.filter(p => !p.isReminder).flatMap(p => p.fornitori || []))].sort();
             ['ganttFornitoreFilter', 'tableFornitoreFilter', 'calendarFornitoreFilter'].forEach(id => {
                 const sel = document.getElementById(id);
                 if (!sel) return;
@@ -327,7 +330,7 @@ const app = {
 
     populateOwnerFilters: function() {
         try {
-            const allOwners = [...new Set(this.data.flatMap(p => p.owners || []))].sort((a, b) => (a||'').localeCompare(b||'', 'it'));
+            const allOwners = [...new Set(this.data.filter(p => !p.isReminder).flatMap(p => p.owners || []))].sort((a, b) => (a||'').localeCompare(b||'', 'it'));
             ['ganttOwnerFilter', 'tableOwnerFilter', 'calendarOwnerFilter'].forEach(id => {
                 const sel = document.getElementById(id);
                 if (!sel) return;
@@ -411,6 +414,57 @@ const app = {
         this.editorModal.hide();
     },
 
+    openReminderModal: function(id = null) {
+        document.getElementById('reminderForm').reset();
+        if (id) {
+            const r = this.data.find(x => x.id === id);
+            document.getElementById('r_id').value = r.id;
+            document.getElementById('r_text').value = r.text || '';
+            document.getElementById('r_date').value = r.date || '';
+            document.getElementById('r_done').checked = !!r.done;
+        } else {
+            document.getElementById('r_id').value = '';
+        }
+        this.reminderModal.show();
+    },
+
+    saveReminder: async function() {
+        const id = document.getElementById('r_id').value;
+        const text = document.getElementById('r_text').value.trim();
+        const date = document.getElementById('r_date').value;
+        const done = document.getElementById('r_done').checked;
+
+        if (!text || !date) {
+            this.showAlert('Compila i campi richiesti', 'warning');
+            return;
+        }
+
+        const newReminder = {
+            id: id || 'rem_' + Date.now().toString(),
+            isReminder: true,
+            text: text,
+            date: date,
+            done: done
+        };
+
+        if (id) {
+            this.data[this.data.findIndex(p => p.id === id)] = newReminder;
+        } else {
+            this.data.push(newReminder);
+        }
+        
+        await this.syncToGithub();
+        this.reminderModal.hide();
+    },
+
+    toggleReminderDone: async function(id) {
+        const r = this.data.find(x => x.id === id);
+        if (r) {
+            r.done = !r.done;
+            await this.syncToGithub();
+        }
+    },
+
     syncToGithub: async function() {
         this.showAlert('Salvataggio su GitHub in corso...', 'warning');
         try {
@@ -471,7 +525,7 @@ const app = {
     },
 
     deleteProject: async function(id) {
-        if (confirm('Sei sicuro di voler eliminare questo progetto?')) {
+        if (confirm('Sei sicuro di voler eliminare questo elemento?')) {
             this.data = this.data.filter(p => p.id !== id);
             await this.syncToGithub();
         }
@@ -575,6 +629,7 @@ const app = {
         today.setHours(0, 0, 0, 0);
 
         let filtered = this.data.filter(p =>
+            !p.isReminder &&
             (showHidden || !this.isHiddenForUI(p)) &&
             (p.nome || '').toLowerCase().includes(search) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
@@ -650,6 +705,7 @@ const app = {
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
 
         let data = this.data.filter(p =>
+            !p.isReminder &&
             (showHidden || !this.isHiddenForUI(p)) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
             (!filtOwn  || (p.owners    && p.owners.includes(filtOwn))) &&
@@ -832,6 +888,27 @@ const app = {
                 (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
             )
             .forEach(p => {
+                if (p.isReminder) {
+                    if (p.date) {
+                        events.push({
+                            id:        p.id,
+                            date:      dayjs(p.date),
+                            sortKey:   p.date,
+                            nome:      p.text,
+                            fornitori: [],
+                            owners:    [],
+                            label:     '📌 Promemoria',
+                            badge:     p.done ? 'bg-secondary' : 'bg-primary',
+                            manual:    false,
+                            autoStale: false,
+                            hidden:    false,
+                            isReminder: true,
+                            done:      p.done
+                        });
+                    }
+                    return;
+                }
+
                 const currentlyHidden = this.isHiddenForUI(p);
                 const autoStale = this.isAutoStale(p);
                 
@@ -840,6 +917,7 @@ const app = {
                         const v = p[m.key];
                         if (v && v.trim() !== '') {
                             events.push({
+                                id:        p.id,
                                 date:      dayjs(v),
                                 sortKey:   v,
                                 nome:      p.nome,
@@ -859,6 +937,7 @@ const app = {
                     p.customMilestones.forEach(cm => {
                         if (cm.date && cm.date.trim() !== '') {
                             events.push({
+                                id:        p.id,
                                 date:      dayjs(cm.date),
                                 sortKey:   cm.date,
                                 nome:      p.nome,
@@ -904,13 +983,28 @@ const app = {
                                 if (ev.manual) statusIcon = '🚫';
                                 else if (ev.autoStale) statusIcon = '<span title="Auto-archiviato">🕐</span>';
                                 
+                                let textDecor = (ev.isReminder && ev.done) ? 'text-decoration-line-through text-muted' : '';
+                                
+                                let actionsHtml = '';
+                                if (ev.isReminder) {
+                                    actionsHtml = `
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm ${ev.done ? 'btn-success' : 'btn-outline-secondary'} py-0 px-2" style="font-size:0.75rem" onclick="app.toggleReminderDone('${ev.id}')">
+                                            ${ev.done ? '✅ Fatto' : '⬜ Da fare'}
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary py-0 px-2 ms-1" style="font-size:0.75rem" onclick="app.openReminderModal('${ev.id}')">✏️</button>
+                                        <button class="btn btn-sm btn-outline-danger py-0 px-2 ms-1" style="font-size:0.75rem" onclick="app.deleteProject('${ev.id}')">🗑️</button>
+                                    </div>`;
+                                }
+                                
                                 return `
                                 <div class="cal-event-item d-flex align-items-start gap-2 mb-2 ${opacityCls}">
                                     <span class="cal-event-date">${ev.date.format('DD/MM')}</span>
                                     <div>
                                         <span class="badge ${ev.badge} me-1">${ev.label}</span>
-                                        <span class="small fw-semibold">${ev.nome} ${statusIcon}</span>
+                                        <span class="small fw-semibold ${textDecor}">${ev.nome} ${statusIcon}</span>
                                         ${fb || ob ? `<div class="cal-supplier-list mt-1">${fb}${ob}</div>` : ''}
+                                        ${actionsHtml}
                                     </div>
                                 </div>`;
                             }).join('')}
