@@ -13,6 +13,9 @@ const app = {
     MAX_CUSTOM_MILESTONES: 5,
     META_ID: '__pm_tracker_meta__',
 
+    // Milestone che NON vengono ingrigite anche se passate
+    ALWAYS_HIGHLIGHT_KEYS: ['devStart', 'devEnd', 'dataTest'],
+
     MILESTONES: [
         { key: 'dataIA',            label: '🤖 Consegna IA',           badge: 'bg-info text-dark' },
         { key: 'devStart',          label: '▶️ Inizio Sviluppo',        badge: 'bg-primary' },
@@ -26,9 +29,9 @@ const app = {
     ],
 
     OWNER_COLORS: {
-        'simone': { bg: '#0d6efd', fg: '#ffffff' }, // blu
-        'flavia': { bg: '#6f42c1', fg: '#ffffff' }, // viola
-        'andrea': { bg: '#ffc107', fg: '#212529' }, // giallo
+        'simone': { bg: '#0d6efd', fg: '#ffffff' },
+        'flavia': { bg: '#6f42c1', fg: '#ffffff' },
+        'andrea': { bg: '#ffc107', fg: '#212529' },
     },
 
     init: function() {
@@ -84,7 +87,6 @@ const app = {
             const manualReminders = Array.isArray(p.manualReminders) ? p.manualReminders : [];
             return { ...p, id: p.id || this.META_ID, type: 'meta', manualReminders };
         }
-
         const owners    = this.csvToArray(p.owners || p.owner);
         const fornitori = this.csvToArray(p.fornitori);
         const customMilestones = Array.isArray(p.customMilestones) ? p.customMilestones : [];
@@ -99,11 +101,9 @@ const app = {
             if (!p.dataProd || p.dataProd.trim() === '') return false;
             const prodDate = new Date(p.dataProd);
             if (isNaN(prodDate.getTime())) return false;
-            
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
-            
             return prodDate < oneMonthAgo;
         } catch (e) {
             console.error("Errore in isAutoStale:", e);
@@ -193,12 +193,10 @@ const app = {
 
     _getCustomMilestonesFromModal: function() {
         const rows = Array.from(document.querySelectorAll('.custom-milestone-row'));
-        return rows.map(row => {
-            return {
-                label: row.querySelector('.custom-ms-label').value.trim(),
-                date: row.querySelector('.custom-ms-date').value
-            };
-        }).filter(m => m.label !== '' && m.date !== '');
+        return rows.map(row => ({
+            label: row.querySelector('.custom-ms-label').value.trim(),
+            date: row.querySelector('.custom-ms-date').value
+        })).filter(m => m.label !== '' && m.date !== '');
     },
 
     jiraLabel: function(url) {
@@ -385,13 +383,13 @@ const app = {
     },
 
     addReminder: async function() {
-        const dateEl = document.getElementById('rem_date');
+        const dateEl  = document.getElementById('rem_date');
         const titleEl = document.getElementById('rem_title');
-        const noteEl = document.getElementById('rem_note');
+        const noteEl  = document.getElementById('rem_note');
 
-        const date = dateEl ? dateEl.value : '';
+        const date  = dateEl  ? dateEl.value         : '';
         const title = titleEl ? titleEl.value.trim() : '';
-        const note = noteEl ? noteEl.value.trim() : '';
+        const note  = noteEl  ? noteEl.value.trim()  : '';
 
         if (!date || !title) {
             this.showAlert('Inserisci almeno Data e Titolo per il promemoria.', 'warning', 3000);
@@ -413,7 +411,7 @@ const app = {
         meta.manualReminders.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
         if (titleEl) titleEl.value = '';
-        if (noteEl) noteEl.value = '';
+        if (noteEl)  noteEl.value  = '';
 
         await this.syncToGithub();
     },
@@ -422,7 +420,7 @@ const app = {
         const meta = this.getMeta();
         const r = (meta.manualReminders || []).find(x => x.id === id);
         if (!r) return;
-        r.done = !r.done;
+        r.done  = !r.done;
         r.doneAt = r.done ? new Date().toISOString() : null;
         await this.syncToGithub();
     },
@@ -439,7 +437,9 @@ const app = {
         if (!list) return;
 
         const showDone = document.getElementById('rem_show_done')?.checked || false;
-        const meta = this.getMeta();
+        const meta  = this.getMeta();
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+
         const items = (meta.manualReminders || [])
             .filter(r => r && r.date && r.title)
             .filter(r => showDone || !r.done)
@@ -455,11 +455,12 @@ const app = {
         }
 
         list.innerHTML = items.map(r => {
-            const cls = r.done ? 'opacity-50' : '';
-            const titleCls = r.done ? 'text-decoration-line-through' : '';
-            const badge = r.done ? 'bg-secondary' : 'bg-primary';
-            const btnText = r.done ? '↩️' : '✅';
-            const btnTitle = r.done ? 'Segna come non completato' : 'Segna come completato';
+            const isExpired = !r.done && new Date(r.date) < today;
+            const cls       = r.done ? 'opacity-50' : (isExpired ? 'opacity-75' : '');
+            const titleCls  = r.done ? 'text-decoration-line-through' : '';
+            const badge     = r.done ? 'bg-secondary' : (isExpired ? 'bg-danger' : 'bg-primary');
+            const btnText   = r.done ? '↩️' : '✅';
+            const btnTitle  = r.done ? 'Segna come non completato' : 'Segna come completato';
 
             return `
             <div class="d-flex justify-content-between align-items-start border rounded p-2 mb-2 ${cls}">
@@ -468,6 +469,7 @@ const app = {
                         <span class="badge ${badge}">📝</span>
                         <span class="small text-muted">${dayjs(r.date).format('DD/MM/YYYY')}</span>
                         <span class="fw-semibold ${titleCls}">${(r.title || '').replace(/</g, '&lt;')}</span>
+                        ${isExpired ? '<span class="badge bg-danger ms-1 small">Scaduto</span>' : ''}
                     </div>
                     ${r.note ? `<div class="small text-muted mt-1">${(r.note || '').replace(/</g, '&lt;')}</div>` : ''}
                 </div>
@@ -481,14 +483,14 @@ const app = {
 
     saveProject: async function() {
         const dates = {
-            stima:    document.getElementById('p_stima').value || null,
-            ia:       document.getElementById('p_ia').value || null,
+            stima:    document.getElementById('p_stima').value    || null,
+            ia:       document.getElementById('p_ia').value       || null,
             devStart: document.getElementById('p_devStart').value || null,
-            devEnd:   document.getElementById('p_devEnd').value || null,
-            test:     document.getElementById('p_test').value || null,
-            prod:     document.getElementById('p_prod').value || null,
-            uat:      document.getElementById('p_uat').value || null,
-            bs:       document.getElementById('p_bs').value || null
+            devEnd:   document.getElementById('p_devEnd').value   || null,
+            test:     document.getElementById('p_test').value     || null,
+            prod:     document.getElementById('p_prod').value     || null,
+            uat:      document.getElementById('p_uat').value      || null,
+            bs:       document.getElementById('p_bs').value       || null
         };
 
         let errorMsg = '';
@@ -496,7 +498,7 @@ const app = {
         else if (dates.devStart && dates.devEnd && dates.devStart > dates.devEnd) errorMsg = 'Dev Start non può essere successivo a Dev End';
         else if (dates.devEnd && dates.test && dates.devEnd > dates.test) errorMsg = 'Dev End non può essere successivo al Test';
         else if (dates.test && dates.prod && dates.test > dates.prod) errorMsg = 'Il Test non può essere successivo a Prod';
-        
+
         if (errorMsg) {
             document.getElementById('dateValidationMsg').innerText = `ERRORE: ${errorMsg}`;
             return;
@@ -512,8 +514,8 @@ const app = {
         const newProj = {
             id:                id || Date.now().toString(),
             nome:              document.getElementById('p_nome').value,
-            fornitori:         fornitori,
-            owners:            owners,
+            fornitori,
+            owners,
             dataStima:         dates.stima,
             dataIA:            dates.ia,
             devStart:          dates.devStart,
@@ -592,7 +594,6 @@ const app = {
             document.getElementById('p_rcFornitore').value       = p.rcFornitore != null ? p.rcFornitore : '';
             document.getElementById('p_note').value              = p.note || '';
             this.calcCosto();
-            
             const links = p.jiraLinks && p.jiraLinks.length > 0 ? p.jiraLinks : (p.jira ? [p.jira] : []);
             this.renderJiraFields(links);
             this.renderCustomMilestoneFields(p.customMilestones || []);
@@ -643,12 +644,8 @@ const app = {
                     return d(a.dataProd) - d(b.dataProd);
                 });
                 break;
-            case 'prod_asc':
-                sorted.sort((a, b) => d(a.dataProd) - d(b.dataProd));
-                break;
-            case 'prod_desc':
-                sorted.sort((a, b) => d(b.dataProd) - d(a.dataProd));
-                break;
+            case 'prod_asc':    sorted.sort((a, b) => d(a.dataProd) - d(b.dataProd)); break;
+            case 'prod_desc':   sorted.sort((a, b) => d(b.dataProd) - d(a.dataProd)); break;
             case 'devStart_inprogress_first':
                 sorted.sort((a, b) => {
                     const ia = inProgress(a) ? 0 : 1;
@@ -657,12 +654,8 @@ const app = {
                     return d(a.devStart) - d(b.devStart);
                 });
                 break;
-            case 'devStart_asc':
-                sorted.sort((a, b) => d(a.devStart) - d(b.devStart));
-                break;
-            case 'devStart_desc':
-                sorted.sort((a, b) => d(b.devStart) - d(a.devStart));
-                break;
+            case 'devStart_asc':  sorted.sort((a, b) => d(a.devStart) - d(b.devStart)); break;
+            case 'devStart_desc': sorted.sort((a, b) => d(b.devStart) - d(a.devStart)); break;
             case 'devEnd_inprogress_first':
                 sorted.sort((a, b) => {
                     const ia = inProgress(a) ? 0 : 1;
@@ -679,12 +672,8 @@ const app = {
                     return d(a.dataTest) - d(b.dataTest);
                 });
                 break;
-            case 'alpha_asc':
-                sorted.sort((a, b) => (a.nome||'').localeCompare(b.nome||'', 'it'));
-                break;
-            case 'alpha_desc':
-                sorted.sort((a, b) => (b.nome||'').localeCompare(a.nome||'', 'it'));
-                break;
+            case 'alpha_asc':  sorted.sort((a, b) => (a.nome||'').localeCompare(b.nome||'', 'it')); break;
+            case 'alpha_desc': sorted.sort((a, b) => (b.nome||'').localeCompare(a.nome||'', 'it')); break;
         }
         return sorted;
     },
@@ -701,11 +690,11 @@ const app = {
     },
 
     renderTable: function() {
-        const tbody    = document.getElementById('projectsTableBody');
-        const search   = (document.getElementById('searchInput')?.value || '').toLowerCase();
-        const filtForn = document.getElementById('tableFornitoreFilter')?.value || '';
-        const filtOwn  = document.getElementById('tableOwnerFilter')?.value || '';
-        const sortMode = document.getElementById('tableSortSelect')?.value || 'prod_inprogress_first';
+        const tbody      = document.getElementById('projectsTableBody');
+        const search     = (document.getElementById('searchInput')?.value || '').toLowerCase();
+        const filtForn   = document.getElementById('tableFornitoreFilter')?.value || '';
+        const filtOwn    = document.getElementById('tableOwnerFilter')?.value || '';
+        const sortMode   = document.getElementById('tableSortSelect')?.value || 'prod_inprogress_first';
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
 
         const today = new Date();
@@ -720,16 +709,13 @@ const app = {
         filtered = this._sortGantt(filtered, sortMode);
 
         tbody.innerHTML = filtered.map(p => {
-            const isPast = p.dataProd && new Date(p.dataProd) <= today;
-            const autoStale = this.isAutoStale(p);
+            const isPast        = p.dataProd && new Date(p.dataProd) <= today;
+            const autoStale     = this.isAutoStale(p);
             const currentlyHidden = this.isHiddenForUI(p);
 
             let rowCls = '';
-            if (currentlyHidden) {
-                rowCls = 'class="table-warning opacity-75"';
-            } else if (isPast) {
-                rowCls = 'class="table-secondary opacity-75"';
-            }
+            if (currentlyHidden) rowCls = 'class="table-warning opacity-75"';
+            else if (isPast)     rowCls = 'class="table-secondary opacity-75"';
 
             const fornBadge = (p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'badge me-1 mb-1')).join('');
             const ownBadge  = (p.owners    || []).map(o => this._badgeSpan('owner', o, 'badge me-1 mb-1')).join('');
@@ -738,17 +724,13 @@ const app = {
             if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">⏱️ ${p.stimaGgu} gg/u</span>`);
             if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1">💰 € ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
 
-            const links = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+            const links   = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
             const jiraHtml = this.jiraLinksHtml(links);
 
             let statusBadge = '';
-            if (p.hidden) {
-                statusBadge = '<span class="badge bg-dark ms-1">🚫 Archiviato</span>';
-            } else if (autoStale) {
-                statusBadge = '<span class="badge bg-secondary ms-1">🕐 Auto-archiviato</span>';
-            } else if (isPast) {
-                statusBadge = '<span class="badge bg-success ms-1">✅ Rilasciato</span>';
-            }
+            if (p.hidden)       statusBadge = '<span class="badge bg-dark ms-1">🚫 Archiviato</span>';
+            else if (autoStale) statusBadge = '<span class="badge bg-secondary ms-1">🕐 Auto-archiviato</span>';
+            else if (isPast)    statusBadge = '<span class="badge bg-success ms-1">✅ Rilasciato</span>';
 
             return `
             <tr ${rowCls}>
@@ -781,9 +763,9 @@ const app = {
         const container = document.getElementById('gantt-chart');
         if (!container) return;
 
-        const filtForn = document.getElementById('ganttFornitoreFilter')?.value || '';
-        const filtOwn  = document.getElementById('ganttOwnerFilter')?.value || '';
-        const sortMode = document.getElementById('ganttSortSelect')?.value || 'prod_inprogress_first';
+        const filtForn   = document.getElementById('ganttFornitoreFilter')?.value || '';
+        const filtOwn    = document.getElementById('ganttOwnerFilter')?.value || '';
+        const sortMode   = document.getElementById('ganttSortSelect')?.value || 'prod_inprogress_first';
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
 
         let data = this.getProjectsOnly().filter(p =>
@@ -809,14 +791,10 @@ const app = {
         data.forEach(p => {
             [p.dataIA, p.devStart, p.devEnd, p.dataTest, p.dataProd,
              p.dataUAT, p.dataBS, p.dataScadenzaStima, p.dataConfigSistema].forEach(updateRange);
-            if(p.customMilestones) {
-                p.customMilestones.forEach(m => updateRange(m.date));
-            }
+            if (p.customMilestones) p.customMilestones.forEach(m => updateRange(m.date));
         });
 
-        if (!minDate || !maxDate) {
-            minDate = new Date(); maxDate = new Date();
-        }
+        if (!minDate || !maxDate) { minDate = new Date(); maxDate = new Date(); }
 
         minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
         let maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
@@ -845,9 +823,9 @@ const app = {
         data.forEach(p => {
             const startD = p.devStart ? p.devStart : (p.dataTest || p.dataProd || p.dataIA);
             const endD   = p.devEnd   ? p.devEnd   : startD;
-            
-            const leftPct  = startD ? pct(startD) : 0;
-            const widthPct = startD && endD ? Math.max(pct(endD) - leftPct, 0.5) : 0;
+
+            const leftPct   = startD ? pct(startD) : 0;
+            const widthPct  = startD && endD ? Math.max(pct(endD) - leftPct, 0.5) : 0;
             const barOpacity = (p.devStart && p.devEnd) ? 1 : 0.2;
 
             const badgesHtml = [
@@ -855,15 +833,15 @@ const app = {
                 ...(p.owners    || []).map(o => this._badgeSpan('owner', o, 'gantt-supplier-badge mb-1'))
             ].join('');
 
-            const isPast = p.dataProd && new Date(p.dataProd) <= today;
-            const autoStale = this.isAutoStale(p);
+            const isPast        = p.dataProd && new Date(p.dataProd) <= today;
+            const autoStale     = this.isAutoStale(p);
             const currentlyHidden = this.isHiddenForUI(p);
 
             let rowCls = isPast ? ' gantt-row--released' : '';
             if (currentlyHidden) rowCls += ' opacity-50';
 
             let statusIcon = '';
-            if (p.hidden) statusIcon = '<span class="badge bg-dark ms-1">🚫</span>';
+            if (p.hidden)       statusIcon = '<span class="badge bg-dark ms-1">🚫</span>';
             else if (autoStale) statusIcon = '<span class="badge bg-secondary ms-1" title="Auto-archiviato">🕐</span>';
 
             let allMilestones = [
@@ -880,13 +858,7 @@ const app = {
 
             if (p.customMilestones) {
                 p.customMilestones.forEach(cm => {
-                    allMilestones.push({
-                        date: cm.date,
-                        cls: 'ms-custom',
-                        icon: '⭐',
-                        label: cm.label,
-                        always: false
-                    });
+                    allMilestones.push({ date: cm.date, cls: 'ms-custom', icon: '⭐', label: cm.label, always: false });
                 });
             }
 
@@ -901,7 +873,7 @@ const app = {
 
             const milestonesHtml = allMilestones.map(m => {
                 const translateX = (-16 + m.offsetPx).toFixed(0);
-                const inlineColor = m.cls === 'ms-custom' ? 'color:#198754;' : '';
+                const inlineColor     = m.cls === 'ms-custom' ? 'color:#198754;' : '';
                 const inlineLineColor = m.cls === 'ms-custom' ? 'background:#198754;' : '';
                 return `<div class="gantt-milestone ${m.cls}" style="left:${pct(m.date).toFixed(2)}%;transform:translateX(${translateX}px);" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
                     <span class="ms-date" style="${inlineColor}">${dayjs(m.date).format('DD/MM')}</span>
@@ -941,25 +913,35 @@ const app = {
             <div class="gantt-legend-item"><span class="legend-ms">🚀</span> Rilascio Prod</div>
             ${hasScadStima ? '<div class="gantt-legend-item"><span class="legend-ms">📥</span> Scad. Stima Fornitore</div>'     : ''}
             ${hasConfigSis ? '<div class="gantt-legend-item"><span class="legend-ms">🔧</span> Config Sistema</div>'            : ''}
-            ${hasCustom    ? '<div class="gantt-legend-item"><span class="legend-ms" style="color:#198754">⭐</span> Milestone Personalizzate</div>'            : ''}
+            ${hasCustom    ? '<div class="gantt-legend-item"><span class="legend-ms" style="color:#198754">⭐</span> Milestone Personalizzate</div>' : ''}
         </div>`;
 
         html += '</div>';
         container.innerHTML = html;
     },
 
+    // Determina se una milestone nel calendario va ingrigita:
+    // si ingrigisce se la data è passata E la chiave NON è in ALWAYS_HIGHLIGHT_KEYS
+    _calIsPast: function(dateStr, milestoneKey) {
+        if (!dateStr) return false;
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const alwaysHighlight = this.ALWAYS_HIGHLIGHT_KEYS || [];
+        if (milestoneKey && alwaysHighlight.includes(milestoneKey)) return false;
+        return new Date(dateStr) < today;
+    },
+
     renderCalendar: function() {
         const container = document.getElementById('calendarContainer');
         if (!container) return;
 
-        const filtForn = document.getElementById('calendarFornitoreFilter')?.value || '';
-        const filtOwn  = document.getElementById('calendarOwnerFilter')?.value    || '';
-        const filtMile = document.getElementById('calendarMilestoneFilter')?.value || '';
+        const filtForn   = document.getElementById('calendarFornitoreFilter')?.value || '';
+        const filtOwn    = document.getElementById('calendarOwnerFilter')?.value    || '';
+        const filtMile   = document.getElementById('calendarMilestoneFilter')?.value || '';
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
 
         const showProjectMilestones = filtMile !== 'reminders';
-        const showCustomMilestones = (filtMile === '' || filtMile === 'custom');
-        const showReminders = (filtMile === '' || filtMile === 'reminders');
+        const showCustomMilestones  = (filtMile === '' || filtMile === 'custom');
+        const showReminders         = (filtMile === '' || filtMile === 'reminders');
 
         const milestonesToUse = (filtMile && !['custom', 'reminders'].includes(filtMile))
             ? this.MILESTONES.filter(m => m.key === filtMile)
@@ -976,11 +958,12 @@ const app = {
                 )
                 .forEach(p => {
                     const currentlyHidden = this.isHiddenForUI(p);
-                    const autoStale = this.isAutoStale(p);
+                    const autoStale       = this.isAutoStale(p);
 
                     milestonesToUse.forEach(m => {
                         const v = p[m.key];
                         if (v && v.trim() !== '') {
+                            const pastGray = this._calIsPast(v, m.key);
                             events.push({
                                 date:      dayjs(v),
                                 sortKey:   v,
@@ -988,8 +971,10 @@ const app = {
                                 fornitori: p.fornitori || [],
                                 owners:    p.owners    || [],
                                 label:     m.label,
-                                badge:     m.badge,
-                                autoStale: autoStale,
+                                badge:     pastGray ? 'bg-secondary' : m.badge,
+                                pastGray,
+                                milestoneKey: m.key,
+                                autoStale,
                                 hidden:    currentlyHidden
                             });
                         }
@@ -998,6 +983,7 @@ const app = {
                     if (showCustomMilestones && p.customMilestones) {
                         p.customMilestones.forEach(cm => {
                             if (cm.date && cm.date.trim() !== '') {
+                                const pastGray = this._calIsPast(cm.date, 'custom');
                                 events.push({
                                     date:      dayjs(cm.date),
                                     sortKey:   cm.date,
@@ -1005,8 +991,10 @@ const app = {
                                     fornitori: p.fornitori || [],
                                     owners:    p.owners    || [],
                                     label:     `⭐ ${cm.label}`,
-                                    badge:     'bg-success',
-                                    autoStale: autoStale,
+                                    badge:     pastGray ? 'bg-secondary' : 'bg-success',
+                                    pastGray,
+                                    milestoneKey: 'custom',
+                                    autoStale,
                                     hidden:    currentlyHidden
                                 });
                             }
@@ -1016,23 +1004,23 @@ const app = {
         }
 
         if (showReminders) {
-            const meta = this.getMeta();
+            const meta     = this.getMeta();
             const showDone = document.getElementById('rem_show_done')?.checked || false;
             (meta.manualReminders || [])
                 .filter(r => r && r.date && r.title)
                 .filter(r => showDone || !r.done)
                 .forEach(r => {
                     events.push({
-                        date: dayjs(r.date),
-                        sortKey: r.date,
-                        nome: r.title,
+                        date:     dayjs(r.date),
+                        sortKey:  r.date,
+                        nome:     r.title,
                         fornitori: [],
-                        owners: [],
-                        label: '📝 Promemoria',
-                        badge: r.done ? 'bg-secondary' : 'bg-primary',
+                        owners:   [],
+                        label:    '📝 Promemoria',
+                        badge:    r.done ? 'bg-secondary' : 'bg-primary',
                         reminder: true,
-                        done: !!r.done,
-                        note: r.note || ''
+                        done:     !!r.done,
+                        note:     r.note || ''
                     });
                 });
         }
@@ -1052,7 +1040,7 @@ const app = {
         });
 
         container.innerHTML = Object.keys(groups).sort().map(k => {
-            const g = groups[k];
+            const g      = groups[k];
             const sorted = g.events.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
             return `
                 <div class="col-md-4 mb-4">
@@ -1061,19 +1049,22 @@ const app = {
                         <div class="card-body">
                             ${sorted.map(ev => {
                                 const fb = (ev.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')).join('');
-                                const ob = (ev.owners || []).map(o    => this._badgeSpan('owner', o, 'gantt-supplier-badge mb-1')).join('');
-                                const opacityCls = ev.hidden ? 'opacity-50' : '';
+                                const ob = (ev.owners    || []).map(o => this._badgeSpan('owner',    o, 'gantt-supplier-badge mb-1')).join('');
 
-                                const isReminder = !!ev.reminder;
-                                const titleCls = (isReminder && ev.done) ? 'text-decoration-line-through' : '';
+                                const isReminder  = !!ev.reminder;
+                                const isPastGray  = !!ev.pastGray && !isReminder;
+
+                                // opacity: 50% se archiviato, 55% se passato-ingrigito, normale altrimenti
+                                const opacityCls  = ev.hidden ? 'opacity-50' : (isPastGray ? 'cal-event--past' : '');
+                                const titleCls    = (isReminder && ev.done) ? 'text-decoration-line-through' : (isPastGray ? 'text-muted' : '');
 
                                 let statusIcon = '';
-                                if (ev.autoStale) statusIcon = '<span title="Auto-archiviato">🕐</span>';
+                                if (ev.autoStale)          statusIcon = '<span title="Auto-archiviato">🕐</span>';
                                 if (isReminder && ev.done) statusIcon = '<span title="Completato">✅</span>';
 
                                 return `
                                 <div class="cal-event-item d-flex align-items-start gap-2 mb-2 ${opacityCls}">
-                                    <span class="cal-event-date">${ev.date.format('DD/MM')}</span>
+                                    <span class="cal-event-date${isPastGray ? ' text-muted' : ''}">${ev.date.format('DD/MM')}</span>
                                     <div>
                                         <span class="badge ${ev.badge} me-1">${ev.label}</span>
                                         <span class="small fw-semibold ${titleCls}">${ev.nome} ${statusIcon}</span>
