@@ -11,6 +11,7 @@ const app = {
     settingsModal: null,
     MAX_JIRA_LINKS: 10,
     MAX_CUSTOM_MILESTONES: 5,
+    META_ID: '__pm_tracker_meta__',
 
     MILESTONES: [
         { key: 'dataIA',            label: '🤖 Consegna IA',           badge: 'bg-info text-dark' },
@@ -53,6 +54,24 @@ const app = {
         }
     },
 
+    isMeta: function(p) {
+        return !!p && ((p.type && p.type === 'meta') || p.id === this.META_ID);
+    },
+
+    getMeta: function() {
+        let meta = this.data.find(p => this.isMeta(p));
+        if (!meta) {
+            meta = { id: this.META_ID, type: 'meta', manualReminders: [] };
+            this.data.push(meta);
+        }
+        if (!Array.isArray(meta.manualReminders)) meta.manualReminders = [];
+        return meta;
+    },
+
+    getProjectsOnly: function() {
+        return (this.data || []).filter(p => !this.isMeta(p));
+    },
+
     csvToArray: function(val) {
         if (!val) return [];
         if (Array.isArray(val)) return val.map(s => (s || '').toString().trim()).filter(Boolean);
@@ -61,6 +80,11 @@ const app = {
     },
 
     normalizeProject: function(p) {
+        if (p && ((p.type && p.type === 'meta') || p.id === this.META_ID)) {
+            const manualReminders = Array.isArray(p.manualReminders) ? p.manualReminders : [];
+            return { ...p, id: p.id || this.META_ID, type: 'meta', manualReminders };
+        }
+
         const owners    = this.csvToArray(p.owners || p.owner);
         const fornitori = this.csvToArray(p.fornitori);
         const customMilestones = Array.isArray(p.customMilestones) ? p.customMilestones : [];
@@ -70,6 +94,7 @@ const app = {
 
     isAutoStale: function(p) {
         try {
+            if (!p || this.isMeta(p)) return false;
             if (p.hidden) return false;
             if (!p.dataProd || p.dataProd.trim() === '') return false;
             const prodDate = new Date(p.dataProd);
@@ -87,6 +112,7 @@ const app = {
     },
 
     isHiddenForUI: function(p) {
+        if (!p || this.isMeta(p)) return true;
         return p.hidden || this.isAutoStale(p);
     },
 
@@ -294,6 +320,7 @@ const app = {
             const json = await response.json();
             this.sha  = json.sha;
             this.data = JSON.parse(decodeURIComponent(escape(atob(json.content)))).map(p => this.normalizeProject(p));
+            this.getMeta();
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
             this.renderAll();
@@ -306,7 +333,8 @@ const app = {
 
     populateFornitoreFilters: function() {
         try {
-            const allSuppliers = [...new Set(this.data.flatMap(p => p.fornitori || []))].sort();
+            const projs = this.getProjectsOnly();
+            const allSuppliers = [...new Set(projs.flatMap(p => p.fornitori || []))].sort();
             ['ganttFornitoreFilter', 'tableFornitoreFilter', 'calendarFornitoreFilter'].forEach(id => {
                 const sel = document.getElementById(id);
                 if (!sel) return;
@@ -327,7 +355,8 @@ const app = {
 
     populateOwnerFilters: function() {
         try {
-            const allOwners = [...new Set(this.data.flatMap(p => p.owners || []))].sort((a, b) => (a||'').localeCompare(b||'', 'it'));
+            const projs = this.getProjectsOnly();
+            const allOwners = [...new Set(projs.flatMap(p => p.owners || []))].sort((a, b) => (a||'').localeCompare(b||'', 'it'));
             ['ganttOwnerFilter', 'tableOwnerFilter', 'calendarOwnerFilter'].forEach(id => {
                 const sel = document.getElementById(id);
                 if (!sel) return;
@@ -344,6 +373,110 @@ const app = {
         } catch(e) {
             console.error("populateOwnerFilters error", e);
         }
+    },
+
+    clearReminderInputs: function() {
+        const d = document.getElementById('rem_date');
+        const t = document.getElementById('rem_title');
+        const n = document.getElementById('rem_note');
+        if (d) d.value = '';
+        if (t) t.value = '';
+        if (n) n.value = '';
+    },
+
+    addReminder: async function() {
+        const dateEl = document.getElementById('rem_date');
+        const titleEl = document.getElementById('rem_title');
+        const noteEl = document.getElementById('rem_note');
+
+        const date = dateEl ? dateEl.value : '';
+        const title = titleEl ? titleEl.value.trim() : '';
+        const note = noteEl ? noteEl.value.trim() : '';
+
+        if (!date || !title) {
+            this.showAlert('Inserisci almeno Data e Titolo per il promemoria.', 'warning', 3000);
+            return;
+        }
+
+        const meta = this.getMeta();
+        meta.manualReminders = meta.manualReminders || [];
+        meta.manualReminders.push({
+            id: Date.now().toString(),
+            date,
+            title,
+            note,
+            done: false,
+            createdAt: new Date().toISOString(),
+            doneAt: null
+        });
+
+        meta.manualReminders.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+        if (titleEl) titleEl.value = '';
+        if (noteEl) noteEl.value = '';
+
+        await this.syncToGithub();
+    },
+
+    toggleReminderDone: async function(id) {
+        const meta = this.getMeta();
+        const r = (meta.manualReminders || []).find(x => x.id === id);
+        if (!r) return;
+        r.done = !r.done;
+        r.doneAt = r.done ? new Date().toISOString() : null;
+        await this.syncToGithub();
+    },
+
+    deleteReminder: async function(id) {
+        if (!confirm('Eliminare questo promemoria?')) return;
+        const meta = this.getMeta();
+        meta.manualReminders = (meta.manualReminders || []).filter(x => x.id !== id);
+        await this.syncToGithub();
+    },
+
+    renderReminders: function() {
+        const list = document.getElementById('remindersList');
+        if (!list) return;
+
+        const showDone = document.getElementById('rem_show_done')?.checked || false;
+        const meta = this.getMeta();
+        const items = (meta.manualReminders || [])
+            .filter(r => r && r.date && r.title)
+            .filter(r => showDone || !r.done)
+            .sort((a, b) => {
+                const d = (a.date || '').localeCompare(b.date || '');
+                if (d !== 0) return d;
+                return (a.title || '').localeCompare(b.title || '', 'it');
+            });
+
+        if (items.length === 0) {
+            list.innerHTML = `<div class="text-muted small">Nessun promemoria da mostrare.</div>`;
+            return;
+        }
+
+        list.innerHTML = items.map(r => {
+            const cls = r.done ? 'opacity-50' : '';
+            const titleCls = r.done ? 'text-decoration-line-through' : '';
+            const badge = r.done ? 'bg-secondary' : 'bg-primary';
+            const btnText = r.done ? '↩️' : '✅';
+            const btnTitle = r.done ? 'Segna come non completato' : 'Segna come completato';
+
+            return `
+            <div class="d-flex justify-content-between align-items-start border rounded p-2 mb-2 ${cls}">
+                <div class="pe-2">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge ${badge}">📝</span>
+                        <span class="small text-muted">${dayjs(r.date).format('DD/MM/YYYY')}</span>
+                        <span class="fw-semibold ${titleCls}">${(r.title || '').replace(/</g, '&lt;')}</span>
+                    </div>
+                    ${r.note ? `<div class="small text-muted mt-1">${(r.note || '').replace(/</g, '&lt;')}</div>` : ''}
+                </div>
+                <div class="d-flex gap-2 flex-shrink-0">
+                    <button class="btn btn-outline-success btn-sm" onclick="app.toggleReminderDone('${r.id}')" title="${btnTitle}">${btnText}</button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="app.deleteReminder('${r.id}')" title="Elimina">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
     },
 
     saveProject: async function() {
@@ -440,6 +573,7 @@ const app = {
         document.getElementById('p_stimaCosto').value = '';
         if (id) {
             const p = this.data.find(x => x.id === id);
+            if (!p || this.isMeta(p)) return;
             document.getElementById('p_id').value                = p.id;
             document.getElementById('p_nome').value              = p.nome;
             document.getElementById('p_fornitori').value         = (p.fornitori || []).join(', ');
@@ -471,6 +605,8 @@ const app = {
     },
 
     deleteProject: async function(id) {
+        const p = this.data.find(x => x.id === id);
+        if (p && this.isMeta(p)) return;
         if (confirm('Sei sicuro di voler eliminare questo progetto?')) {
             this.data = this.data.filter(p => p.id !== id);
             await this.syncToGithub();
@@ -479,6 +615,7 @@ const app = {
 
     toggleHidden: async function(id) {
         const p = this.data.find(x => x.id === id);
+        if (p && this.isMeta(p)) return;
         if (p) {
             p.hidden = !p.hidden;
             if (!p.hidden && this.isAutoStale(p)) {
@@ -574,7 +711,7 @@ const app = {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        let filtered = this.data.filter(p =>
+        let filtered = this.getProjectsOnly().filter(p =>
             (showHidden || !this.isHiddenForUI(p)) &&
             (p.nome || '').toLowerCase().includes(search) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
@@ -649,7 +786,7 @@ const app = {
         const sortMode = document.getElementById('ganttSortSelect')?.value || 'prod_inprogress_first';
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
 
-        let data = this.data.filter(p =>
+        let data = this.getProjectsOnly().filter(p =>
             (showHidden || !this.isHiddenForUI(p)) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
             (!filtOwn  || (p.owners    && p.owners.includes(filtOwn))) &&
@@ -820,23 +957,28 @@ const app = {
         const filtMile = document.getElementById('calendarMilestoneFilter')?.value || '';
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
 
-        const activeMilestones = filtMile && filtMile !== 'custom'
+        const showProjectMilestones = filtMile !== 'reminders';
+        const showCustomMilestones = (filtMile === '' || filtMile === 'custom');
+        const showReminders = (filtMile === '' || filtMile === 'reminders');
+
+        const milestonesToUse = (filtMile && !['custom', 'reminders'].includes(filtMile))
             ? this.MILESTONES.filter(m => m.key === filtMile)
             : this.MILESTONES;
 
         const events = [];
-        this.data
-            .filter(p =>
-                (showHidden || !this.isHiddenForUI(p)) &&
-                (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
-                (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
-            )
-            .forEach(p => {
-                const currentlyHidden = this.isHiddenForUI(p);
-                const autoStale = this.isAutoStale(p);
-                
-                if (filtMile !== 'custom') {
-                    activeMilestones.forEach(m => {
+
+        if (showProjectMilestones) {
+            this.getProjectsOnly()
+                .filter(p =>
+                    (showHidden || !this.isHiddenForUI(p)) &&
+                    (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
+                    (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
+                )
+                .forEach(p => {
+                    const currentlyHidden = this.isHiddenForUI(p);
+                    const autoStale = this.isAutoStale(p);
+
+                    milestonesToUse.forEach(m => {
                         const v = p[m.key];
                         if (v && v.trim() !== '') {
                             events.push({
@@ -847,33 +989,55 @@ const app = {
                                 owners:    p.owners    || [],
                                 label:     m.label,
                                 badge:     m.badge,
-                                manual:    p.hidden,
                                 autoStale: autoStale,
                                 hidden:    currentlyHidden
                             });
                         }
                     });
-                }
-                
-                if ((filtMile === '' || filtMile === 'custom') && p.customMilestones) {
-                    p.customMilestones.forEach(cm => {
-                        if (cm.date && cm.date.trim() !== '') {
-                            events.push({
-                                date:      dayjs(cm.date),
-                                sortKey:   cm.date,
-                                nome:      p.nome,
-                                fornitori: p.fornitori || [],
-                                owners:    p.owners    || [],
-                                label:     `⭐ ${cm.label}`,
-                                badge:     'bg-success',
-                                manual:    p.hidden,
-                                autoStale: autoStale,
-                                hidden:    currentlyHidden
-                            });
-                        }
+
+                    if (showCustomMilestones && p.customMilestones) {
+                        p.customMilestones.forEach(cm => {
+                            if (cm.date && cm.date.trim() !== '') {
+                                events.push({
+                                    date:      dayjs(cm.date),
+                                    sortKey:   cm.date,
+                                    nome:      p.nome,
+                                    fornitori: p.fornitori || [],
+                                    owners:    p.owners    || [],
+                                    label:     `⭐ ${cm.label}`,
+                                    badge:     'bg-success',
+                                    autoStale: autoStale,
+                                    hidden:    currentlyHidden
+                                });
+                            }
+                        });
+                    }
+                });
+        }
+
+        if (showReminders) {
+            const meta = this.getMeta();
+            const showDone = document.getElementById('rem_show_done')?.checked || false;
+            (meta.manualReminders || [])
+                .filter(r => r && r.date && r.title)
+                .filter(r => showDone || !r.done)
+                .forEach(r => {
+                    events.push({
+                        date: dayjs(r.date),
+                        sortKey: r.date,
+                        nome: r.title,
+                        fornitori: [],
+                        owners: [],
+                        label: '📝 Promemoria',
+                        badge: r.done ? 'bg-secondary' : 'bg-primary',
+                        reminder: true,
+                        done: !!r.done,
+                        note: r.note || ''
                     });
-                }
-            });
+                });
+        }
+
+        this.renderReminders();
 
         if (events.length === 0) {
             container.innerHTML = "<div class='col-12'><p class='text-center text-muted p-3'>Nessun evento da visualizzare per i filtri selezionati.</p></div>";
@@ -896,20 +1060,24 @@ const app = {
                         <div class="card-header bg-white fw-bold text-uppercase text-primary">${g.label}</div>
                         <div class="card-body">
                             ${sorted.map(ev => {
-                                const fb = ev.fornitori.map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')).join('');
-                                const ob = ev.owners.map(o    => this._badgeSpan('owner', o, 'gantt-supplier-badge mb-1')).join('');
+                                const fb = (ev.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')).join('');
+                                const ob = (ev.owners || []).map(o    => this._badgeSpan('owner', o, 'gantt-supplier-badge mb-1')).join('');
                                 const opacityCls = ev.hidden ? 'opacity-50' : '';
-                                
+
+                                const isReminder = !!ev.reminder;
+                                const titleCls = (isReminder && ev.done) ? 'text-decoration-line-through' : '';
+
                                 let statusIcon = '';
-                                if (ev.manual) statusIcon = '🚫';
-                                else if (ev.autoStale) statusIcon = '<span title="Auto-archiviato">🕐</span>';
-                                
+                                if (ev.autoStale) statusIcon = '<span title="Auto-archiviato">🕐</span>';
+                                if (isReminder && ev.done) statusIcon = '<span title="Completato">✅</span>';
+
                                 return `
                                 <div class="cal-event-item d-flex align-items-start gap-2 mb-2 ${opacityCls}">
                                     <span class="cal-event-date">${ev.date.format('DD/MM')}</span>
                                     <div>
                                         <span class="badge ${ev.badge} me-1">${ev.label}</span>
-                                        <span class="small fw-semibold">${ev.nome} ${statusIcon}</span>
+                                        <span class="small fw-semibold ${titleCls}">${ev.nome} ${statusIcon}</span>
+                                        ${ev.note ? `<div class="small text-muted mt-1">${(ev.note || '').replace(/</g, '&lt;')}</div>` : ''}
                                         ${fb || ob ? `<div class="cal-supplier-list mt-1">${fb}${ob}</div>` : ''}
                                     </div>
                                 </div>`;
