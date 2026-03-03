@@ -1099,7 +1099,18 @@ const app = {
 
         sortedMonthKeys.forEach((k) => {
             const g = groups[k];
-            const sorted = g.events.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+            
+            // Ordina prima gli eventi "attivi" (non ingrigiti) e poi quelli ingrigiti
+            const sorted = g.events.sort((a, b) => {
+                const aInactive = (a.isHiddenPref || a.hidden || a.userGray || (a.pastGray && !a.reminder) || (a.reminder && a.done)) ? 1 : 0;
+                const bInactive = (b.isHiddenPref || b.hidden || b.userGray || (b.pastGray && !b.reminder) || (b.reminder && b.done)) ? 1 : 0;
+                
+                if (aInactive !== bInactive) {
+                    return aInactive - bInactive; // 0 (active) viene prima di 1 (inactive)
+                }
+                
+                return a.sortKey.localeCompare(b.sortKey);
+            });
 
             html += `
             <div class="col-md-6 col-xl-4">
