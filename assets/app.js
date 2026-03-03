@@ -1081,42 +1081,36 @@ const app = {
             groups[key].events.push(ev);
         });
 
-        const currentMonthKey = dayjs().format('YYYY-MM');
         const sortedMonthKeys = Object.keys(groups).sort();
-        const firstMonthToOpen = sortedMonthKeys.includes(currentMonthKey) ? currentMonthKey : sortedMonthKeys[0];
 
         let html = `
         <div class="col-12 mb-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0 rounded-top">
                     <h5 class="mb-0 fw-bold text-primary">📅 Eventi in Calendario</h5>
                     <div class="form-check form-switch m-0">
                         <input class="form-check-input" type="checkbox" id="calShowHiddenPrefs" onchange="app.renderCalendar()" ${calShowHiddenPrefs ? 'checked' : ''}>
                         <label class="form-check-label small text-muted mt-1 ms-1" for="calShowHiddenPrefs">Mostra elementi nascosti</label>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="accordion accordion-flush" id="calendarAccordion">
+                <div class="card-body p-4">
+                    <div class="row g-4">
         `;
 
-        sortedMonthKeys.forEach((k, idx) => {
+        sortedMonthKeys.forEach((k) => {
             const g = groups[k];
             const sorted = g.events.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-            const collapseId = `collapseMonth_${idx}`;
-            const isOpen = (k === firstMonthToOpen);
-            const showClass = isOpen ? 'show' : '';
-            const btnClass = isOpen ? '' : 'collapsed';
 
             html += `
-            <div class="accordion-item">
-                <h2 class="accordion-header">
-                    <button class="accordion-button ${btnClass} fw-bold bg-light border-bottom" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                        <span class="text-uppercase">${g.label}</span> 
-                        <span class="badge bg-secondary ms-2 rounded-pill">${sorted.length}</span>
-                    </button>
-                </h2>
-                <div id="${collapseId}" class="accordion-collapse collapse ${showClass}" data-bs-parent="#calendarAccordion">
-                    <div class="accordion-body p-3">
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h6 class="mb-0 fw-bold text-uppercase text-primary d-flex align-items-center justify-content-between">
+                            ${g.label} 
+                            <span class="badge bg-secondary rounded-pill">${sorted.length}</span>
+                        </h6>
+                    </div>
+                    <div class="card-body p-3 bg-white">
                         <div class="d-flex flex-column gap-2">
             `;
 
@@ -1180,7 +1174,7 @@ const app = {
                 </div>`;
             });
 
-            html += `</div></div></div>`;
+            html += `</div></div></div></div>`;
         });
 
         html += `</div></div></div></div>`;
