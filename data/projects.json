@@ -1,61 +1,7 @@
 [
   {
-    "id": "1771404797962",
-    "nome": "ZTL",
-    "fornitori": [
-      "Engineering"
-    ],
-    "owners": [
-      "Simone",
-      "Flavia"
-    ],
-    "dataStima": "2026-03-11",
-    "dataIA": "2026-03-18",
-    "devStart": "2026-03-19",
-    "devEnd": "2026-03-27",
-    "dataTest": "2026-03-28",
-    "dataProd": "2026-04-10",
-    "dataUAT": "2026-04-06",
-    "dataBS": "2026-04-11",
-    "jiraLinks": [
-      "https://telepass.atlassian.net/browse/ZTL-14"
-    ],
-    "dataScadenzaStima": "2026-02-18",
-    "dataConfigSistema": "2026-02-28",
-    "stimaGgu": 10,
-    "rcFornitore": 390,
-    "stimaCosto": 3900
-  },
-  {
-    "id": "1771414171964",
-    "nome": "ZTL",
-    "fornitori": [
-      "Accenture"
-    ],
-    "owners": [
-      "Andrea",
-      "Michele"
-    ],
-    "dataStima": "2026-03-11",
-    "dataIA": "2026-03-19",
-    "devStart": "2026-03-26",
-    "devEnd": "2026-04-06",
-    "dataTest": "2026-04-09",
-    "dataProd": "2026-04-26",
-    "dataUAT": null,
-    "dataBS": null,
-    "jiraLinks": [
-      "https://telepass.atlassian.net/browse/ZTL-4"
-    ],
-    "dataScadenzaStima": null,
-    "dataConfigSistema": null,
-    "stimaGgu": null,
-    "rcFornitore": null,
-    "stimaCosto": null
-  },
-  {
-    "id": "1771428352503",
-    "nome": "Iban Revolut",
+    "id": "1772009349631",
+    "nome": "Nuovo modello Sempre (DIRF1)",
     "fornitori": [
       "Engineering"
     ],
@@ -63,20 +9,339 @@
       "Simone"
     ],
     "dataStima": "",
-    "dataIA": "",
-    "devStart": "2026-01-12",
-    "devEnd": "2026-01-19",
-    "dataTest": "2026-01-19",
-    "dataProd": "2026-02-24",
+    "dataIA": null,
+    "devStart": "2026-02-23",
+    "devEnd": "2026-03-20",
+    "dataTest": "2026-04-03",
+    "dataProd": "2026-05-05",
     "dataUAT": null,
     "dataBS": null,
     "jiraLinks": [
-      "https://telepass.atlassian.net/browse/DPS-2407"
+      "https://telepass.atlassian.net/browse/DPS-2596"
+    ],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": "2026-03-03",
+    "stimaGgu": 20,
+    "rcFornitore": 400,
+    "stimaCosto": 8000,
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772009744530",
+    "nome": "Iban esteri in onboarding sito",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": "",
+    "dataIA": null,
+    "devStart": "2026-03-23",
+    "devEnd": "2026-03-30",
+    "dataTest": "2026-03-31",
+    "dataProd": "2026-04-20",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/MKTG-538"
     ],
     "dataScadenzaStima": null,
     "dataConfigSistema": null,
-    "stimaGgu": 14,
-    "rcFornitore": 360,
-    "stimaCosto": 5040
+    "stimaGgu": 10,
+    "rcFornitore": 400,
+    "stimaCosto": 4000,
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772009902765",
+    "nome": "Gestione KO SEDA",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": "",
+    "dataIA": null,
+    "devStart": "2026-04-16",
+    "devEnd": "2026-05-15",
+    "dataTest": "2026-05-15",
+    "dataProd": "2026-06-23",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/DPS-2472"
+    ],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": "2026-04-16",
+    "stimaGgu": 35,
+    "rcFornitore": 400,
+    "stimaCosto": 14000,
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772012800744",
+    "nome": "Nuovo evento iban check",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": "",
+    "dataIA": null,
+    "devStart": "2026-06-08",
+    "devEnd": "2026-06-15",
+    "dataTest": "2026-06-16",
+    "dataProd": "2026-07-15",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/COMPLIANCE-1805"
+    ],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": "2026-06-08",
+    "stimaGgu": 10,
+    "rcFornitore": 400,
+    "stimaCosto": 4000,
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772014826609",
+    "nome": "Nuovo evento Iban check Mule",
+    "fornitori": [
+      "Accenture"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": "",
+    "dataIA": null,
+    "devStart": "2026-04-17",
+    "devEnd": "2026-04-23",
+    "dataTest": "2026-04-23",
+    "dataProd": "2026-07-15",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/COMPLIANCE-1807"
+    ],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 5,
+    "rcFornitore": 364,
+    "stimaCosto": 1820,
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772015383415",
+    "nome": "Risottomissione documenti Onfido da altri canali",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone",
+      "Andrea"
+    ],
+    "dataStima": "",
+    "dataIA": null,
+    "devStart": "2026-04-27",
+    "devEnd": "2026-06-04",
+    "dataTest": "2026-06-11",
+    "dataProd": "2026-06-23",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/SLF-4854"
+    ],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 40,
+    "rcFornitore": 400,
+    "stimaCosto": 16000,
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772015597105",
+    "nome": "Abilitazione Carte di debito in onboarding G&G",
+    "fornitori": [
+      "Accenture"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": "",
+    "dataIA": null,
+    "devStart": "2026-01-28",
+    "devEnd": "2026-02-10",
+    "dataTest": "2026-02-11",
+    "dataProd": "2026-03-10",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 6,
+    "rcFornitore": 364,
+    "stimaCosto": 2184,
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772015731800",
+    "nome": "Piano Vignette GoByTLP",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Andrea"
+    ],
+    "dataStima": "",
+    "dataIA": null,
+    "devStart": "2026-02-02",
+    "devEnd": "2026-02-12",
+    "dataTest": "2026-02-13",
+    "dataProd": "2026-04-20",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/GBT2-78"
+    ],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 12,
+    "rcFornitore": 400,
+    "stimaCosto": 4800,
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772017506539",
+    "nome": "Riskshield",
+    "fornitori": [
+      "Accenture"
+    ],
+    "owners": [
+      "Flavia"
+    ],
+    "dataStima": "2026-02-18",
+    "dataIA": "2026-02-26",
+    "devStart": "2026-02-23",
+    "devEnd": "2026-03-06",
+    "dataTest": "2026-03-06",
+    "dataProd": "2026-03-19",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/RISKSHIELD-267"
+    ],
+    "dataScadenzaStima": "2026-02-18",
+    "dataConfigSistema": null,
+    "stimaGgu": 15,
+    "rcFornitore": 364,
+    "stimaCosto": 5460,
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772018580311",
+    "nome": "ZTL",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": null,
+    "dataIA": null,
+    "devStart": null,
+    "devEnd": null,
+    "dataTest": "2026-02-25",
+    "dataProd": "2026-03-10",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/ZTL-131",
+      "https://telepass.atlassian.net/browse/ZTL-257",
+      "https://telepass.atlassian.net/browse/ZTL-265"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": null,
+    "rcFornitore": null,
+    "stimaCosto": null,
+    "note": "",
+    "hidden": false
+  },
+  {
+    "id": "1772019429452",
+    "nome": "Carrelli abbandonati",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": "2026-03-05",
+    "dataIA": null,
+    "devStart": null,
+    "devEnd": null,
+    "dataTest": null,
+    "dataProd": null,
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/DPS-2647"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": null,
+    "rcFornitore": null,
+    "stimaCosto": null,
+    "note": "Ancora in attesa di un feedback da data platform",
+    "hidden": false
+  },
+  {
+    "id": "1772029183107",
+    "nome": "Domicilio onboarding sito",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": null,
+    "dataIA": null,
+    "devStart": null,
+    "devEnd": null,
+    "dataTest": null,
+    "dataProd": null,
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/MKTG-577"
+    ],
+    "customMilestones": [
+      {
+        "label": "Creare story e richiedere pianificazione a ENG",
+        "date": "2026-02-27"
+      }
+    ],
+    "dataScadenzaStima": "2026-03-06",
+    "dataConfigSistema": null,
+    "stimaGgu": null,
+    "rcFornitore": null,
+    "stimaCosto": null,
+    "note": "Aperta story, in attesa stime",
+    "hidden": false
   }
 ]

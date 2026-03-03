@@ -10,34 +10,46 @@ const app = {
     editorModal: null,
     settingsModal: null,
     MAX_JIRA_LINKS: 10,
+    MAX_CUSTOM_MILESTONES: 5,
 
     MILESTONES: [
-        { key: 'dataIA',            label: '\ud83e\udd16 Consegna IA',           badge: 'bg-info text-dark' },
-        { key: 'devStart',          label: '\u25b6\ufe0f Inizio Sviluppo',        badge: 'bg-primary' },
-        { key: 'devEnd',            label: '\u23f9\ufe0f Fine Sviluppo',          badge: 'bg-secondary' },
-        { key: 'dataUAT',           label: '\ud83d\udc65 UAT',                    badge: 'bg-info' },
-        { key: 'dataBS',            label: '\ud83d\udcbc Business Simulation',    badge: 'bg-dark' },
-        { key: 'dataTest',          label: '\ud83e\uddea Rilascio Test',          badge: 'bg-warning text-dark' },
-        { key: 'dataProd',          label: '\ud83d\ude80 Rilascio Prod',          badge: 'bg-success' },
-        { key: 'dataScadenzaStima', label: '\ud83d\udce5 Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
-        { key: 'dataConfigSistema', label: '\ud83d\udd27 Config Sistema',         badge: 'bg-light text-dark border' }
+        { key: 'dataIA',            label: '🤖 Consegna IA',           badge: 'bg-info text-dark' },
+        { key: 'devStart',          label: '▶️ Inizio Sviluppo',        badge: 'bg-primary' },
+        { key: 'devEnd',            label: '⏹️ Fine Sviluppo',          badge: 'bg-secondary' },
+        { key: 'dataUAT',           label: '👥 UAT',                    badge: 'bg-info' },
+        { key: 'dataBS',            label: '💼 Business Simulation',    badge: 'bg-dark' },
+        { key: 'dataTest',          label: '🧪 Rilascio Test',          badge: 'bg-warning text-dark' },
+        { key: 'dataProd',          label: '🚀 Rilascio Prod',          badge: 'bg-success' },
+        { key: 'dataScadenzaStima', label: '📥 Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
+        { key: 'dataConfigSistema', label: '🔧 Config Sistema',         badge: 'bg-light text-dark border' }
     ],
 
+    OWNER_COLORS: {
+        'simone': { bg: '#0d6efd', fg: '#ffffff' }, // blu
+        'flavia': { bg: '#6f42c1', fg: '#ffffff' }, // viola
+        'andrea': { bg: '#ffc107', fg: '#212529' }, // giallo
+    },
+
     init: function() {
-        this.editorModal = new bootstrap.Modal(document.getElementById('editorModal'));
-        this.settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+        try {
+            this.editorModal = new bootstrap.Modal(document.getElementById('editorModal'));
+            this.settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
 
-        ['p_stimaGgu', 'p_rcFornitore'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('input', () => this.calcCosto());
-        });
+            ['p_stimaGgu', 'p_rcFornitore'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => this.calcCosto());
+            });
 
-        const savedCfg = localStorage.getItem('pm_tracker_config');
-        if (savedCfg) {
-            this.config = JSON.parse(savedCfg);
-            this.loadData();
-        } else {
-            this.showSettings();
+            const savedCfg = localStorage.getItem('pm_tracker_config');
+            if (savedCfg) {
+                this.config = JSON.parse(savedCfg);
+                this.loadData();
+            } else {
+                this.showSettings();
+            }
+        } catch (err) {
+            console.error(err);
+            this.showAlert(`Errore critico avvio: ${err.message}`, 'danger');
         }
     },
 
@@ -51,7 +63,116 @@ const app = {
     normalizeProject: function(p) {
         const owners    = this.csvToArray(p.owners || p.owner);
         const fornitori = this.csvToArray(p.fornitori);
-        return { ...p, owners, fornitori };
+        const customMilestones = Array.isArray(p.customMilestones) ? p.customMilestones : [];
+        const hidden = !!p.hidden;
+        return { ...p, owners, fornitori, customMilestones, hidden };
+    },
+
+    isAutoStale: function(p) {
+        try {
+            if (p.hidden) return false;
+            if (!p.dataProd || p.dataProd.trim() === '') return false;
+            const prodDate = new Date(p.dataProd);
+            if (isNaN(prodDate.getTime())) return false;
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+            
+            return prodDate < oneMonthAgo;
+        } catch (e) {
+            console.error("Errore in isAutoStale:", e);
+            return false;
+        }
+    },
+
+    isHiddenForUI: function(p) {
+        return p.hidden || this.isAutoStale(p);
+    },
+
+    _hashString: function(str) {
+        const s = (str || '').toString().trim().toLowerCase();
+        let h = 0;
+        for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+        return Math.abs(h);
+    },
+
+    _autoColor: function(name, kind) {
+        const hue = this._hashString(`${kind}:${name}`) % 360;
+        return { bg: `hsl(${hue}, 65%, 45%)`, fg: '#ffffff' };
+    },
+
+    _badgeColor: function(kind, name) {
+        const key = (name || '').toString().trim().toLowerCase();
+        if (kind === 'owner' && this.OWNER_COLORS[key]) {
+            return this.OWNER_COLORS[key];
+        }
+        return this._autoColor(name, kind);
+    },
+
+    _badgeStyle: function(kind, name) {
+        const c = this._badgeColor(kind, name);
+        return `background: ${c.bg} !important; color: ${c.fg} !important; border: 1px solid rgba(0,0,0,0.12);`;
+    },
+
+    _badgeSpan: function(kind, name, className) {
+        const safeName = (name ?? '').toString();
+        return `<span class="${className}" style="${this._badgeStyle(kind, safeName)}">${safeName}</span>`;
+    },
+
+    renderCustomMilestoneFields: function(milestones) {
+        const container = document.getElementById('customMilestonesContainer');
+        container.innerHTML = '';
+        const items = (milestones && milestones.length > 0) ? milestones : [];
+        items.forEach((m, i) => this._appendCustomMilestoneField(m.label, m.date, i));
+        this._updateAddCustomMilestoneBtn();
+    },
+
+    _appendCustomMilestoneField: function(label, date, index) {
+        const container = document.getElementById('customMilestonesContainer');
+        const wrap = document.createElement('div');
+        wrap.className = 'd-flex align-items-center gap-2 mb-2 custom-milestone-row';
+        wrap.dataset.milestoneIndex = index;
+        wrap.innerHTML = `
+            <input type="text" class="form-control form-control-sm custom-ms-label" placeholder="Nome (es: Creare Story)" value="${label ? label.replace(/"/g, '&quot;') : ''}">
+            <input type="date" class="form-control form-control-sm custom-ms-date" value="${date || ''}">
+            <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0" onclick="app.removeCustomMilestone(this)" title="Rimuovi">&times;</button>
+        `;
+        container.appendChild(wrap);
+    },
+
+    addCustomMilestone: function() {
+        const container = document.getElementById('customMilestonesContainer');
+        const count = container.querySelectorAll('.custom-milestone-row').length;
+        if (count >= this.MAX_CUSTOM_MILESTONES) return;
+        this._appendCustomMilestoneField('', '', count);
+        this._updateAddCustomMilestoneBtn();
+    },
+
+    removeCustomMilestone: function(btn) {
+        btn.closest('.custom-milestone-row').remove();
+        this._updateAddCustomMilestoneBtn();
+    },
+
+    _updateAddCustomMilestoneBtn: function() {
+        const container = document.getElementById('customMilestonesContainer');
+        const btn = document.querySelector('button[onclick="app.addCustomMilestone()"]');
+        if (!btn) return;
+        const count = container.querySelectorAll('.custom-milestone-row').length;
+        btn.disabled = count >= this.MAX_CUSTOM_MILESTONES;
+        btn.textContent = count >= this.MAX_CUSTOM_MILESTONES
+            ? `Limite raggiunto (${this.MAX_CUSTOM_MILESTONES})`
+            : '+ Aggiungi Milestone Personalizzata';
+    },
+
+    _getCustomMilestonesFromModal: function() {
+        const rows = Array.from(document.querySelectorAll('.custom-milestone-row'));
+        return rows.map(row => {
+            return {
+                label: row.querySelector('.custom-ms-label').value.trim(),
+                date: row.querySelector('.custom-ms-date').value
+            };
+        }).filter(m => m.label !== '' && m.date !== '');
     },
 
     jiraLabel: function(url) {
@@ -70,7 +191,7 @@ const app = {
         if (!jiraLinks || jiraLinks.length === 0) return '';
         return jiraLinks
             .filter(u => u && u.trim())
-            .map(u => `<a href="${u}" target="_blank" class="badge bg-primary text-decoration-none me-1 mb-1" title="${u}">${this.jiraLabel(u)} \ud83d\udd17</a>`)
+            .map(u => `<a href="${u}" target="_blank" class="badge bg-primary text-decoration-none me-1 mb-1" title="${u}">${this.jiraLabel(u)} 🔗</a>`)
             .join('');
     },
 
@@ -129,7 +250,7 @@ const app = {
         const rc  = parseFloat(document.getElementById('p_rcFornitore').value);
         const out = document.getElementById('p_stimaCosto');
         if (!isNaN(ggu) && !isNaN(rc) && ggu >= 0 && rc >= 0) {
-            out.value = '\u20ac ' + (ggu * rc).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            out.value = '€ ' + (ggu * rc).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         } else {
             out.value = '';
         }
@@ -156,7 +277,10 @@ const app = {
     },
 
     loadData: async function() {
-        if (!this.config.token) return;
+        if (!this.config.token) {
+            this.showAlert('Nessun token impostato, vai su Config.', 'warning');
+            return;
+        }
         this.showAlert('Caricamento dati...', 'info');
         try {
             const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}?t=${new Date().getTime()}`;
@@ -172,9 +296,7 @@ const app = {
             this.data = JSON.parse(decodeURIComponent(escape(atob(json.content)))).map(p => this.normalizeProject(p));
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
-            this.renderTable();
-            this.renderGantt();
-            this.renderCalendar();
+            this.renderAll();
             this.showAlert('Dati aggiornati con successo!', 'success', 2000);
         } catch (error) {
             console.error(error);
@@ -183,60 +305,67 @@ const app = {
     },
 
     populateFornitoreFilters: function() {
-        const allSuppliers = [...new Set(this.data.flatMap(p => p.fornitori || []))].sort();
-        ['ganttFornitoreFilter', 'tableFornitoreFilter', 'calendarFornitoreFilter'].forEach(id => {
-            const sel = document.getElementById(id);
-            if (!sel) return;
-            const current = sel.value;
-            while (sel.options.length > 1) sel.remove(1);
-            allSuppliers.forEach(f => {
-                const opt = document.createElement('option');
-                opt.value = f;
-                opt.textContent = f;
-                sel.appendChild(opt);
+        try {
+            const allSuppliers = [...new Set(this.data.flatMap(p => p.fornitori || []))].sort();
+            ['ganttFornitoreFilter', 'tableFornitoreFilter', 'calendarFornitoreFilter'].forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const current = sel.value;
+                while (sel.options.length > 1) sel.remove(1);
+                allSuppliers.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f;
+                    opt.textContent = f;
+                    sel.appendChild(opt);
+                });
+                if (current && allSuppliers.includes(current)) sel.value = current;
             });
-            if (current && allSuppliers.includes(current)) sel.value = current;
-        });
+        } catch (e) {
+            console.error("populateFornitoreFilters error", e);
+        }
     },
 
     populateOwnerFilters: function() {
-        const allOwners = [...new Set(this.data.flatMap(p => p.owners || []))].sort((a, b) => a.localeCompare(b, 'it'));
-        ['ganttOwnerFilter', 'tableOwnerFilter', 'calendarOwnerFilter'].forEach(id => {
-            const sel = document.getElementById(id);
-            if (!sel) return;
-            const current = sel.value;
-            while (sel.options.length > 1) sel.remove(1);
-            allOwners.forEach(o => {
-                const opt = document.createElement('option');
-                opt.value = o;
-                opt.textContent = o;
-                sel.appendChild(opt);
+        try {
+            const allOwners = [...new Set(this.data.flatMap(p => p.owners || []))].sort((a, b) => (a||'').localeCompare(b||'', 'it'));
+            ['ganttOwnerFilter', 'tableOwnerFilter', 'calendarOwnerFilter'].forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const current = sel.value;
+                while (sel.options.length > 1) sel.remove(1);
+                allOwners.forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o;
+                    opt.textContent = o;
+                    sel.appendChild(opt);
+                });
+                if (current && allOwners.includes(current)) sel.value = current;
             });
-            if (current && allOwners.includes(current)) sel.value = current;
-        });
+        } catch(e) {
+            console.error("populateOwnerFilters error", e);
+        }
     },
 
     saveProject: async function() {
         const dates = {
-            stima:    document.getElementById('p_stima').value,
-            // IA è opzionale e senza vincoli di posizione nella sequenza
+            stima:    document.getElementById('p_stima').value || null,
             ia:       document.getElementById('p_ia').value || null,
-            devStart: document.getElementById('p_devStart').value,
-            devEnd:   document.getElementById('p_devEnd').value,
-            test:     document.getElementById('p_test').value,
-            prod:     document.getElementById('p_prod').value,
-            uat:      document.getElementById('p_uat').value  || null,
-            bs:       document.getElementById('p_bs').value   || null
+            devStart: document.getElementById('p_devStart').value || null,
+            devEnd:   document.getElementById('p_devEnd').value || null,
+            test:     document.getElementById('p_test').value || null,
+            prod:     document.getElementById('p_prod').value || null,
+            uat:      document.getElementById('p_uat').value || null,
+            bs:       document.getElementById('p_bs').value || null
         };
 
-        // Sequenza obbligatoria: Stima ≤ DevStart ≤ DevEnd ≤ Test ≤ Prod
-        // La data IA è libera (opzionale, nessun vincolo di ordine)
-        if (dates.stima > dates.devStart ||
-            dates.devStart > dates.devEnd ||
-            dates.devEnd   > dates.test   ||
-            dates.test     > dates.prod) {
-            document.getElementById('dateValidationMsg').innerText =
-                'ERRORE: La sequenza temporale non \u00e8 rispettata! (Stima \u2264 Dev Start \u2264 Dev End \u2264 Test \u2264 Prod)';
+        let errorMsg = '';
+        if (dates.stima && dates.devStart && dates.stima > dates.devStart) errorMsg = 'Stima non può essere successiva a Dev Start';
+        else if (dates.devStart && dates.devEnd && dates.devStart > dates.devEnd) errorMsg = 'Dev Start non può essere successivo a Dev End';
+        else if (dates.devEnd && dates.test && dates.devEnd > dates.test) errorMsg = 'Dev End non può essere successivo al Test';
+        else if (dates.test && dates.prod && dates.test > dates.prod) errorMsg = 'Il Test non può essere successivo a Prod';
+        
+        if (errorMsg) {
+            document.getElementById('dateValidationMsg').innerText = `ERRORE: ${errorMsg}`;
             return;
         }
 
@@ -261,13 +390,19 @@ const app = {
             dataUAT:           dates.uat,
             dataBS:            dates.bs,
             jiraLinks:         this._getJiraLinksFromModal(),
+            customMilestones:  this._getCustomMilestonesFromModal(),
             dataScadenzaStima: document.getElementById('p_dataScadenzaStima').value || null,
             dataConfigSistema: document.getElementById('p_dataConfigSistema').value || null,
             stimaGgu:          isNaN(stimaGgu)    ? null : stimaGgu,
             rcFornitore:       isNaN(rcFornitore) ? null : rcFornitore,
-            stimaCosto:        (!isNaN(stimaGgu) && !isNaN(rcFornitore)) ? stimaGgu * rcFornitore : null
+            stimaCosto:        (!isNaN(stimaGgu) && !isNaN(rcFornitore)) ? stimaGgu * rcFornitore : null,
+            note:              document.getElementById('p_note').value,
+            hidden:            false
         };
+
         if (id) {
+            const oldProj = this.data.find(p => p.id === id);
+            if (oldProj && oldProj.hidden) newProj.hidden = true;
             this.data[this.data.findIndex(p => p.id === id)] = newProj;
         } else {
             this.data.push(newProj);
@@ -321,14 +456,16 @@ const app = {
             document.getElementById('p_dataConfigSistema').value = p.dataConfigSistema || '';
             document.getElementById('p_stimaGgu').value          = p.stimaGgu    != null ? p.stimaGgu    : '';
             document.getElementById('p_rcFornitore').value       = p.rcFornitore != null ? p.rcFornitore : '';
+            document.getElementById('p_note').value              = p.note || '';
             this.calcCosto();
-            const links = p.jiraLinks && p.jiraLinks.length > 0
-                ? p.jiraLinks
-                : (p.jira ? [p.jira] : []);
+            
+            const links = p.jiraLinks && p.jiraLinks.length > 0 ? p.jiraLinks : (p.jira ? [p.jira] : []);
             this.renderJiraFields(links);
+            this.renderCustomMilestoneFields(p.customMilestones || []);
         } else {
             document.getElementById('p_id').value = '';
             this.renderJiraFields([]);
+            this.renderCustomMilestoneFields([]);
         }
         this.editorModal.show();
     },
@@ -336,6 +473,17 @@ const app = {
     deleteProject: async function(id) {
         if (confirm('Sei sicuro di voler eliminare questo progetto?')) {
             this.data = this.data.filter(p => p.id !== id);
+            await this.syncToGithub();
+        }
+    },
+
+    toggleHidden: async function(id) {
+        const p = this.data.find(x => x.id === id);
+        if (p) {
+            p.hidden = !p.hidden;
+            if (!p.hidden && this.isAutoStale(p)) {
+                this.showAlert('Progetto ripristinato, ma è vecchio di 1 mese. Rimuovi o modifica la data di Prod per renderlo visibile senza la spunta.', 'warning', 6000);
+            }
             await this.syncToGithub();
         }
     },
@@ -395,13 +543,24 @@ const app = {
                 });
                 break;
             case 'alpha_asc':
-                sorted.sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+                sorted.sort((a, b) => (a.nome||'').localeCompare(b.nome||'', 'it'));
                 break;
             case 'alpha_desc':
-                sorted.sort((a, b) => b.nome.localeCompare(a.nome, 'it'));
+                sorted.sort((a, b) => (b.nome||'').localeCompare(a.nome||'', 'it'));
                 break;
         }
         return sorted;
+    },
+
+    renderAll: function() {
+        try {
+            this.renderTable();
+            this.renderGantt();
+            this.renderCalendar();
+        } catch (err) {
+            console.error("Errore in renderAll:", err);
+            this.showAlert(`Errore visualizzazione: ${err.message}`, 'danger');
+        }
     },
 
     renderTable: function() {
@@ -410,12 +569,14 @@ const app = {
         const filtForn = document.getElementById('tableFornitoreFilter')?.value || '';
         const filtOwn  = document.getElementById('tableOwnerFilter')?.value || '';
         const sortMode = document.getElementById('tableSortSelect')?.value || 'prod_inprogress_first';
+        const showHidden = document.getElementById('globalShowHidden')?.checked || false;
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         let filtered = this.data.filter(p =>
-            p.nome.toLowerCase().includes(search) &&
+            (showHidden || !this.isHiddenForUI(p)) &&
+            (p.nome || '').toLowerCase().includes(search) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
             (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
         );
@@ -423,38 +584,57 @@ const app = {
 
         tbody.innerHTML = filtered.map(p => {
             const isPast = p.dataProd && new Date(p.dataProd) <= today;
-            const rowCls = isPast ? 'class="table-secondary opacity-75"' : '';
+            const autoStale = this.isAutoStale(p);
+            const currentlyHidden = this.isHiddenForUI(p);
 
-            const fornBadge = p.fornitori.map(f => `<span class="badge bg-secondary me-1">${f}</span>`).join('');
-            const ownBadge  = (p.owners || []).map(o => `<span class="badge bg-info text-dark me-1">${o}</span>`).join('');
+            let rowCls = '';
+            if (currentlyHidden) {
+                rowCls = 'class="table-warning opacity-75"';
+            } else if (isPast) {
+                rowCls = 'class="table-secondary opacity-75"';
+            }
+
+            const fornBadge = (p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'badge me-1 mb-1')).join('');
+            const ownBadge  = (p.owners    || []).map(o => this._badgeSpan('owner', o, 'badge me-1 mb-1')).join('');
 
             const extraRows = [];
-            if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">\u23f1\ufe0f ${p.stimaGgu} gg/u</span>`);
-            if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1">\ud83d\udcb0 \u20ac ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
+            if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">⏱️ ${p.stimaGgu} gg/u</span>`);
+            if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1">💰 € ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
 
             const links = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
             const jiraHtml = this.jiraLinksHtml(links);
 
+            let statusBadge = '';
+            if (p.hidden) {
+                statusBadge = '<span class="badge bg-dark ms-1">🚫 Archiviato</span>';
+            } else if (autoStale) {
+                statusBadge = '<span class="badge bg-secondary ms-1">🕐 Auto-archiviato</span>';
+            } else if (isPast) {
+                statusBadge = '<span class="badge bg-success ms-1">✅ Rilasciato</span>';
+            }
+
             return `
             <tr ${rowCls}>
                 <td>
-                    <strong>${p.nome}</strong>
-                    ${isPast ? '<span class="badge bg-success ms-1">\u2705 Rilasciato</span>' : ''}
+                    <strong>${p.nome || 'Senza nome'}</strong>
+                    ${statusBadge}
                     ${jiraHtml ? `<div class="mt-1">${jiraHtml}</div>` : ''}
                     ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
                 </td>
                 <td>
-                    <div>${fornBadge}</div>
-                    ${ownBadge ? `<div class="mt-1">${ownBadge}</div>` : ''}
+                    <div class="d-flex flex-wrap">${fornBadge}</div>
+                    ${ownBadge ? `<div class="mt-1 d-flex flex-wrap">${ownBadge}</div>` : ''}
                 </td>
                 <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
                 <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
-                <td class="small">${this.formatDate(p.devStart)} \u279d ${this.formatDate(p.devEnd)}</td>
+                <td class="small">${this.formatDate(p.devStart)} ➔ ${this.formatDate(p.devEnd)}</td>
                 <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
                 <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
+                <td class="small text-muted" style="max-width: 250px; white-space: pre-wrap;">${p.note || ''}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="app.openModal('${p.id}')">✏️</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="app.deleteProject('${p.id}')">🗑️</button>
+                    <button class="btn btn-sm ${p.hidden ? 'btn-secondary' : 'btn-outline-secondary'} mb-1" onclick="app.toggleHidden('${p.id}')" title="${p.hidden ? 'Ripristina Progetto' : 'Archivia (Nascondi)'}">${p.hidden ? '👁️' : '🚫'}</button>
+                    <button class="btn btn-sm btn-outline-primary mb-1" onclick="app.openModal('${p.id}')" title="Modifica">✏️</button>
+                    <button class="btn btn-sm btn-outline-danger mb-1" onclick="app.deleteProject('${p.id}')" title="Elimina">🗑️</button>
                 </td>
             </tr>`;
         }).join('');
@@ -467,15 +647,18 @@ const app = {
         const filtForn = document.getElementById('ganttFornitoreFilter')?.value || '';
         const filtOwn  = document.getElementById('ganttOwnerFilter')?.value || '';
         const sortMode = document.getElementById('ganttSortSelect')?.value || 'prod_inprogress_first';
+        const showHidden = document.getElementById('globalShowHidden')?.checked || false;
 
         let data = this.data.filter(p =>
+            (showHidden || !this.isHiddenForUI(p)) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
-            (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
+            (!filtOwn  || (p.owners    && p.owners.includes(filtOwn))) &&
+            (p.devStart || p.devEnd || p.dataTest || p.dataProd || p.dataIA || (p.customMilestones && p.customMilestones.length > 0))
         );
         data = this._sortGantt(data, sortMode);
 
         if (data.length === 0) {
-            container.innerHTML = "<p class='text-center p-3 text-muted'>Nessun progetto da visualizzare per i filtri selezionati.</p>";
+            container.innerHTML = "<p class='text-center p-3 text-muted'>Nessun progetto con date programmate trovato per i filtri selezionati.</p>";
             return;
         }
 
@@ -489,7 +672,14 @@ const app = {
         data.forEach(p => {
             [p.dataIA, p.devStart, p.devEnd, p.dataTest, p.dataProd,
              p.dataUAT, p.dataBS, p.dataScadenzaStima, p.dataConfigSistema].forEach(updateRange);
+            if(p.customMilestones) {
+                p.customMilestones.forEach(m => updateRange(m.date));
+            }
         });
+
+        if (!minDate || !maxDate) {
+            minDate = new Date(); maxDate = new Date();
+        }
 
         minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
         let maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
@@ -516,28 +706,54 @@ const app = {
         today.setHours(0, 0, 0, 0);
 
         data.forEach(p => {
-            const leftPct  = pct(p.devStart);
-            const widthPct = Math.max(pct(p.devEnd) - leftPct, 0.5);
+            const startD = p.devStart ? p.devStart : (p.dataTest || p.dataProd || p.dataIA);
+            const endD   = p.devEnd   ? p.devEnd   : startD;
+            
+            const leftPct  = startD ? pct(startD) : 0;
+            const widthPct = startD && endD ? Math.max(pct(endD) - leftPct, 0.5) : 0;
+            const barOpacity = (p.devStart && p.devEnd) ? 1 : 0.2;
 
             const badgesHtml = [
-                ...(p.fornitori || []).map(f => `<span class="gantt-supplier-badge">${f}</span>`),
-                ...(p.owners    || []).map(o => `<span class="gantt-supplier-badge bg-info text-dark">${o}</span>`)
+                ...(p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')),
+                ...(p.owners    || []).map(o => this._badgeSpan('owner', o, 'gantt-supplier-badge mb-1'))
             ].join('');
 
             const isPast = p.dataProd && new Date(p.dataProd) <= today;
-            const rowCls = isPast ? ' gantt-row--released' : '';
+            const autoStale = this.isAutoStale(p);
+            const currentlyHidden = this.isHiddenForUI(p);
 
-            const allMilestones = [
-                { date: p.dataIA,            cls: 'ms-ia',         icon: '\ud83e\udd16', label: 'Consegna IA',           always: true  },
-                { date: p.devStart,          cls: 'ms-dev-start',  icon: '\u25b6\ufe0f',  label: 'Inizio Sviluppo',       always: true  },
-                { date: p.devEnd,            cls: 'ms-dev-end',    icon: '\u23f9\ufe0f',  label: 'Fine Sviluppo',         always: true  },
-                { date: p.dataUAT,           cls: 'ms-uat',        icon: '\ud83d\udc65', label: 'UAT',                   always: false },
-                { date: p.dataBS,            cls: 'ms-bs',         icon: '\ud83d\udcbc', label: 'Business Simulation',   always: false },
-                { date: p.dataTest,          cls: 'ms-test',       icon: '\ud83e\uddea', label: 'Rilascio Test',         always: true  },
-                { date: p.dataProd,          cls: 'ms-prod',       icon: '\ud83d\ude80', label: 'Rilascio Prod',         always: true  },
-                { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '\ud83d\udce5', label: 'Scad. Stima Fornitore', always: false },
-                { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '\ud83d\udd27', label: 'Config Sistema',        always: false }
-            ].filter(m => m.date && m.date.trim() !== '');
+            let rowCls = isPast ? ' gantt-row--released' : '';
+            if (currentlyHidden) rowCls += ' opacity-50';
+
+            let statusIcon = '';
+            if (p.hidden) statusIcon = '<span class="badge bg-dark ms-1">🚫</span>';
+            else if (autoStale) statusIcon = '<span class="badge bg-secondary ms-1" title="Auto-archiviato">🕐</span>';
+
+            let allMilestones = [
+                { date: p.dataIA,            cls: 'ms-ia',         icon: '🤖', label: 'Consegna IA',           always: true  },
+                { date: p.devStart,          cls: 'ms-dev-start',  icon: '▶️',  label: 'Inizio Sviluppo',       always: true  },
+                { date: p.devEnd,            cls: 'ms-dev-end',    icon: '⏹️',  label: 'Fine Sviluppo',         always: true  },
+                { date: p.dataUAT,           cls: 'ms-uat',        icon: '👥', label: 'UAT',                   always: false },
+                { date: p.dataBS,            cls: 'ms-bs',         icon: '💼', label: 'Business Simulation',   always: false },
+                { date: p.dataTest,          cls: 'ms-test',       icon: '🧪', label: 'Rilascio Test',         always: true  },
+                { date: p.dataProd,          cls: 'ms-prod',       icon: '🚀', label: 'Rilascio Prod',         always: true  },
+                { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '📥', label: 'Scad. Stima Fornitore', always: false },
+                { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '🔧', label: 'Config Sistema',        always: false }
+            ];
+
+            if (p.customMilestones) {
+                p.customMilestones.forEach(cm => {
+                    allMilestones.push({
+                        date: cm.date,
+                        cls: 'ms-custom',
+                        icon: '⭐',
+                        label: cm.label,
+                        always: false
+                    });
+                });
+            }
+
+            allMilestones = allMilestones.filter(m => m.date && m.date.trim() !== '');
 
             const dateGroups = {};
             allMilestones.forEach(m => { (dateGroups[m.date] = dateGroups[m.date] || []).push(m); });
@@ -548,19 +764,21 @@ const app = {
 
             const milestonesHtml = allMilestones.map(m => {
                 const translateX = (-16 + m.offsetPx).toFixed(0);
+                const inlineColor = m.cls === 'ms-custom' ? 'color:#198754;' : '';
+                const inlineLineColor = m.cls === 'ms-custom' ? 'background:#198754;' : '';
                 return `<div class="gantt-milestone ${m.cls}" style="left:${pct(m.date).toFixed(2)}%;transform:translateX(${translateX}px);" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
-                    <span class="ms-date">${dayjs(m.date).format('DD/MM')}</span>
+                    <span class="ms-date" style="${inlineColor}">${dayjs(m.date).format('DD/MM')}</span>
                     <span class="ms-icon">${m.icon}</span>
-                    <span class="ms-line"></span>
+                    <span class="ms-line" style="${inlineLineColor}"></span>
                 </div>`;
             }).join('');
 
             html += `
                 <div class="gantt-row${rowCls}">
-                    <div class="gantt-project-col"><div><strong>${p.nome}</strong><div class="gantt-supplier-list">${badgesHtml}</div></div></div>
+                    <div class="gantt-project-col"><div><strong>${p.nome} ${statusIcon}</strong><div class="gantt-supplier-list">${badgesHtml}</div></div></div>
                     <div class="gantt-timeline-col" style="position:relative;">
-                        <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;" title="Sviluppo: ${dayjs(p.devStart).format('DD/MM/YYYY')} - ${dayjs(p.devEnd).format('DD/MM/YYYY')}">
-                            <span>\u2699\ufe0f Sviluppo</span>
+                        <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity};" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
+                            <span>⚙️ Sviluppo</span>
                         </div>
                         ${milestonesHtml}
                     </div>
@@ -572,19 +790,21 @@ const app = {
         const hasBS        = data.some(p => p.dataBS            && p.dataBS.trim()            !== '');
         const hasScadStima = data.some(p => p.dataScadenzaStima && p.dataScadenzaStima.trim() !== '');
         const hasConfigSis = data.some(p => p.dataConfigSistema && p.dataConfigSistema.trim() !== '');
+        const hasCustom    = data.some(p => p.customMilestones  && p.customMilestones.length  > 0);
 
         html += `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">\ud83e\udd16</span> Consegna IA</div>
-            <div class="gantt-legend-item"><span class="legend-ms">\u25b6\ufe0f</span> Inizio Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">\u23f9\ufe0f</span> Fine Sviluppo</div>
-            ${hasUAT       ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udc65</span> UAT</div>'                       : ''}
-            ${hasBS        ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udcbc</span> Business Simulation</div>'        : ''}
-            <div class="gantt-legend-item"><span class="legend-ms">\ud83e\uddea</span> Rilascio Test</div>
-            <div class="gantt-legend-item"><span class="legend-ms">\ud83d\ude80</span> Rilascio Prod</div>
-            ${hasScadStima ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udce5</span> Scad. Stima Fornitore</div>'     : ''}
-            ${hasConfigSis ? '<div class="gantt-legend-item"><span class="legend-ms">\ud83d\udd27</span> Config Sistema</div>'            : ''}
+            <div class="gantt-legend-item"><span class="legend-ms">🤖</span> Consegna IA</div>
+            <div class="gantt-legend-item"><span class="legend-ms">▶️</span> Inizio Sviluppo</div>
+            <div class="gantt-legend-item"><span class="legend-ms">⏹️</span> Fine Sviluppo</div>
+            ${hasUAT       ? '<div class="gantt-legend-item"><span class="legend-ms">👥</span> UAT</div>'                       : ''}
+            ${hasBS        ? '<div class="gantt-legend-item"><span class="legend-ms">💼</span> Business Simulation</div>'        : ''}
+            <div class="gantt-legend-item"><span class="legend-ms">🧪</span> Rilascio Test</div>
+            <div class="gantt-legend-item"><span class="legend-ms">🚀</span> Rilascio Prod</div>
+            ${hasScadStima ? '<div class="gantt-legend-item"><span class="legend-ms">📥</span> Scad. Stima Fornitore</div>'     : ''}
+            ${hasConfigSis ? '<div class="gantt-legend-item"><span class="legend-ms">🔧</span> Config Sistema</div>'            : ''}
+            ${hasCustom    ? '<div class="gantt-legend-item"><span class="legend-ms" style="color:#198754">⭐</span> Milestone Personalizzate</div>'            : ''}
         </div>`;
 
         html += '</div>';
@@ -598,32 +818,61 @@ const app = {
         const filtForn = document.getElementById('calendarFornitoreFilter')?.value || '';
         const filtOwn  = document.getElementById('calendarOwnerFilter')?.value    || '';
         const filtMile = document.getElementById('calendarMilestoneFilter')?.value || '';
+        const showHidden = document.getElementById('globalShowHidden')?.checked || false;
 
-        const activeMilestones = filtMile
+        const activeMilestones = filtMile && filtMile !== 'custom'
             ? this.MILESTONES.filter(m => m.key === filtMile)
             : this.MILESTONES;
 
         const events = [];
         this.data
             .filter(p =>
+                (showHidden || !this.isHiddenForUI(p)) &&
                 (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
                 (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
             )
             .forEach(p => {
-                activeMilestones.forEach(m => {
-                    const v = p[m.key];
-                    if (v && v.trim() !== '') {
-                        events.push({
-                            date:      dayjs(v),
-                            sortKey:   v,
-                            nome:      p.nome,
-                            fornitori: p.fornitori || [],
-                            owners:    p.owners    || [],
-                            label:     m.label,
-                            badge:     m.badge
-                        });
-                    }
-                });
+                const currentlyHidden = this.isHiddenForUI(p);
+                const autoStale = this.isAutoStale(p);
+                
+                if (filtMile !== 'custom') {
+                    activeMilestones.forEach(m => {
+                        const v = p[m.key];
+                        if (v && v.trim() !== '') {
+                            events.push({
+                                date:      dayjs(v),
+                                sortKey:   v,
+                                nome:      p.nome,
+                                fornitori: p.fornitori || [],
+                                owners:    p.owners    || [],
+                                label:     m.label,
+                                badge:     m.badge,
+                                manual:    p.hidden,
+                                autoStale: autoStale,
+                                hidden:    currentlyHidden
+                            });
+                        }
+                    });
+                }
+                
+                if ((filtMile === '' || filtMile === 'custom') && p.customMilestones) {
+                    p.customMilestones.forEach(cm => {
+                        if (cm.date && cm.date.trim() !== '') {
+                            events.push({
+                                date:      dayjs(cm.date),
+                                sortKey:   cm.date,
+                                nome:      p.nome,
+                                fornitori: p.fornitori || [],
+                                owners:    p.owners    || [],
+                                label:     `⭐ ${cm.label}`,
+                                badge:     'bg-success',
+                                manual:    p.hidden,
+                                autoStale: autoStale,
+                                hidden:    currentlyHidden
+                            });
+                        }
+                    });
+                }
             });
 
         if (events.length === 0) {
@@ -647,14 +896,20 @@ const app = {
                         <div class="card-header bg-white fw-bold text-uppercase text-primary">${g.label}</div>
                         <div class="card-body">
                             ${sorted.map(ev => {
-                                const fb = ev.fornitori.map(f => `<span class="gantt-supplier-badge">${f}</span>`).join('');
-                                const ob = ev.owners.map(o    => `<span class="gantt-supplier-badge bg-info text-dark">${o}</span>`).join('');
+                                const fb = ev.fornitori.map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')).join('');
+                                const ob = ev.owners.map(o    => this._badgeSpan('owner', o, 'gantt-supplier-badge mb-1')).join('');
+                                const opacityCls = ev.hidden ? 'opacity-50' : '';
+                                
+                                let statusIcon = '';
+                                if (ev.manual) statusIcon = '🚫';
+                                else if (ev.autoStale) statusIcon = '<span title="Auto-archiviato">🕐</span>';
+                                
                                 return `
-                                <div class="cal-event-item d-flex align-items-start gap-2 mb-2">
+                                <div class="cal-event-item d-flex align-items-start gap-2 mb-2 ${opacityCls}">
                                     <span class="cal-event-date">${ev.date.format('DD/MM')}</span>
                                     <div>
                                         <span class="badge ${ev.badge} me-1">${ev.label}</span>
-                                        <span class="small fw-semibold">${ev.nome}</span>
+                                        <span class="small fw-semibold">${ev.nome} ${statusIcon}</span>
                                         ${fb || ob ? `<div class="cal-supplier-list mt-1">${fb}${ob}</div>` : ''}
                                     </div>
                                 </div>`;

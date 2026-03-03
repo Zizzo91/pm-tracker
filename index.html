@@ -12,7 +12,11 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">PM Tracker</a>
-        <div class="d-flex">
+        <div class="d-flex align-items-center">
+            <div class="form-check form-switch text-light me-3 mb-0 d-flex align-items-center">
+                <input class="form-check-input me-2" type="checkbox" id="globalShowHidden" onchange="app.renderAll()" style="cursor: pointer;">
+                <label class="form-check-label small mb-0 fw-semibold" for="globalShowHidden" style="cursor: pointer;">Mostra Archiviati</label>
+            </div>
             <button class="btn btn-outline-light btn-sm me-2" onclick="app.loadData()">🔄 Ricarica</button>
             <button class="btn btn-warning btn-sm" onclick="app.showSettings()">⚙️ Config</button>
         </div>
@@ -77,6 +81,7 @@
                             <th>Sviluppo (Start-End)</th>
                             <th>Test</th>
                             <th>Prod</th>
+                            <th>Note</th>
                             <th>Azioni</th>
                         </tr>
                     </thead>
@@ -143,6 +148,7 @@
                         <option value="dataProd">🚀 Rilascio Prod</option>
                         <option value="dataScadenzaStima">📥 Scad. Stima Fornitore</option>
                         <option value="dataConfigSistema">🔧 Config Sistema</option>
+                        <option value="custom">⭐ Milestone Personalizzate</option>
                     </select>
                 </div>
                 <div class="d-flex align-items-center gap-2">
@@ -193,7 +199,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label small">1. Stima Pianificazione</label>
-                            <input type="date" class="form-control" id="p_stima" required>
+                            <input type="date" class="form-control" id="p_stima">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">2. Condivisione IA <span class="text-muted">(opzionale)</span></label>
@@ -201,19 +207,19 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">3. Start Sviluppo</label>
-                            <input type="date" class="form-control" id="p_devStart" required>
+                            <input type="date" class="form-control" id="p_devStart">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">4. End Sviluppo</label>
-                            <input type="date" class="form-control" id="p_devEnd" required>
+                            <input type="date" class="form-control" id="p_devEnd">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">5. Rilascio Test</label>
-                            <input type="date" class="form-control" id="p_test" required>
+                            <input type="date" class="form-control" id="p_test">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small">6. Rilascio Prod</label>
-                            <input type="date" class="form-control" id="p_prod" required>
+                            <input type="date" class="form-control" id="p_prod">
                         </div>
                     </div>
 
@@ -228,6 +234,12 @@
                             <input type="date" class="form-control" id="p_bs">
                         </div>
                     </div>
+                    
+                    <h6 class="mt-4 border-bottom pb-2">Milestone Personalizzate <span class="text-muted fw-normal small">(opzionali, ad-hoc per questo progetto)</span></h6>
+                    <div id="customMilestonesContainer">
+                        <!-- Le custom milestone vengono aggiunte dinamicamente -->
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="app.addCustomMilestone()">+ Aggiungi Milestone Personalizzata</button>
 
                     <h6 class="mt-4 border-bottom pb-2">Dati Economici &amp; Operativi <span class="text-muted fw-normal small">(opzionali)</span></h6>
                     <div class="row g-3">
@@ -254,6 +266,11 @@
                     </div>
 
                     <div id="dateValidationMsg" class="text-danger mt-2 small"></div>
+
+                    <h6 class="mt-4 border-bottom pb-2">Note</h6>
+                    <div class="mb-3">
+                        <textarea class="form-control" id="p_note" rows="2" placeholder="Note aggiuntive sul progetto..."></textarea>
+                    </div>
 
                     <!-- Link Jira multipli (fino a 10) -->
                     <h6 class="mt-4 border-bottom pb-2">Link Jira <span class="text-muted fw-normal small">(opzionali, fino a 10)</span></h6>
@@ -308,6 +325,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=14"></script>
+<script src="assets/app.js?v=18"></script>
 </body>
 </html>
