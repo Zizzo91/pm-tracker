@@ -64,10 +64,11 @@ const app = {
     getMeta: function() {
         let meta = this.data.find(p => this.isMeta(p));
         if (!meta) {
-            meta = { id: this.META_ID, type: 'meta', manualReminders: [] };
+            meta = { id: this.META_ID, type: 'meta', manualReminders: [], hiddenMilestones: [] };
             this.data.push(meta);
         }
         if (!Array.isArray(meta.manualReminders)) meta.manualReminders = [];
+        if (!Array.isArray(meta.hiddenMilestones)) meta.hiddenMilestones = [];
         return meta;
     },
 
@@ -84,8 +85,9 @@ const app = {
 
     normalizeProject: function(p) {
         if (p && ((p.type && p.type === 'meta') || p.id === this.META_ID)) {
-            const manualReminders = Array.isArray(p.manualReminders) ? p.manualReminders : [];
-            return { ...p, id: p.id || this.META_ID, type: 'meta', manualReminders };
+            const manualReminders  = Array.isArray(p.manualReminders) ? p.manualReminders : [];
+            const hiddenMilestones = Array.isArray(p.hiddenMilestones) ? p.hiddenMilestones : [];
+            return { ...p, id: p.id || this.META_ID, type: 'meta', manualReminders, hiddenMilestones };
         }
         const owners    = this.csvToArray(p.owners || p.owner);
         const fornitori = this.csvToArray(p.fornitori);
@@ -397,7 +399,6 @@ const app = {
         }
 
         const meta = this.getMeta();
-        meta.manualReminders = meta.manualReminders || [];
         meta.manualReminders.push({
             id: Date.now().toString(),
             date,
@@ -429,6 +430,16 @@ const app = {
         if (!confirm('Eliminare questo promemoria?')) return;
         const meta = this.getMeta();
         meta.manualReminders = (meta.manualReminders || []).filter(x => x.id !== id);
+        await this.syncToGithub();
+    },
+
+    toggleHideMilestone: async function(uid) {
+        const meta = this.getMeta();
+        if (meta.hiddenMilestones.includes(uid)) {
+            meta.hiddenMilestones = meta.hiddenMilestones.filter(x => x !== uid);
+        } else {
+            meta.hiddenMilestones.push(uid);
+        }
         await this.syncToGithub();
     },
 
@@ -938,6 +949,7 @@ const app = {
         const filtOwn    = document.getElementById('calendarOwnerFilter')?.value    || '';
         const filtMile   = document.getElementById('calendarMilestoneFilter')?.value || '';
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
+        const showHiddenManual = document.getElementById('cal_show_hidden')?.checked || false;
 
         const showProjectMilestones = filtMile !== 'reminders';
         const showCustomMilestones  = (filtMile === '' || filtMile === 'custom');
@@ -948,6 +960,8 @@ const app = {
             : this.MILESTONES;
 
         const events = [];
+        const meta = this.getMeta();
+        const hiddenList = meta.hiddenMilestones || [];
 
         if (showProjectMilestones) {
             this.getProjectsOnly()
@@ -963,8 +977,14 @@ const app = {
                     milestonesToUse.forEach(m => {
                         const v = p[m.key];
                         if (v && v.trim() !== '') {
+                            const uid = `${p.id}_${m.key}`;
+                            const manuallyHidden = hiddenList.includes(uid);
+                            
+                            if (manuallyHidden && !showHiddenManual) return;
+
                             const pastGray = this._calIsPast(v, m.key);
                             events.push({
+                                uid:       uid,
                                 date:      dayjs(v),
                                 sortKey:   v,
                                 nome:      p.nome,
@@ -973,6 +993,7 @@ const app = {
                                 label:     m.label,
                                 badge:     pastGray ? 'bg-secondary' : m.badge,
                                 pastGray,
+                                manuallyHidden,
                                 milestoneKey: m.key,
                                 autoStale,
                                 hidden:    currentlyHidden
@@ -983,8 +1004,14 @@ const app = {
                     if (showCustomMilestones && p.customMilestones) {
                         p.customMilestones.forEach(cm => {
                             if (cm.date && cm.date.trim() !== '') {
+                                const uid = `${p.id}_custom_${this._hashString(cm.label + cm.date)}`;
+                                const manuallyHidden = hiddenList.includes(uid);
+
+                                if (manuallyHidden && !showHiddenManual) return;
+
                                 const pastGray = this._calIsPast(cm.date, 'custom');
                                 events.push({
+                                    uid:       uid,
                                     date:      dayjs(cm.date),
                                     sortKey:   cm.date,
                                     nome:      p.nome,
@@ -993,6 +1020,7 @@ const app = {
                                     label:     `⭐ ${cm.label}`,
                                     badge:     pastGray ? 'bg-secondary' : 'bg-success',
                                     pastGray,
+                                    manuallyHidden,
                                     milestoneKey: 'custom',
                                     autoStale,
                                     hidden:    currentlyHidden
@@ -1004,7 +1032,6 @@ const app = {
         }
 
         if (showReminders) {
-            const meta     = this.getMeta();
             const showDone = document.getElementById('rem_show_done')?.checked || false;
             (meta.manualReminders || [])
                 .filter(r => r && r.date && r.title)
@@ -1039,6 +1066,8 @@ const app = {
             groups[key].events.push(ev);
         });
 
+        const todayStr = dayjs().format('YYYY-MM-DD');
+
         container.innerHTML = Object.keys(groups).sort().map(k => {
             const g      = groups[k];
             const sorted = g.events.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
@@ -1053,21 +1082,34 @@ const app = {
 
                                 const isReminder  = !!ev.reminder;
                                 const isPastGray  = !!ev.pastGray && !isReminder;
+                                const isToday     = ev.date.format('YYYY-MM-DD') === todayStr;
 
-                                // opacity: 50% se archiviato, 55% se passato-ingrigito, normale altrimenti
-                                const opacityCls  = ev.hidden ? 'opacity-50' : (isPastGray ? 'cal-event--past' : '');
+                                // opacity: 50% se archiviato o nascosto manualmente, 55% se passato-ingrigito
+                                const opacityCls  = (ev.hidden || ev.manuallyHidden) ? 'opacity-50' : (isPastGray ? 'cal-event--past' : '');
                                 const titleCls    = (isReminder && ev.done) ? 'text-decoration-line-through' : (isPastGray ? 'text-muted' : '');
 
                                 let statusIcon = '';
                                 if (ev.autoStale)          statusIcon = '<span title="Auto-archiviato">🕐</span>';
                                 if (isReminder && ev.done) statusIcon = '<span title="Completato">✅</span>';
 
+                                const hideBtn = ev.uid ? `<button class="btn btn-link btn-sm p-0 ms-1 text-muted text-decoration-none" onclick="app.toggleHideMilestone('${ev.uid}')" title="${ev.manuallyHidden ? 'Mostra milestone' : 'Nascondi milestone'}">${ev.manuallyHidden ? '👁️' : '🚫'}</button>` : '';
+                                
+                                // Evidenziazione per oggi
+                                const todayBg = isToday ? 'bg-warning bg-opacity-25 border border-warning rounded p-2 mb-2' : 'border-bottom mb-2 pb-1';
+                                const todayBadge = isToday ? '<span class="badge bg-danger ms-1 heartbeat-animation" style="font-size:0.6rem;">OGGI</span>' : '';
+
                                 return `
-                                <div class="cal-event-item d-flex align-items-start gap-2 mb-2 ${opacityCls}">
-                                    <span class="cal-event-date${isPastGray ? ' text-muted' : ''}">${ev.date.format('DD/MM')}</span>
-                                    <div>
-                                        <span class="badge ${ev.badge} me-1">${ev.label}</span>
-                                        <span class="small fw-semibold ${titleCls}">${ev.nome} ${statusIcon}</span>
+                                <div class="cal-event-item d-flex align-items-start gap-2 ${opacityCls} ${todayBg}" style="${!isToday ? 'border-color:#eee;' : ''}">
+                                    <span class="cal-event-date${isPastGray && !isToday ? ' text-muted' : ''}">${ev.date.format('DD/MM')}</span>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <span class="badge ${ev.badge} me-1">${ev.label}</span>
+                                                ${todayBadge}
+                                                <div class="small fw-semibold ${titleCls} mt-1">${ev.nome} ${statusIcon}</div>
+                                            </div>
+                                            ${hideBtn}
+                                        </div>
                                         ${ev.note ? `<div class="small text-muted mt-1">${(ev.note || '').replace(/</g, '&lt;')}</div>` : ''}
                                         ${fb || ob ? `<div class="cal-supplier-list mt-1">${fb}${ob}</div>` : ''}
                                     </div>
