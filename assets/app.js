@@ -7,6 +7,8 @@ const app = {
         path: 'data/projects.json'
     },
     sha: null,
+    lastETag: null, // Per ETag caching intelligente
+    searchTimeout: null, // Per debounce
     editorModal: null,
     settingsModal: null,
     MAX_JIRA_LINKS: 10,
@@ -55,6 +57,16 @@ const app = {
             console.error(err);
             this.showAlert(`Errore critico avvio: ${err.message}`, 'danger');
         }
+    },
+
+    // Funzione Debounce per la ricerca
+    debouncedRenderTable: function() {
+        if (this.searchTimeout) {
+            clearTimeout(this.searchTimeout);
+        }
+        this.searchTimeout = setTimeout(() => {
+            this.renderTable();
+        }, 300); // 300ms di ritardo
     },
 
     isMeta: function(p) {
@@ -302,32 +314,56 @@ const app = {
         this.loadData();
     },
 
-    loadData: async function() {
+    loadData: async function(force = false) {
         if (!this.config.token) {
             this.showAlert('Nessun token impostato, vai su Config.', 'warning');
             return;
         }
-        this.showAlert('Caricamento dati...', 'info');
+        
+        this.showAlert('Caricamento dati...', 'info', 1000);
+        
         try {
-            const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}?t=${new Date().getTime()}`;
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `token ${this.config.token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
+            // Selezioniamo URL con o senza anti-cache basato sul parametro force
+            const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}${force ? '?t=' + new Date().getTime() : ''}`;
+            
+            const headers = {
+                'Authorization': `token ${this.config.token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            };
+
+            // Implementiamo Caching intelligente tramite ETag
+            if (!force && this.lastETag) {
+                headers['If-None-Match'] = this.lastETag;
+            }
+
+            const response = await fetch(url, { headers, cache: force ? 'no-cache' : 'default' });
+            
+            // Se i dati non sono cambiati (304), ricarica l'interfaccia con i dati già in memoria
+            if (response.status === 304) {
+                this.renderAll();
+                this.showAlert('Dati già aggiornati (Cache)', 'success', 2000);
+                return;
+            }
+
             if (!response.ok) throw new Error(`Errore GitHub: ${response.status}`);
+            
+            // Salviamo il nuovo ETag
+            this.lastETag = response.headers.get('ETag');
             const json = await response.json();
+            
             this.sha  = json.sha;
             this.data = JSON.parse(decodeURIComponent(escape(atob(json.content)))).map(p => this.normalizeProject(p));
+            
             this.getMeta();
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
             this.renderAll();
-            this.showAlert('Dati aggiornati con successo!', 'success', 2000);
+            
+            this.showAlert('Dati scaricati con successo!', 'success', 2000);
+            
         } catch (error) {
             console.error(error);
-            this.showAlert(`Impossibile caricare i dati: ${error.message}`, 'danger');
+            this.showAlert(`Impossibile caricare i dati: ${error.message}`, 'danger', 5000);
         }
     },
 
@@ -549,25 +585,39 @@ const app = {
     },
 
     syncToGithub: async function() {
-        this.showAlert('Salvataggio su GitHub in corso...', 'warning');
+        this.showAlert('Salvataggio in corso...', 'info', 2000);
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(this.data, null, 2))));
             const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}`;
+            
             const response = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Authorization': `token ${this.config.token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: `Update data via PM Tracker webapp - ${new Date().toISOString()}`, content, sha: this.sha })
             });
+            
             if (!response.ok) {
+                // Gestione Conflitti (Qualcun altro ha modificato il file)
+                if (response.status === 409) {
+                    throw new Error("⚠️ Conflitto di versione! Il file è stato modificato da un'altra pagina o persona. Ricarica la pagina per evitare di perdere dati.");
+                }
                 const err = await response.json();
                 throw new Error(err.message || 'Salvataggio fallito');
             }
-            this.sha = (await response.json()).content.sha;
-            this.showAlert('Dati salvati su GitHub! Aggiornamento in corso...', 'success');
+            
+            const result = await response.json();
+            this.sha = result.content.sha;
+            
+            // Disabilitiamo temporaneamente l'ETag per forzare il prossimo download fresco
+            this.lastETag = null; 
+            
+            this.showAlert('Salvataggio completato!', 'success', 3000);
+            
+            // Ricarichiamo in background per garantire la consistenza
             await this.loadData();
         } catch (e) {
             console.error('Errore sync:', e);
-            this.showAlert(`Errore salvataggio: ${e.message}`, 'danger');
+            this.showAlert(`Errore salvataggio: ${e.message}`, 'danger', 8000); // Più tempo per leggere l'errore
         }
     },
 
@@ -1196,12 +1246,40 @@ const app = {
         return d ? dayjs(d).format('DD/MM/YY') : 'N/A';
     },
 
-    showAlert: function(msg, type = 'info', timeout = 0) {
-        const div = document.getElementById('alertArea');
-        if (!div) return;
-        div.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
-            ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
-        if (timeout) setTimeout(() => { div.innerHTML = ''; }, timeout);
+    showAlert: function(msg, type = 'info', timeout = 3000) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return; // Fallback di sicurezza
+
+        const toastId = 'toast-' + Date.now();
+        
+        let icon = 'ℹ️';
+        if (type === 'success') icon = '✅';
+        else if (type === 'danger') icon = '❌';
+        else if (type === 'warning') icon = '⚠️';
+
+        // Usiamo i toast text-bg-* di bootstrap
+        const bgClass = type === 'warning' ? 'text-bg-warning' : (type === 'info' ? 'text-bg-info text-dark' : `text-bg-${type}`);
+        
+        const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center ${bgClass} border-0 mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${timeout}">
+            <div class="d-flex">
+                <div class="toast-body fw-semibold d-flex align-items-center gap-2">
+                    <span>${icon}</span>
+                    <span>${msg}</span>
+                </div>
+                <button type="button" class="btn-close ${type === 'warning' ? '' : 'btn-close-white'} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>`;
+
+        container.insertAdjacentHTML('beforeend', toastHtml);
+        const toastElement = document.getElementById(toastId);
+        
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+        
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
     }
 };
 
