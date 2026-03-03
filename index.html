@@ -17,15 +17,13 @@
                 <input class="form-check-input me-2" type="checkbox" id="globalShowHidden" onchange="app.renderAll()" style="cursor: pointer;">
                 <label class="form-check-label small mb-0 fw-semibold" for="globalShowHidden" style="cursor: pointer;">Mostra Archiviati</label>
             </div>
-            <button class="btn btn-outline-light btn-sm me-2" onclick="app.loadData()">🔄 Ricarica</button>
+            <button class="btn btn-outline-light btn-sm me-2" onclick="app.loadData(true)">🔄 Ricarica</button>
             <button class="btn btn-warning btn-sm" onclick="app.showSettings()">⚙️ Config</button>
         </div>
     </div>
 </nav>
 
 <div class="container-fluid px-4">
-    <div id="alertArea"></div>
-
     <!-- Tabs Nav -->
     <ul class="nav nav-tabs mb-3" id="mainTab" role="tablist">
         <li class="nav-item">
@@ -67,7 +65,7 @@
                     <select id="tableOwnerFilter" class="form-select form-select-sm" style="min-width:180px" onchange="app.renderTable()">
                         <option value="">Tutti gli owner</option>
                     </select>
-                    <input type="text" id="searchInput" class="form-control form-control-sm" style="min-width:180px" placeholder="Cerca progetto..." onkeyup="app.renderTable()">
+                    <input type="text" id="searchInput" class="form-control form-control-sm" style="min-width:180px" placeholder="Cerca progetto..." oninput="app.debouncedRenderTable()">
                 </div>
             </div>
             <div class="table-responsive bg-white shadow-sm rounded">
@@ -364,10 +362,13 @@
     </div>
 </div>
 
+<!-- Toast Container per Notifiche -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055" id="toastContainer"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=22"></script>
+<script src="assets/app.js?v=23"></script>
 </body>
 </html>
