@@ -94,17 +94,33 @@ body {
 
 /* === GANTT CHART === */
 .gantt-custom {
-  overflow-x: auto;
-  margin: 20px 30px;
+  max-height: 600px;
+  overflow: auto;
+  margin: 0;
   border: 1px solid #dee2e6;
   border-radius: 8px;
   background: white;
+  position: relative;
 }
-.gantt-header { display: flex; background: #e9ecef; font-weight: bold; border-bottom: 2px solid #0d6efd; }
+.gantt-header { 
+  display: flex; 
+  background: #e9ecef; 
+  font-weight: bold; 
+  border-bottom: 2px solid #0d6efd;
+  position: sticky;
+  top: 0;
+  z-index: 50; 
+}
 .gantt-project-col {
   min-width: 200px; width: 200px; padding: 12px;
   border-right: 1px solid #dee2e6; background: #f8f9fa;
   display: flex; align-items: center;
+  position: sticky;
+  left: 0;
+  z-index: 40;
+}
+.gantt-header .gantt-project-col {
+  z-index: 60; /* Top-left corner needs highest z-index */
 }
 .gantt-supplier-list { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px; }
 .gantt-supplier-badge {
@@ -120,8 +136,9 @@ body {
   border-right: 1px solid #dee2e6;
   background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
   font-size: 0.85rem; font-weight: 600; color: #495057;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.gantt-body { background: white; max-height: 500px; overflow-y: auto; }
+.gantt-body { background: white; }
 .gantt-row { display: flex; border-bottom: 1px solid #dee2e6; min-height: 84px; transition: background-color 0.2s ease; }
 .gantt-row:hover { background: #f1f3f5; }
 
@@ -149,9 +166,16 @@ body {
   padding: 0 12px; cursor: pointer; transition: all 0.3s ease;
   color: white; font-size: 0.82rem; font-weight: 600;
   box-shadow: 0 2px 8px rgba(13,110,253,0.3); top: 32px; z-index: 5;
+  overflow: hidden;
 }
 .gantt-bar:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(13,110,253,0.5); }
 .gantt-bar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gantt-bar-progress {
+  position: absolute; left: 0; top: 0; height: 100%;
+  background: rgba(255,255,255,0.25);
+  border-right: 2px solid rgba(255,255,255,0.5);
+  z-index: 1;
+}
 
 /* === GANTT MILESTONES === */
 .gantt-milestone {
