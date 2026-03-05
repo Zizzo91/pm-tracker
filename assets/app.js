@@ -157,13 +157,29 @@ const app = {
 
     _projectColors: function(name) {
         if (!name) return { bg: '#ffffff', border: '#dee2e6', barBg: '#0d6efd', barBorder: '#0a58ca' };
-        const hue = this._hashString(`proj_color_${name}`) % 360;
-        return { 
-            bg: `hsl(${hue}, 70%, 96%)`, 
-            border: `hsl(${hue}, 60%, 45%)`,
-            barBg: `hsl(${hue}, 65%, 85%)`,
-            barBorder: `hsl(${hue}, 60%, 45%)`
-        };
+        
+        // Palette curata di 15 colori ben distinti e leggibili
+        const palette = [
+            { bg: '#eef2ff', border: '#0d6efd', barBg: '#cfe2ff', barBorder: '#0a58ca' }, // 0. Blu chiaro
+            { bg: '#f4f0ff', border: '#6f42c1', barBg: '#e0cffc', barBorder: '#59359a' }, // 1. Viola / Lilla
+            { bg: '#fdf8f5', border: '#c27b5e', barBg: '#f2d8cd', barBorder: '#9c543a' }, // 2. Marroncino / Terracotta
+            { bg: '#f0fdf4', border: '#198754', barBg: '#d1f2e0', barBorder: '#146c43' }, // 3. Verde
+            { bg: '#fff6f0', border: '#fd7e14', barBg: '#ffe5d0', barBorder: '#e0660b' }, // 4. Arancione
+            { bg: '#fff0f6', border: '#d63384', barBg: '#fccce1', barBorder: '#a32060' }, // 5. Rosa
+            { bg: '#f0fbff', border: '#0dcaf0', barBg: '#cff4fc', barBorder: '#0aa2c0' }, // 6. Azzurro / Ciano
+            { bg: '#fff5f5', border: '#dc3545', barBg: '#f8d7da', barBorder: '#b02a37' }, // 7. Rosso
+            { bg: '#fffbea', border: '#cfa00c', barBg: '#fae39d', barBorder: '#a88106' }, // 8. Giallo / Senape
+            { bg: '#f4f5fd', border: '#6610f2', barBg: '#e2d6fa', barBorder: '#520dc2' }, // 9. Indaco
+            { bg: '#f2fbf7', border: '#20c997', barBg: '#d1f7ea', barBorder: '#1aa179' }, // 10. Verde Menta
+            { bg: '#fcf3f4', border: '#9e2a2b', barBg: '#eed2d4', barBorder: '#7a2021' }, // 11. Bordeaux
+            { bg: '#fbf7f4', border: '#8b4513', barBg: '#e8d2c3', barBorder: '#66320e' }, // 12. Marrone
+            { bg: '#fcf0f8', border: '#8f2d56', barBg: '#ebd1e0', barBorder: '#6e2141' }, // 13. Prugna
+            { bg: '#f2f9f9', border: '#127369', barBg: '#cbe7e7', barBorder: '#0d544c' }  // 14. Petrolio
+        ];
+
+        // Usiamo una chiave leggermente modificata in modo da rimescolare le assegnazioni rispetto a prima
+        const index = this._hashString(`fixed_palette_${name}`) % palette.length;
+        return palette[index];
     },
 
     _badgeSpan: function(kind, name, className) {
