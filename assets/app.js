@@ -1194,9 +1194,17 @@ const app = {
                 
                 let borderCls = 'border border-light shadow-sm';
                 let bgCls = 'bg-white';
+
+                // Applica lo stile da "post-it" se è un promemoria
+                if (isReminder) {
+                    bgCls = 'bg-warning bg-opacity-10';
+                    borderCls = 'border border-warning border-opacity-50 shadow-sm';
+                }
+
+                // Se l'evento è oggi, diamo maggiore evidenza a prescindere
                 if (isToday) {
                     borderCls = 'border border-danger border-2 shadow';
-                    bgCls = 'bg-danger bg-opacity-10';
+                    bgCls = isReminder ? 'bg-warning bg-opacity-25' : 'bg-danger bg-opacity-10';
                 }
 
                 let statusIcon = '';
@@ -1206,8 +1214,8 @@ const app = {
                 html += `
                 <div class="cal-event-item d-flex align-items-start gap-3 p-3 rounded ${opacityCls} ${borderCls} ${bgCls}">
                     <div class="cal-event-date text-center" style="min-width: 50px;">
-                        <div class="fw-bold fs-5 ${isToday ? 'text-danger' : (isPastGray || isUserGray || isHiddenPref ? 'text-muted' : 'text-primary')}">${ev.date.format('DD')}</div>
-                        <div class="small text-uppercase ${isToday ? 'text-danger fw-bold' : 'text-muted'}">${ev.date.format('MMM')}</div>
+                        <div class="fw-bold fs-5 ${isToday ? 'text-danger' : (isPastGray || isUserGray || isHiddenPref ? 'text-muted' : (isReminder ? 'text-warning text-dark' : 'text-primary'))}">${ev.date.format('DD')}</div>
+                        <div class="small text-uppercase ${isToday ? 'text-danger fw-bold' : (isReminder && !isPastGray && !isUserGray ? 'text-warning text-dark' : 'text-muted')}">${ev.date.format('MMM')}</div>
                     </div>
                     
                     <div class="flex-grow-1">
@@ -1218,7 +1226,7 @@ const app = {
                             ${isUserGray ? '<span class="badge bg-secondary">Ingrigito</span>' : ''}
                         </div>
                         <div class="fw-semibold fs-6 ${titleCls}">${ev.nome} ${statusIcon}</div>
-                        ${ev.note ? `<div class="small text-muted mt-1 border-start border-2 ps-2 ms-1">${(ev.note || '').replace(/</g, '&lt;')}</div>` : ''}
+                        ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2 ms-1">${(ev.note || '').replace(/</g, '&lt;')}</div>` : ''}
                         ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
                     </div>
 
