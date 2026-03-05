@@ -74,6 +74,7 @@
                         <tr>
                             <th>Progetto</th>
                             <th>Fornitori / Owner</th>
+                            <th>Prog.</th>
                             <th>Stima</th>
                             <th>IA</th>
                             <th>Sviluppo (Start-End)</th>
@@ -94,7 +95,13 @@
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <button class="btn btn-success btn-sm" onclick="app.openModal()">+ Nuovo Progetto</button>
                     <div class="d-flex align-items-center gap-2">
-                        <h6 class="text-muted mb-0 d-none d-md-block">Visualizzazione temporale fase di Sviluppo</h6>
+                        <div class="d-flex align-items-center gap-1 bg-light p-1 rounded border">
+                            <label class="form-label mb-0 small fw-semibold px-2">🔎 Zoom:</label>
+                            <select id="ganttZoomSelect" class="form-select form-select-sm border-0" onchange="app.renderGantt()">
+                                <option value="month">Mensile</option>
+                                <option value="week">Settimanale</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <div class="d-flex align-items-center gap-1">
@@ -237,8 +244,12 @@
                         </div>
                     </div>
 
-                    <h6 class="mt-4 border-bottom pb-2">Timeline</h6>
+                    <h6 class="mt-4 border-bottom pb-2">Timeline e Avanzamento</h6>
                     <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small">📈 Avanzamento (%)</label>
+                            <input type="number" class="form-control bg-light" id="p_progress" min="0" max="100" placeholder="Es: 50">
+                        </div>
                         <div class="col-md-4">
                             <label class="form-label small">1. Stima Pianificazione</label>
                             <input type="date" class="form-control" id="p_stima">
@@ -370,6 +381,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=24"></script>
+<script src="assets/app.js?v=25"></script>
 </body>
 </html>
