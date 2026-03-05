@@ -100,7 +100,8 @@
                         <div class="d-flex align-items-center gap-1">
                             <label class="form-label mb-0 small fw-semibold">🔄 Ordina:</label>
                             <select id="ganttSortSelect" class="form-select form-select-sm" style="min-width:220px" onchange="app.renderGantt()">
-                                <option value="prod_inprogress_first">🚀 Prod: in corso prima, poi passate</option>
+                                <option value="custom">✋ Manuale (Drag &amp; Drop)</option>
+                                <option value="prod_inprogress_first" selected>🚀 Prod: in corso prima, poi passate</option>
                                 <option value="prod_asc">📅 Rilascio Prod (prima → ultima)</option>
                                 <option value="prod_desc">📅 Rilascio Prod (ultima → prima)</option>
                                 <option value="devStart_inprogress_first">▶️ Dev Start: in corso prima, poi passate</option>
@@ -369,6 +370,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
-<script src="assets/app.js?v=23"></script>
+<script src="assets/app.js?v=24"></script>
 </body>
 </html>
