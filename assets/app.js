@@ -603,6 +603,7 @@ const app = {
         if (id) {
             const oldProj = this.data.find(p => p.id === id);
             if (oldProj && oldProj.hidden) newProj.hidden = true;
+            if (oldProj && oldProj.ganttOrder !== undefined) newProj.ganttOrder = oldProj.ganttOrder; // preserva l'ordine custom
             this.data[this.data.findIndex(p => p.id === id)] = newProj;
         } else {
             this.data.push(newProj);
@@ -715,6 +716,13 @@ const app = {
         };
         const sorted = [...data];
         switch (mode) {
+            case 'custom':
+                sorted.sort((a, b) => {
+                    const oa = a.ganttOrder !== undefined ? a.ganttOrder : 999999;
+                    const ob = b.ganttOrder !== undefined ? b.ganttOrder : 999999;
+                    return oa - ob;
+                });
+                break;
             case 'prod_inprogress_first':
                 sorted.sort((a, b) => {
                     const ia = inProgress(a) ? 0 : 1;
@@ -755,6 +763,86 @@ const app = {
             case 'alpha_desc': sorted.sort((a, b) => (b.nome||'').localeCompare(a.nome||'', 'it')); break;
         }
         return sorted;
+    },
+
+    // --- DRAG AND DROP HANDLERS ---
+    handleDragStart: function(e, id) {
+        e.dataTransfer.setData('text/plain', id);
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => {
+            const row = e.currentTarget || e.target;
+            if (row && row.classList) row.classList.add('dragging');
+        }, 10);
+    },
+    
+    handleDragOver: function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    },
+    
+    handleDragEnter: function(e) {
+        e.preventDefault();
+        const row = e.currentTarget;
+        if (row && row.classList) row.classList.add('drag-over');
+    },
+    
+    handleDragLeave: function(e) {
+        const row = e.currentTarget;
+        // Evitiamo sfarfallii ignorando i leave che avvengono passando sopra elementi figli
+        if (row && row.classList && !row.contains(e.relatedTarget)) {
+            row.classList.remove('drag-over');
+        }
+    },
+    
+    handleDragEnd: function(e) {
+        document.querySelectorAll('.gantt-row').forEach(el => el.classList.remove('dragging', 'drag-over'));
+    },
+    
+    handleDrop: function(e, targetId) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        document.querySelectorAll('.gantt-row').forEach(el => el.classList.remove('dragging', 'drag-over'));
+
+        const sourceId = e.dataTransfer.getData('text/plain');
+        if (!sourceId || sourceId === targetId) return;
+
+        this.reorderGantt(sourceId, targetId);
+    },
+    
+    reorderGantt: async function(sourceId, targetId) {
+        let allProjs = this.getProjectsOnly();
+        
+        // Ordiniamo l'array con il custom order attuale (per non perdere il punto di partenza)
+        allProjs.sort((a, b) => {
+            const oa = a.ganttOrder !== undefined ? a.ganttOrder : 999999;
+            const ob = b.ganttOrder !== undefined ? b.ganttOrder : 999999;
+            return oa - ob;
+        });
+        
+        const sourceIdx = allProjs.findIndex(p => p.id === sourceId);
+        const targetIdx = allProjs.findIndex(p => p.id === targetId);
+
+        if (sourceIdx >= 0 && targetIdx >= 0) {
+            // Sposta l'elemento
+            const [moved] = allProjs.splice(sourceIdx, 1);
+            allProjs.splice(targetIdx, 0, moved);
+            
+            // Riassegna sequenzialmente ganttOrder da 0 a N
+            allProjs.forEach((p, index) => {
+                p.ganttOrder = index;
+            });
+
+            // Sincronizza questo update nel data principale
+            allProjs.forEach(p => {
+                const original = this.data.find(x => x.id === p.id);
+                if (original) original.ganttOrder = p.ganttOrder;
+            });
+
+            this.renderGantt(); // Aggiorna UI istantaneamente
+            await this.syncToGithub(); // Salva in background
+        }
     },
 
     renderAll: function() {
@@ -899,6 +987,8 @@ const app = {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        const isCustomSort = sortMode === 'custom';
+
         data.forEach(p => {
             const startD = p.devStart ? p.devStart : (p.dataTest || p.dataProd || p.dataIA);
             const endD   = p.devEnd   ? p.devEnd   : startD;
@@ -963,9 +1053,24 @@ const app = {
 
             const pColors = this._projectColors(p.nome);
 
+            let rowAttr = '';
+            let dragHandleHtml = '';
+            
+            if (isCustomSort) {
+                rowCls += ' draggable';
+                rowAttr = `draggable="true" ondragstart="app.handleDragStart(event, '${p.id}')" ondragover="app.handleDragOver(event)" ondrop="app.handleDrop(event, '${p.id}')" ondragenter="app.handleDragEnter(event)" ondragleave="app.handleDragLeave(event)" ondragend="app.handleDragEnd(event)"`;
+                dragHandleHtml = '<div class="drag-handle" title="Trascina per riordinare">☰</div>';
+            }
+
             html += `
-                <div class="gantt-row${rowCls}" style="background-color: ${pColors.bg}; border-left: 4px solid ${pColors.border}; margin-bottom: 4px; border-radius: 4px;">
-                    <div class="gantt-project-col"><div><strong>${p.nome} ${statusIcon}</strong><div class="gantt-supplier-list">${badgesHtml}</div></div></div>
+                <div class="gantt-row${rowCls}" ${rowAttr} style="background-color: ${pColors.bg}; border-left: 4px solid ${pColors.border}; margin-bottom: 4px; border-radius: 4px;">
+                    <div class="gantt-project-col">
+                        ${dragHandleHtml}
+                        <div>
+                            <strong>${p.nome} ${statusIcon}</strong>
+                            <div class="gantt-supplier-list">${badgesHtml}</div>
+                        </div>
+                    </div>
                     <div class="gantt-timeline-col" style="position:relative;">
                         <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity}; background-color: ${pColors.barBg}; border: 1px solid ${pColors.barBorder}; box-shadow: none;" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
                             <span style="color: #212529;">⚙️ Sviluppo</span>
