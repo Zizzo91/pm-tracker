@@ -155,6 +155,17 @@ const app = {
         return `background: ${c.bg} !important; color: ${c.fg} !important; border: 1px solid rgba(0,0,0,0.12);`;
     },
 
+    _projectColors: function(name) {
+        if (!name) return { bg: '#ffffff', border: '#dee2e6', barBg: '#0d6efd', barBorder: '#0a58ca' };
+        const hue = this._hashString(`proj_color_${name}`) % 360;
+        return { 
+            bg: `hsl(${hue}, 70%, 96%)`, 
+            border: `hsl(${hue}, 60%, 45%)`,
+            barBg: `hsl(${hue}, 65%, 85%)`,
+            barBorder: `hsl(${hue}, 60%, 45%)`
+        };
+    },
+
     _badgeSpan: function(kind, name, className) {
         const safeName = (name ?? '').toString();
         return `<span class="${className}" style="${this._badgeStyle(kind, safeName)}">${safeName}</span>`;
@@ -934,12 +945,14 @@ const app = {
                 </div>`;
             }).join('');
 
+            const pColors = this._projectColors(p.nome);
+
             html += `
-                <div class="gantt-row${rowCls}">
+                <div class="gantt-row${rowCls}" style="background-color: ${pColors.bg}; border-left: 4px solid ${pColors.border}; margin-bottom: 4px; border-radius: 4px;">
                     <div class="gantt-project-col"><div><strong>${p.nome} ${statusIcon}</strong><div class="gantt-supplier-list">${badgesHtml}</div></div></div>
                     <div class="gantt-timeline-col" style="position:relative;">
-                        <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity};" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
-                            <span>⚙️ Sviluppo</span>
+                        <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity}; background-color: ${pColors.barBg}; border: 1px solid ${pColors.barBorder}; box-shadow: none;" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
+                            <span style="color: #212529;">⚙️ Sviluppo</span>
                         </div>
                         ${milestonesHtml}
                     </div>
@@ -1192,19 +1205,27 @@ const app = {
 
                 const titleCls = (isReminder && ev.done) ? 'text-decoration-line-through' : ((isPastGray || isUserGray || isHiddenPref) ? 'text-muted' : '');
                 
-                let borderCls = 'border border-light shadow-sm';
-                let bgCls = 'bg-white';
+                let borderCls = 'border shadow-sm';
+                let bgCls = '';
+                let customStyle = '';
 
-                // Applica lo stile da "post-it" se è un promemoria
+                // Applica lo stile
                 if (isReminder) {
                     bgCls = 'bg-warning bg-opacity-10';
                     borderCls = 'border border-warning border-opacity-50 shadow-sm';
+                } else {
+                    const pColors = app._projectColors(ev.nome);
+                    customStyle = `background-color: ${pColors.bg}; border-left: 4px solid ${pColors.border} !important; border-top: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.05);`;
                 }
 
                 // Se l'evento è oggi, diamo maggiore evidenza a prescindere
                 if (isToday) {
                     borderCls = 'border border-danger border-2 shadow';
-                    bgCls = isReminder ? 'bg-warning bg-opacity-25' : 'bg-danger bg-opacity-10';
+                    if (isReminder) {
+                        bgCls = 'bg-warning bg-opacity-25';
+                    } else {
+                        customStyle += ` border-color: #dc3545 !important; border-left: 4px solid #dc3545 !important;`;
+                    }
                 }
 
                 let statusIcon = '';
@@ -1212,7 +1233,7 @@ const app = {
                 if (isReminder && ev.done) statusIcon = '<span title="Completato">✅</span>';
 
                 html += `
-                <div class="cal-event-item d-flex align-items-start gap-3 p-3 rounded ${opacityCls} ${borderCls} ${bgCls}">
+                <div class="cal-event-item d-flex align-items-start gap-3 p-3 rounded ${opacityCls} ${borderCls} ${bgCls}" style="${customStyle}">
                     <div class="cal-event-date text-center" style="min-width: 50px;">
                         <div class="fw-bold fs-5 ${isToday ? 'text-danger' : (isPastGray || isUserGray || isHiddenPref ? 'text-muted' : (isReminder ? 'text-warning text-dark' : 'text-primary'))}">${ev.date.format('DD')}</div>
                         <div class="small text-uppercase ${isToday ? 'text-danger fw-bold' : (isReminder && !isPastGray && !isUserGray ? 'text-warning text-dark' : 'text-muted')}">${ev.date.format('MMM')}</div>
