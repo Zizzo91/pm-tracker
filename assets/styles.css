@@ -122,8 +122,24 @@ body {
   font-size: 0.85rem; font-weight: 600; color: #495057;
 }
 .gantt-body { background: white; max-height: 500px; overflow-y: auto; }
-.gantt-row { display: flex; border-bottom: 1px solid #dee2e6; min-height: 84px; }
+.gantt-row { display: flex; border-bottom: 1px solid #dee2e6; min-height: 84px; transition: background-color 0.2s ease; }
 .gantt-row:hover { background: #f1f3f5; }
+
+/* DRAG AND DROP GANTT */
+.gantt-row.draggable { cursor: grab; }
+.gantt-row.draggable:active { cursor: grabbing; }
+.gantt-row.dragging { opacity: 0.5; background-color: #e2e3e5 !important; }
+.gantt-row.drag-over { border-top: 4px solid #0d6efd !important; }
+.drag-handle {
+  cursor: grab;
+  padding-right: 10px;
+  color: #adb5bd;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+}
+.drag-handle:hover { color: #0d6efd; }
+.gantt-row.draggable:active .drag-handle { cursor: grabbing; }
 
 /* Barra sviluppo */
 .gantt-bar {
