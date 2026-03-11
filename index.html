@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PM Tracker</title>
+    <meta name="theme-color" content="#0d6efd">
+    <meta name="description" content="Gestione progetti e timeline">
+    <link rel="manifest" href="manifest.json">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles.css">
 </head>
@@ -287,11 +290,9 @@
                             <input type="date" class="form-control" id="p_bs">
                         </div>
                     </div>
-                    
+
                     <h6 class="mt-4 border-bottom pb-2">Milestone Personalizzate <span class="text-muted fw-normal small">(opzionali, ad-hoc per questo progetto)</span></h6>
-                    <div id="customMilestonesContainer">
-                        <!-- Le custom milestone vengono aggiunte dinamicamente -->
-                    </div>
+                    <div id="customMilestonesContainer"></div>
                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="app.addCustomMilestone()">+ Aggiungi Milestone Personalizzata</button>
 
                     <h6 class="mt-4 border-bottom pb-2">Dati Economici &amp; Operativi <span class="text-muted fw-normal small">(opzionali)</span></h6>
@@ -325,11 +326,8 @@
                         <textarea class="form-control" id="p_note" rows="2" placeholder="Note aggiuntive sul progetto..."></textarea>
                     </div>
 
-                    <!-- Link Jira multipli (fino a 10) -->
                     <h6 class="mt-4 border-bottom pb-2">Link Jira <span class="text-muted fw-normal small">(opzionali, fino a 10)</span></h6>
-                    <div id="jiraLinksContainer">
-                        <!-- I campi vengono generati dinamicamente da app.js -->
-                    </div>
+                    <div id="jiraLinksContainer"></div>
                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="app.addJiraField()" id="addJiraBtn">+ Aggiungi Link Jira</button>
                 </form>
             </div>
@@ -382,5 +380,14 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script>dayjs.locale('it');</script>
 <script src="assets/app.js?v=25"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/pm-tracker/service-worker.js')
+        .then(reg => console.log('SW registrato:', reg.scope))
+        .catch(err => console.warn('SW errore:', err));
+    });
+  }
+</script>
 </body>
 </html>
