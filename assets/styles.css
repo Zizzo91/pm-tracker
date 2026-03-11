@@ -81,21 +81,35 @@ body {
 }
 
 /* === NAV TABS === */
+/* Wrapper tab: sfondo bianco sotto i tab per garantire contrasto */
+#mainTab {
+  background-color: #ffffff;
+  padding: 8px 8px 0 8px;
+  border-radius: 8px 8px 0 0;
+}
+/* Tab inattivo: sfondo bianco, testo blu, bordo grigio */
 #mainTab .nav-link {
   color: #003DA5 !important;
-  background-color: rgba(0,61,165,0.07) !important;
-  border-color: rgba(0,61,165,0.15) rgba(0,61,165,0.15) transparent !important;
+  background-color: #f0f4ff !important;
+  border: 1px solid #c8d6f0 !important;
+  border-bottom-color: transparent !important;
   font-weight: 600;
+  margin-right: 4px;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+/* Hover: giallo con testo blu */
 #mainTab .nav-link:hover:not(.active) {
-  background-color: #FFD200 !important;
+  background-color: #fff3b0 !important;
   color: #003DA5 !important;
+  border-color: #FFD200 !important;
+  border-bottom-color: transparent !important;
 }
+/* Tab attivo: giallo Telepass, testo blu scuro, bordo giallo */
 #mainTab .nav-link.active {
   color: #003DA5 !important;
   background-color: #FFD200 !important;
-  border-color: #dee2e6 #dee2e6 #FFD200 !important;
+  border-color: #e6be00 #e6be00 #FFD200 !important;
+  border-bottom-color: #FFD200 !important;
   font-weight: 700;
 }
 
