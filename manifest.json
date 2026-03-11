@@ -5,8 +5,8 @@
   "start_url": "/pm-tracker/",
   "scope": "/pm-tracker/",
   "display": "standalone",
-  "background_color": "#f8f9fa",
-  "theme_color": "#0d6efd",
+  "background_color": "#FFD200",
+  "theme_color": "#003DA5",
   "lang": "it",
   "icons": [
     {

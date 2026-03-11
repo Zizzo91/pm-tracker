@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PM Tracker</title>
-    <meta name="theme-color" content="#0d6efd">
+    <meta name="theme-color" content="#003DA5">
     <meta name="description" content="Gestione progetti e timeline">
     <link rel="manifest" href="manifest.json">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,16 +12,16 @@
 </head>
 <body class="bg-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+<nav class="navbar navbar-expand-lg navbar-dark mb-4" style="background-color: #003DA5;">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">PM Tracker</a>
+        <a class="navbar-brand fw-bold" href="#" style="color: #FFD200;">▶ PM Tracker</a>
         <div class="d-flex align-items-center">
             <div class="form-check form-switch text-light me-3 mb-0 d-flex align-items-center">
                 <input class="form-check-input me-2" type="checkbox" id="globalShowHidden" onchange="app.renderAll()" style="cursor: pointer;">
                 <label class="form-check-label small mb-0 fw-semibold" for="globalShowHidden" style="cursor: pointer;">Mostra Archiviati</label>
             </div>
-            <button class="btn btn-outline-light btn-sm me-2" onclick="app.loadData(true)">🔄 Ricarica</button>
-            <button class="btn btn-warning btn-sm" onclick="app.showSettings()">⚙️ Config</button>
+            <button class="btn btn-sm me-2 fw-semibold" onclick="app.loadData(true)" style="background-color: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.4);">🔄 Ricarica</button>
+            <button class="btn btn-sm fw-semibold" onclick="app.showSettings()" style="background-color: #FFD200; color: #003DA5; border: none;">⚙️ Config</button>
         </div>
     </div>
 </nav>
@@ -184,7 +184,7 @@
                 </div>
             </div>
 
-            <!-- Promemoria manuali (salvati nel projects.json) -->
+            <!-- Promemoria manuali -->
             <div class="card shadow-sm mb-3">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -225,9 +225,9 @@
 <div class="modal fade" id="editorModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" style="background-color: #003DA5; color: #fff;">
                 <h5 class="modal-title">Gestione Progetto</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="projectForm">
@@ -343,8 +343,8 @@
 <div class="modal fade" id="settingsModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title">Configurazione GitHub</h5>
+            <div class="modal-header" style="background-color: #FFD200;">
+                <h5 class="modal-title" style="color: #003DA5; font-weight: 700;">⚙️ Configurazione GitHub</h5>
             </div>
             <div class="modal-body">
                 <p class="small">Per salvare i dati, serve un Personal Access Token (PAT) con permessi <code>repo</code>.</p>
@@ -366,7 +366,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="app.saveSettings()">Salva Config</button>
+                <button type="button" class="btn fw-semibold" onclick="app.saveSettings()" style="background-color: #003DA5; color: #fff;">Salva Config</button>
             </div>
         </div>
     </div>

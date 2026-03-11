@@ -1,9 +1,16 @@
+/* === PALETTE TELEPASS ===
+   Giallo:   #FFD200
+   Blu:      #003DA5
+   Verde:    #00A651
+   Bianco:   #FFFFFF
+*/
+
 /* === RESET E BASE === */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #003DA5 0%, #0055cc 100%);
   min-height: 100vh;
   padding: 20px;
 }
@@ -18,8 +25,8 @@ body {
 }
 
 /* === HEADER === */
-.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-.header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+.header { background: linear-gradient(135deg, #003DA5 0%, #0055cc 100%); color: white; padding: 30px; text-align: center; }
+.header h1 { font-size: 2.5rem; margin-bottom: 10px; color: #FFD200; }
 .header p { opacity: 0.9; font-size: 1.1rem; }
 
 /* === TOOLBAR === */
@@ -44,12 +51,12 @@ body {
   font-weight: 500;
 }
 
-.btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+.btn-primary { background: linear-gradient(135deg, #003DA5 0%, #0055cc 100%); color: white; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,61,165,0.4); }
 .btn-secondary { background: #6c757d; color: white; }
 .btn-secondary:hover { background: #5a6268; }
-.btn-success { background: #28a745; color: white; }
-.btn-success:hover { background: #218838; }
+.btn-success { background: #00A651; color: white; }
+.btn-success:hover { background: #008c44; }
 
 /* === FIX MODAL: forza sfondo bianco e testo scuro === */
 .modal-dialog, .modal-content, .modal-body, .modal-footer {
@@ -69,26 +76,26 @@ body {
 .modal .form-control:focus, .modal input:focus, .modal textarea:focus {
   background-color: #ffffff !important; color: #212529 !important;
   -webkit-text-fill-color: #212529 !important;
-  border-color: #667eea !important;
-  box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25) !important;
+  border-color: #003DA5 !important;
+  box-shadow: 0 0 0 0.2rem rgba(0,61,165,0.2) !important;
 }
 
-/* === NAV TABS: leggibilità testo === */
+/* === NAV TABS === */
 #mainTab .nav-link {
-  color: #ffffff !important;
-  background-color: rgba(255,255,255,0.18) !important;
-  border-color: rgba(255,255,255,0.3) rgba(255,255,255,0.3) transparent !important;
+  color: #003DA5 !important;
+  background-color: rgba(0,61,165,0.07) !important;
+  border-color: rgba(0,61,165,0.15) rgba(0,61,165,0.15) transparent !important;
   font-weight: 600;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 #mainTab .nav-link:hover:not(.active) {
-  background-color: rgba(255,255,255,0.32) !important;
-  color: #ffffff !important;
+  background-color: #FFD200 !important;
+  color: #003DA5 !important;
 }
 #mainTab .nav-link.active {
-  color: #4a3b8c !important;
-  background-color: #ffffff !important;
-  border-color: #dee2e6 #dee2e6 #ffffff !important;
+  color: #003DA5 !important;
+  background-color: #FFD200 !important;
+  border-color: #dee2e6 #dee2e6 #FFD200 !important;
   font-weight: 700;
 }
 
@@ -102,14 +109,14 @@ body {
   background: white;
   position: relative;
 }
-.gantt-header { 
-  display: flex; 
-  background: #e9ecef; 
-  font-weight: bold; 
-  border-bottom: 2px solid #0d6efd;
+.gantt-header {
+  display: flex;
+  background: #e9ecef;
+  font-weight: bold;
+  border-bottom: 2px solid #003DA5;
   position: sticky;
   top: 0;
-  z-index: 50; 
+  z-index: 50;
 }
 .gantt-project-col {
   min-width: 200px; width: 200px; padding: 12px;
@@ -119,14 +126,12 @@ body {
   left: 0;
   z-index: 40;
 }
-.gantt-header .gantt-project-col {
-  z-index: 60; /* Top-left corner needs highest z-index */
-}
+.gantt-header .gantt-project-col { z-index: 60; }
 .gantt-supplier-list { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px; }
 .gantt-supplier-badge {
   display: inline-block; font-size: 0.68rem; font-weight: 600;
   padding: 1px 6px; border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #003DA5 0%, #0055cc 100%);
   color: #fff; letter-spacing: 0.02em; white-space: nowrap;
 }
 .gantt-timeline-col { flex: 1; min-width: 600px; position: relative; }
@@ -135,18 +140,18 @@ body {
   padding: 10px; text-align: center;
   border-right: 1px solid #dee2e6;
   background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-  font-size: 0.85rem; font-weight: 600; color: #495057;
+  font-size: 0.85rem; font-weight: 600; color: #003DA5;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .gantt-body { background: white; }
 .gantt-row { display: flex; border-bottom: 1px solid #dee2e6; min-height: 84px; transition: background-color 0.2s ease; }
-.gantt-row:hover { background: #f1f3f5; }
+.gantt-row:hover { background: #fffbe6; }
 
 /* DRAG AND DROP GANTT */
 .gantt-row.draggable { cursor: grab; }
 .gantt-row.draggable:active { cursor: grabbing; }
 .gantt-row.dragging { opacity: 0.5; background-color: #e2e3e5 !important; }
-.gantt-row.drag-over { border-top: 4px solid #0d6efd !important; }
+.gantt-row.drag-over { border-top: 4px solid #003DA5 !important; }
 .drag-handle {
   cursor: grab;
   padding-right: 10px;
@@ -155,25 +160,24 @@ body {
   display: flex;
   align-items: center;
 }
-.drag-handle:hover { color: #0d6efd; }
-.gantt-row.draggable:active .drag-handle { cursor: grabbing; }
+.drag-handle:hover { color: #003DA5; }
 
 /* Barra sviluppo */
 .gantt-bar {
   position: absolute; height: 36px;
-  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  background: linear-gradient(135deg, #003DA5 0%, #0055cc 100%);
   border-radius: 6px; display: flex; align-items: center;
   padding: 0 12px; cursor: pointer; transition: all 0.3s ease;
   color: white; font-size: 0.82rem; font-weight: 600;
-  box-shadow: 0 2px 8px rgba(13,110,253,0.3); top: 32px; z-index: 5;
+  box-shadow: 0 2px 8px rgba(0,61,165,0.3); top: 32px; z-index: 5;
   overflow: hidden;
 }
-.gantt-bar:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(13,110,253,0.5); }
+.gantt-bar:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,61,165,0.5); }
 .gantt-bar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gantt-bar-progress {
   position: absolute; left: 0; top: 0; height: 100%;
-  background: rgba(255,255,255,0.25);
-  border-right: 2px solid rgba(255,255,255,0.5);
+  background: rgba(255,210,0,0.35);
+  border-right: 2px solid rgba(255,210,0,0.8);
   z-index: 1;
 }
 
@@ -191,31 +195,28 @@ body {
   padding: 1px 3px; margin-bottom: 1px; letter-spacing: 0.01em;
   box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
-
-/* Colore data per tipo milestone */
 .ms-ia         .ms-date { color: #c85a00; }
-.ms-dev-start  .ms-date { color: #1a7a3c; }
-.ms-dev-end    .ms-date { color: #1a4a8a; }
+.ms-dev-start  .ms-date { color: #006b2e; }
+.ms-dev-end    .ms-date { color: #003DA5; }
 .ms-uat        .ms-date { color: #0a6e4e; }
 .ms-bs         .ms-date { color: #5a3e00; }
 .ms-test       .ms-date { color: #5a2d91; }
 .ms-prod       .ms-date { color: #b02a37; }
 .ms-scad-stima .ms-date { color: #8a5200; }
-.ms-config-sis .ms-date { color: #1a5276; }
+.ms-config-sis .ms-date { color: #003DA5; }
 
 .gantt-milestone .ms-icon { font-size: 1rem; line-height: 1.2; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
 .gantt-milestone .ms-line { width: 2px; flex: 1; margin-top: 1px; border-radius: 1px; }
 
-/* Colori linea per tipo */
 .ms-ia         .ms-line { background: #fd7e14; }
-.ms-dev-start  .ms-line { background: #28a745; }
-.ms-dev-end    .ms-line { background: #0d6efd; }
+.ms-dev-start  .ms-line { background: #00A651; }
+.ms-dev-end    .ms-line { background: #003DA5; }
 .ms-uat        .ms-line { background: #20c997; }
 .ms-bs         .ms-line { background: #a67c00; }
 .ms-test       .ms-line { background: #6f42c1; }
 .ms-prod       .ms-line { background: #dc3545; }
 .ms-scad-stima .ms-line { background: #e67e22; }
-.ms-config-sis .ms-line { background: #2980b9; }
+.ms-config-sis .ms-line { background: #0055cc; }
 
 /* Tooltip al hover */
 .gantt-milestone::after {
@@ -238,25 +239,25 @@ body {
 .gantt-legend-item { display: flex; align-items: center; gap: 6px; }
 .legend-bar {
   width: 28px; height: 12px; border-radius: 3px;
-  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-  display: inline-block; box-shadow: 0 1px 3px rgba(13,110,253,0.3);
+  background: linear-gradient(135deg, #003DA5 0%, #0055cc 100%);
+  display: inline-block; box-shadow: 0 1px 3px rgba(0,61,165,0.3);
 }
 .legend-ms { font-size: 1rem; }
 .legend-line { display: inline-block; width: 3px; height: 16px; border-radius: 2px; vertical-align: middle; }
 .legend-line.ia        { background: #fd7e14; }
-.legend-line.dev-start { background: #28a745; }
-.legend-line.dev-end   { background: #0d6efd; }
+.legend-line.dev-start { background: #00A651; }
+.legend-line.dev-end   { background: #003DA5; }
 .legend-line.uat       { background: #20c997; }
 .legend-line.bs        { background: #a67c00; }
 .legend-line.test      { background: #6f42c1; }
 .legend-line.prod      { background: #dc3545; }
 .legend-line.scad-stima { background: #e67e22; }
-.legend-line.config-sis { background: #2980b9; }
+.legend-line.config-sis { background: #0055cc; }
 
 /* === CALENDAR CARD === */
-.cal-month-card { border-left: 5px solid #0d6efd; }
+.cal-month-card { border-left: 5px solid #003DA5; }
 .cal-event-item { border-bottom: 1px solid #eee; padding: 5px 0; }
-.cal-event-date { font-weight: bold; color: #dc3545; width: 60px; display: inline-block; }
+.cal-event-date { font-weight: bold; color: #003DA5; width: 60px; display: inline-block; }
 
 /* === UTILITY === */
 .text-muted { color: #6c757d; }
