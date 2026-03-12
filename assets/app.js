@@ -14,6 +14,7 @@ const app = {
     MAX_JIRA_LINKS: 10,
     MAX_CUSTOM_MILESTONES: 5,
     META_ID: '__pm_tracker_meta__',
+    _editingReminderId: null, // ID del promemoria in modifica (null = modalità inserimento)
 
     // Milestone che NON vengono ingrigite anche se passate
     ALWAYS_HIGHLIGHT_KEYS: ['devStart', 'devEnd', 'dataTest'],
@@ -438,6 +439,16 @@ const app = {
         }
     },
 
+    _updateReminderFormUI: function() {
+        const isEditing = !!this._editingReminderId;
+        const addBtn = document.getElementById('rem_add_btn');
+        const cancelBtn = document.getElementById('rem_cancel_btn');
+        const editBanner = document.getElementById('rem_edit_banner');
+        if (addBtn)    addBtn.textContent = isEditing ? '💾 Aggiorna promemoria' : '+ Aggiungi promemoria';
+        if (cancelBtn) cancelBtn.style.display = isEditing ? 'inline-block' : 'none';
+        if (editBanner) editBanner.style.display = isEditing ? 'flex' : 'none';
+    },
+
     clearReminderInputs: function() {
         const d = document.getElementById('rem_date');
         const t = document.getElementById('rem_title');
@@ -445,6 +456,29 @@ const app = {
         if (d) d.value = '';
         if (t) t.value = '';
         if (n) n.value = '';
+        this._editingReminderId = null;
+        this._updateReminderFormUI();
+    },
+
+    editReminder: function(id) {
+        const meta = this.getMeta();
+        const r = (meta.manualReminders || []).find(x => x.id === id);
+        if (!r) return;
+
+        const dateEl  = document.getElementById('rem_date');
+        const titleEl = document.getElementById('rem_title');
+        const noteEl  = document.getElementById('rem_note');
+
+        if (dateEl)  dateEl.value  = r.date  || '';
+        if (titleEl) titleEl.value = r.title || '';
+        if (noteEl)  noteEl.value  = r.note  || '';
+
+        this._editingReminderId = id;
+        this._updateReminderFormUI();
+
+        // Scroll al form
+        dateEl && dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        titleEl && titleEl.focus();
     },
 
     addReminder: async function() {
@@ -463,20 +497,36 @@ const app = {
 
         const meta = this.getMeta();
         meta.manualReminders = meta.manualReminders || [];
-        meta.manualReminders.push({
-            id: Date.now().toString(),
-            date,
-            title,
-            note,
-            done: false,
-            createdAt: new Date().toISOString(),
-            doneAt: null
-        });
+
+        if (this._editingReminderId) {
+            // Modalità MODIFICA: aggiorna il promemoria esistente
+            const r = meta.manualReminders.find(x => x.id === this._editingReminderId);
+            if (r) {
+                r.date  = date;
+                r.title = title;
+                r.note  = note;
+                r.updatedAt = new Date().toISOString();
+            }
+            this._editingReminderId = null;
+        } else {
+            // Modalità INSERIMENTO: crea nuovo promemoria
+            meta.manualReminders.push({
+                id: Date.now().toString(),
+                date,
+                title,
+                note,
+                done: false,
+                createdAt: new Date().toISOString(),
+                doneAt: null
+            });
+        }
 
         meta.manualReminders.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
         if (titleEl) titleEl.value = '';
         if (noteEl)  noteEl.value  = '';
+        if (dateEl)  dateEl.value  = '';
+        this._updateReminderFormUI();
 
         await this.syncToGithub();
     },
@@ -492,6 +542,10 @@ const app = {
 
     deleteReminder: async function(id) {
         if (!confirm('Eliminare questo promemoria?')) return;
+        // Se stiamo modificando proprio quello che viene eliminato, resettiamo il form
+        if (this._editingReminderId === id) {
+            this.clearReminderInputs();
+        }
         const meta = this.getMeta();
         meta.manualReminders = (meta.manualReminders || []).filter(x => x.id !== id);
         await this.syncToGithub();
@@ -519,13 +573,17 @@ const app = {
             return;
         }
 
+        const editingId = this._editingReminderId;
+
         list.innerHTML = items.map(r => {
-            const isExpired = !r.done && new Date(r.date) < today;
-            const cls       = r.done ? 'opacity-50' : (isExpired ? 'opacity-75' : '');
-            const titleCls  = r.done ? 'text-decoration-line-through' : '';
-            const badge     = r.done ? 'bg-secondary' : (isExpired ? 'bg-danger' : 'bg-primary');
-            const btnText   = r.done ? '↩️' : '✅';
-            const btnTitle  = r.done ? 'Segna come non completato' : 'Segna come completato';
+            const isExpired  = !r.done && new Date(r.date) < today;
+            const isEditing  = r.id === editingId;
+            const cls        = isEditing ? 'border-warning border-2' : (r.done ? 'opacity-50' : (isExpired ? 'opacity-75' : ''));
+            const titleCls   = r.done ? 'text-decoration-line-through' : '';
+            const badge      = r.done ? 'bg-secondary' : (isExpired ? 'bg-danger' : 'bg-primary');
+            const btnText    = r.done ? '↩️' : '✅';
+            const btnTitle   = r.done ? 'Segna come non completato' : 'Segna come completato';
+            const editingBadge = isEditing ? '<span class="badge bg-warning text-dark ms-1">✏️ In modifica</span>' : '';
 
             return `
             <div class="d-flex justify-content-between align-items-start border rounded p-2 mb-2 ${cls}">
@@ -535,15 +593,20 @@ const app = {
                         <span class="small text-muted">${dayjs(r.date).format('DD/MM/YYYY')}</span>
                         <span class="fw-semibold ${titleCls}">${(r.title || '').replace(/</g, '&lt;')}</span>
                         ${isExpired ? '<span class="badge bg-danger ms-1 small">Scaduto</span>' : ''}
+                        ${editingBadge}
                     </div>
                     ${r.note ? `<div class="small text-muted mt-1">${(r.note || '').replace(/</g, '&lt;')}</div>` : ''}
                 </div>
                 <div class="d-flex gap-2 flex-shrink-0">
+                    <button class="btn btn-outline-warning btn-sm" onclick="app.editReminder('${r.id}')" title="Modifica">✏️</button>
                     <button class="btn btn-outline-success btn-sm" onclick="app.toggleReminderDone('${r.id}')" title="${btnTitle}">${btnText}</button>
                     <button class="btn btn-outline-danger btn-sm" onclick="app.deleteReminder('${r.id}')" title="Elimina">🗑️</button>
                 </div>
             </div>`;
         }).join('');
+
+        // Aggiorna UI del form (pulsanti) in base allo stato di editing
+        this._updateReminderFormUI();
     },
 
     saveProject: async function() {
