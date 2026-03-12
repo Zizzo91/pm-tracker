@@ -875,7 +875,7 @@ const app = {
                         <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity}; background-color: ${pColors.barBg}; border: 1px solid ${pColors.barBorder}; box-shadow: none;" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
                             <span style="color: #212529;">\u2699\uFE0F Sviluppo</span>
                         </div>
-                        ${milestonesHtml}
+                        ${milestonesHtml}<div class="gantt-today-line" style="position:absolute;top:0;bottom:0;left:${pct(today).toFixed(2)}%;width:2px;background:rgba(220,53,69,0.65);pointer-events:none;z-index:5;" title="Oggi: ${dayjs(today).format('DD/MM/YYYY')}"></div>
                     </div>
                 </div>`;
         });
