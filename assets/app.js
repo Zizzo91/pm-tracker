@@ -7,28 +7,27 @@ const app = {
         path: 'data/projects.json'
     },
     sha: null,
-    lastETag: null, // Per ETag caching intelligente
-    searchTimeout: null, // Per debounce
+    lastETag: null,
+    searchTimeout: null,
     editorModal: null,
     settingsModal: null,
     MAX_JIRA_LINKS: 10,
     MAX_CUSTOM_MILESTONES: 5,
     META_ID: '__pm_tracker_meta__',
-    _editingReminderId: null, // ID del promemoria in modifica (null = modalità inserimento)
+    _editingReminderId: null,
 
-    // Milestone che NON vengono ingrigite anche se passate
     ALWAYS_HIGHLIGHT_KEYS: ['devStart', 'devEnd', 'dataTest'],
 
     MILESTONES: [
-        { key: 'dataIA',            label: '🤖 Consegna IA',           badge: 'bg-info text-dark' },
-        { key: 'devStart',          label: '▶️ Inizio Sviluppo',        badge: 'bg-primary' },
-        { key: 'devEnd',            label: '⏹️ Fine Sviluppo',          badge: 'bg-secondary' },
-        { key: 'dataUAT',           label: '👥 UAT',                    badge: 'bg-info' },
-        { key: 'dataBS',            label: '💼 Business Simulation',    badge: 'bg-dark' },
-        { key: 'dataTest',          label: '🧪 Rilascio Test',          badge: 'bg-warning text-dark' },
-        { key: 'dataProd',          label: '🚀 Rilascio Prod',          badge: 'bg-success' },
-        { key: 'dataScadenzaStima', label: '📥 Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
-        { key: 'dataConfigSistema', label: '🔧 Config Sistema',         badge: 'bg-light text-dark border' }
+        { key: 'dataIA',            label: '\uD83E\uDD16 Consegna IA',           badge: 'bg-info text-dark' },
+        { key: 'devStart',          label: '\u25B6\uFE0F Inizio Sviluppo',        badge: 'bg-primary' },
+        { key: 'devEnd',            label: '\u23F9\uFE0F Fine Sviluppo',          badge: 'bg-secondary' },
+        { key: 'dataUAT',           label: '\uD83D\uDC65 UAT',                    badge: 'bg-info' },
+        { key: 'dataBS',            label: '\uD83D\uDCBC Business Simulation',    badge: 'bg-dark' },
+        { key: 'dataTest',          label: '\uD83E\uDDEA Rilascio Test',          badge: 'bg-warning text-dark' },
+        { key: 'dataProd',          label: '\uD83D\uDE80 Rilascio Prod',          badge: 'bg-success' },
+        { key: 'dataScadenzaStima', label: '\uD83D\uDCE5 Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
+        { key: 'dataConfigSistema', label: '\uD83D\uDD27 Config Sistema',         badge: 'bg-light text-dark border' }
     ],
 
     OWNER_COLORS: {
@@ -60,14 +59,9 @@ const app = {
         }
     },
 
-    // Funzione Debounce per la ricerca
     debouncedRenderTable: function() {
-        if (this.searchTimeout) {
-            clearTimeout(this.searchTimeout);
-        }
-        this.searchTimeout = setTimeout(() => {
-            this.renderTable();
-        }, 300); // 300ms di ritardo
+        if (this.searchTimeout) clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => this.renderTable(), 300);
     },
 
     isMeta: function(p) {
@@ -145,9 +139,7 @@ const app = {
 
     _badgeColor: function(kind, name) {
         const key = (name || '').toString().trim().toLowerCase();
-        if (kind === 'owner' && this.OWNER_COLORS[key]) {
-            return this.OWNER_COLORS[key];
-        }
+        if (kind === 'owner' && this.OWNER_COLORS[key]) return this.OWNER_COLORS[key];
         return this._autoColor(name, kind);
     },
 
@@ -158,27 +150,23 @@ const app = {
 
     _projectColors: function(name) {
         if (!name) return { bg: '#ffffff', border: '#dee2e6', barBg: '#0d6efd', barBorder: '#0a58ca' };
-        
-        // Palette curata di 15 colori ben distinti e leggibili
         const palette = [
-            { bg: '#eef2ff', border: '#0d6efd', barBg: '#cfe2ff', barBorder: '#0a58ca' }, // 0. Blu chiaro
-            { bg: '#f4f0ff', border: '#6f42c1', barBg: '#e0cffc', barBorder: '#59359a' }, // 1. Viola / Lilla
-            { bg: '#fdf8f5', border: '#c27b5e', barBg: '#f2d8cd', barBorder: '#9c543a' }, // 2. Marroncino / Terracotta
-            { bg: '#f0fdf4', border: '#198754', barBg: '#d1f2e0', barBorder: '#146c43' }, // 3. Verde
-            { bg: '#fff6f0', border: '#fd7e14', barBg: '#ffe5d0', barBorder: '#e0660b' }, // 4. Arancione
-            { bg: '#fff0f6', border: '#d63384', barBg: '#fccce1', barBorder: '#a32060' }, // 5. Rosa
-            { bg: '#f0fbff', border: '#0dcaf0', barBg: '#cff4fc', barBorder: '#0aa2c0' }, // 6. Azzurro / Ciano
-            { bg: '#fff5f5', border: '#dc3545', barBg: '#f8d7da', barBorder: '#b02a37' }, // 7. Rosso
-            { bg: '#fffbea', border: '#cfa00c', barBg: '#fae39d', barBorder: '#a88106' }, // 8. Giallo / Senape
-            { bg: '#f4f5fd', border: '#6610f2', barBg: '#e2d6fa', barBorder: '#520dc2' }, // 9. Indaco
-            { bg: '#f2fbf7', border: '#20c997', barBg: '#d1f7ea', barBorder: '#1aa179' }, // 10. Verde Menta
-            { bg: '#fcf3f4', border: '#9e2a2b', barBg: '#eed2d4', barBorder: '#7a2021' }, // 11. Bordeaux
-            { bg: '#fbf7f4', border: '#8b4513', barBg: '#e8d2c3', barBorder: '#66320e' }, // 12. Marrone
-            { bg: '#fcf0f8', border: '#8f2d56', barBg: '#ebd1e0', barBorder: '#6e2141' }, // 13. Prugna
-            { bg: '#f2f9f9', border: '#127369', barBg: '#cbe7e7', barBorder: '#0d544c' }  // 14. Petrolio
+            { bg: '#eef2ff', border: '#0d6efd', barBg: '#cfe2ff', barBorder: '#0a58ca' },
+            { bg: '#f4f0ff', border: '#6f42c1', barBg: '#e0cffc', barBorder: '#59359a' },
+            { bg: '#fdf8f5', border: '#c27b5e', barBg: '#f2d8cd', barBorder: '#9c543a' },
+            { bg: '#f0fdf4', border: '#198754', barBg: '#d1f2e0', barBorder: '#146c43' },
+            { bg: '#fff6f0', border: '#fd7e14', barBg: '#ffe5d0', barBorder: '#e0660b' },
+            { bg: '#fff0f6', border: '#d63384', barBg: '#fccce1', barBorder: '#a32060' },
+            { bg: '#f0fbff', border: '#0dcaf0', barBg: '#cff4fc', barBorder: '#0aa2c0' },
+            { bg: '#fff5f5', border: '#dc3545', barBg: '#f8d7da', barBorder: '#b02a37' },
+            { bg: '#fffbea', border: '#cfa00c', barBg: '#fae39d', barBorder: '#a88106' },
+            { bg: '#f4f5fd', border: '#6610f2', barBg: '#e2d6fa', barBorder: '#520dc2' },
+            { bg: '#f2fbf7', border: '#20c997', barBg: '#d1f7ea', barBorder: '#1aa179' },
+            { bg: '#fcf3f4', border: '#9e2a2b', barBg: '#eed2d4', barBorder: '#7a2021' },
+            { bg: '#fbf7f4', border: '#8b4513', barBg: '#e8d2c3', barBorder: '#66320e' },
+            { bg: '#fcf0f8', border: '#8f2d56', barBg: '#ebd1e0', barBorder: '#6e2141' },
+            { bg: '#f2f9f9', border: '#127369', barBg: '#cbe7e7', barBorder: '#0d544c' }
         ];
-
-        // Usiamo una chiave leggermente modificata in modo da rimescolare le assegnazioni rispetto a prima
         const index = this._hashString(`fixed_palette_${name}`) % palette.length;
         return palette[index];
     },
@@ -257,7 +245,7 @@ const app = {
         if (!jiraLinks || jiraLinks.length === 0) return '';
         return jiraLinks
             .filter(u => u && u.trim())
-            .map(u => `<a href="${u}" target="_blank" class="badge bg-primary text-decoration-none me-1 mb-1" title="${u}">${this.jiraLabel(u)} 🔗</a>`)
+            .map(u => `<a href="${u}" target="_blank" class="badge bg-primary text-decoration-none me-1 mb-1" title="${u}">${this.jiraLabel(u)} \uD83D\uDD17</a>`)
             .join('');
     },
 
@@ -316,7 +304,7 @@ const app = {
         const rc  = parseFloat(document.getElementById('p_rcFornitore').value);
         const out = document.getElementById('p_stimaCosto');
         if (!isNaN(ggu) && !isNaN(rc) && ggu >= 0 && rc >= 0) {
-            out.value = '€ ' + (ggu * rc).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            out.value = '\u20AC ' + (ggu * rc).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         } else {
             out.value = '';
         }
@@ -347,48 +335,30 @@ const app = {
             this.showAlert('Nessun token impostato, vai su Config.', 'warning');
             return;
         }
-        
         this.showAlert('Caricamento dati...', 'info', 1000);
-        
         try {
-            // Selezioniamo URL con o senza anti-cache basato sul parametro force
             const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}${force ? '?t=' + new Date().getTime() : ''}`;
-            
             const headers = {
                 'Authorization': `token ${this.config.token}`,
                 'Accept': 'application/vnd.github.v3+json'
             };
-
-            // Implementiamo Caching intelligente tramite ETag
-            if (!force && this.lastETag) {
-                headers['If-None-Match'] = this.lastETag;
-            }
-
+            if (!force && this.lastETag) headers['If-None-Match'] = this.lastETag;
             const response = await fetch(url, { headers, cache: force ? 'no-cache' : 'default' });
-            
-            // Se i dati non sono cambiati (304), ricarica l'interfaccia con i dati già in memoria
             if (response.status === 304) {
                 this.renderAll();
-                this.showAlert('Dati già aggiornati (Cache)', 'success', 2000);
+                this.showAlert('Dati gi\u00E0 aggiornati (Cache)', 'success', 2000);
                 return;
             }
-
             if (!response.ok) throw new Error(`Errore GitHub: ${response.status}`);
-            
-            // Salviamo il nuovo ETag
             this.lastETag = response.headers.get('ETag');
             const json = await response.json();
-            
             this.sha  = json.sha;
             this.data = JSON.parse(decodeURIComponent(escape(atob(json.content)))).map(p => this.normalizeProject(p));
-            
             this.getMeta();
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
             this.renderAll();
-            
             this.showAlert('Dati scaricati con successo!', 'success', 2000);
-            
         } catch (error) {
             console.error(error);
             this.showAlert(`Impossibile caricare i dati: ${error.message}`, 'danger', 5000);
@@ -412,9 +382,7 @@ const app = {
                 });
                 if (current && allSuppliers.includes(current)) sel.value = current;
             });
-        } catch (e) {
-            console.error("populateFornitoreFilters error", e);
-        }
+        } catch (e) { console.error("populateFornitoreFilters error", e); }
     },
 
     populateOwnerFilters: function() {
@@ -434,18 +402,16 @@ const app = {
                 });
                 if (current && allOwners.includes(current)) sel.value = current;
             });
-        } catch(e) {
-            console.error("populateOwnerFilters error", e);
-        }
+        } catch(e) { console.error("populateOwnerFilters error", e); }
     },
 
     _updateReminderFormUI: function() {
         const isEditing = !!this._editingReminderId;
-        const addBtn = document.getElementById('rem_add_btn');
+        const addBtn    = document.getElementById('rem_add_btn');
         const cancelBtn = document.getElementById('rem_cancel_btn');
-        const editBanner = document.getElementById('rem_edit_banner');
-        if (addBtn)    addBtn.textContent = isEditing ? '💾 Aggiorna promemoria' : '+ Aggiungi promemoria';
-        if (cancelBtn) cancelBtn.style.display = isEditing ? 'inline-block' : 'none';
+        const editBanner= document.getElementById('rem_edit_banner');
+        if (addBtn)     addBtn.textContent = isEditing ? '\uD83D\uDCBE Aggiorna promemoria' : '+ Aggiungi promemoria';
+        if (cancelBtn)  cancelBtn.style.display = isEditing ? 'inline-block' : 'none';
         if (editBanner) editBanner.style.display = isEditing ? 'flex' : 'none';
     },
 
@@ -464,19 +430,14 @@ const app = {
         const meta = this.getMeta();
         const r = (meta.manualReminders || []).find(x => x.id === id);
         if (!r) return;
-
         const dateEl  = document.getElementById('rem_date');
         const titleEl = document.getElementById('rem_title');
         const noteEl  = document.getElementById('rem_note');
-
         if (dateEl)  dateEl.value  = r.date  || '';
         if (titleEl) titleEl.value = r.title || '';
         if (noteEl)  noteEl.value  = r.note  || '';
-
         this._editingReminderId = id;
         this._updateReminderFormUI();
-
-        // Scroll al form
         dateEl && dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         titleEl && titleEl.focus();
     },
@@ -485,49 +446,30 @@ const app = {
         const dateEl  = document.getElementById('rem_date');
         const titleEl = document.getElementById('rem_title');
         const noteEl  = document.getElementById('rem_note');
-
         const date  = dateEl  ? dateEl.value         : '';
         const title = titleEl ? titleEl.value.trim() : '';
         const note  = noteEl  ? noteEl.value.trim()  : '';
-
         if (!date || !title) {
             this.showAlert('Inserisci almeno Data e Titolo per il promemoria.', 'warning', 3000);
             return;
         }
-
         const meta = this.getMeta();
         meta.manualReminders = meta.manualReminders || [];
-
         if (this._editingReminderId) {
-            // Modalità MODIFICA: aggiorna il promemoria esistente
             const r = meta.manualReminders.find(x => x.id === this._editingReminderId);
-            if (r) {
-                r.date  = date;
-                r.title = title;
-                r.note  = note;
-                r.updatedAt = new Date().toISOString();
-            }
+            if (r) { r.date = date; r.title = title; r.note = note; r.updatedAt = new Date().toISOString(); }
             this._editingReminderId = null;
         } else {
-            // Modalità INSERIMENTO: crea nuovo promemoria
             meta.manualReminders.push({
-                id: Date.now().toString(),
-                date,
-                title,
-                note,
-                done: false,
-                createdAt: new Date().toISOString(),
-                doneAt: null
+                id: Date.now().toString(), date, title, note,
+                done: false, createdAt: new Date().toISOString(), doneAt: null
             });
         }
-
         meta.manualReminders.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-
         if (titleEl) titleEl.value = '';
         if (noteEl)  noteEl.value  = '';
         if (dateEl)  dateEl.value  = '';
         this._updateReminderFormUI();
-
         await this.syncToGithub();
     },
 
@@ -542,10 +484,7 @@ const app = {
 
     deleteReminder: async function(id) {
         if (!confirm('Eliminare questo promemoria?')) return;
-        // Se stiamo modificando proprio quello che viene eliminato, resettiamo il form
-        if (this._editingReminderId === id) {
-            this.clearReminderInputs();
-        }
+        if (this._editingReminderId === id) this.clearReminderInputs();
         const meta = this.getMeta();
         meta.manualReminders = (meta.manualReminders || []).filter(x => x.id !== id);
         await this.syncToGithub();
@@ -554,11 +493,9 @@ const app = {
     renderReminders: function() {
         const list = document.getElementById('remindersList');
         if (!list) return;
-
         const showDone = document.getElementById('rem_show_done')?.checked || false;
         const meta  = this.getMeta();
         const today = new Date(); today.setHours(0, 0, 0, 0);
-
         const items = (meta.manualReminders || [])
             .filter(r => r && r.date && r.title)
             .filter(r => showDone || !r.done)
@@ -567,29 +504,25 @@ const app = {
                 if (d !== 0) return d;
                 return (a.title || '').localeCompare(b.title || '', 'it');
             });
-
         if (items.length === 0) {
             list.innerHTML = `<div class="text-muted small">Nessun promemoria da mostrare.</div>`;
             return;
         }
-
         const editingId = this._editingReminderId;
-
         list.innerHTML = items.map(r => {
             const isExpired  = !r.done && new Date(r.date) < today;
             const isEditing  = r.id === editingId;
             const cls        = isEditing ? 'border-warning border-2' : (r.done ? 'opacity-50' : (isExpired ? 'opacity-75' : ''));
             const titleCls   = r.done ? 'text-decoration-line-through' : '';
             const badge      = r.done ? 'bg-secondary' : (isExpired ? 'bg-danger' : 'bg-primary');
-            const btnText    = r.done ? '↩️' : '✅';
+            const btnText    = r.done ? '\u21A9\uFE0F' : '\u2705';
             const btnTitle   = r.done ? 'Segna come non completato' : 'Segna come completato';
-            const editingBadge = isEditing ? '<span class="badge bg-warning text-dark ms-1">✏️ In modifica</span>' : '';
-
+            const editingBadge = isEditing ? '<span class="badge bg-warning text-dark ms-1">\u270F\uFE0F In modifica</span>' : '';
             return `
             <div class="d-flex justify-content-between align-items-start border rounded p-2 mb-2 ${cls}">
                 <div class="pe-2">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="badge ${badge}">📝</span>
+                        <span class="badge ${badge}">\uD83D\uDCDD</span>
                         <span class="small text-muted">${dayjs(r.date).format('DD/MM/YYYY')}</span>
                         <span class="fw-semibold ${titleCls}">${(r.title || '').replace(/</g, '&lt;')}</span>
                         ${isExpired ? '<span class="badge bg-danger ms-1 small">Scaduto</span>' : ''}
@@ -598,14 +531,12 @@ const app = {
                     ${r.note ? `<div class="small text-muted mt-1">${(r.note || '').replace(/</g, '&lt;')}</div>` : ''}
                 </div>
                 <div class="d-flex gap-2 flex-shrink-0">
-                    <button class="btn btn-outline-warning btn-sm" onclick="app.editReminder('${r.id}')" title="Modifica">✏️</button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="app.editReminder('${r.id}')" title="Modifica">\u270F\uFE0F</button>
                     <button class="btn btn-outline-success btn-sm" onclick="app.toggleReminderDone('${r.id}')" title="${btnTitle}">${btnText}</button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="app.deleteReminder('${r.id}')" title="Elimina">🗑️</button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="app.deleteReminder('${r.id}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>
                 </div>
             </div>`;
         }).join('');
-
-        // Aggiorna UI del form (pulsanti) in base allo stato di editing
         this._updateReminderFormUI();
     },
 
@@ -620,25 +551,20 @@ const app = {
             uat:      document.getElementById('p_uat').value      || null,
             bs:       document.getElementById('p_bs').value       || null
         };
-
         let errorMsg = '';
-        if (dates.stima && dates.devStart && dates.stima > dates.devStart) errorMsg = 'Stima non può essere successiva a Dev Start';
-        else if (dates.devStart && dates.devEnd && dates.devStart > dates.devEnd) errorMsg = 'Dev Start non può essere successivo a Dev End';
-        else if (dates.devEnd && dates.test && dates.devEnd > dates.test) errorMsg = 'Dev End non può essere successivo al Test';
-        else if (dates.test && dates.prod && dates.test > dates.prod) errorMsg = 'Il Test non può essere successivo a Prod';
-
+        if (dates.stima && dates.devStart && dates.stima > dates.devStart) errorMsg = 'Stima non pu\u00F2 essere successiva a Dev Start';
+        else if (dates.devStart && dates.devEnd && dates.devStart > dates.devEnd) errorMsg = 'Dev Start non pu\u00F2 essere successivo a Dev End';
+        else if (dates.devEnd && dates.test && dates.devEnd > dates.test) errorMsg = 'Dev End non pu\u00F2 essere successivo al Test';
+        else if (dates.test && dates.prod && dates.test > dates.prod) errorMsg = 'Il Test non pu\u00F2 essere successivo a Prod';
         if (errorMsg) {
             document.getElementById('dateValidationMsg').innerText = `ERRORE: ${errorMsg}`;
             return;
         }
-
         const stimaGgu    = parseFloat(document.getElementById('p_stimaGgu').value);
         const rcFornitore = parseFloat(document.getElementById('p_rcFornitore').value);
         const id = document.getElementById('p_id').value;
-
         const fornitori = document.getElementById('p_fornitori').value.split(',').map(s => s.trim()).filter(Boolean);
         const owners    = document.getElementById('p_owners').value.split(',').map(s => s.trim()).filter(Boolean);
-
         const newProj = {
             id:                id || Date.now().toString(),
             nome:              document.getElementById('p_nome').value,
@@ -662,11 +588,10 @@ const app = {
             note:              document.getElementById('p_note').value,
             hidden:            false
         };
-
         if (id) {
             const oldProj = this.data.find(p => p.id === id);
             if (oldProj && oldProj.hidden) newProj.hidden = true;
-            if (oldProj && oldProj.ganttOrder !== undefined) newProj.ganttOrder = oldProj.ganttOrder; // preserva l'ordine custom
+            if (oldProj && oldProj.ganttOrder !== undefined) newProj.ganttOrder = oldProj.ganttOrder;
             this.data[this.data.findIndex(p => p.id === id)] = newProj;
         } else {
             this.data.push(newProj);
@@ -680,35 +605,24 @@ const app = {
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(this.data, null, 2))));
             const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}`;
-            
             const response = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Authorization': `token ${this.config.token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: `Update data via PM Tracker webapp - ${new Date().toISOString()}`, content, sha: this.sha })
             });
-            
             if (!response.ok) {
-                // Gestione Conflitti (Qualcun altro ha modificato il file)
-                if (response.status === 409) {
-                    throw new Error("⚠️ Conflitto di versione! Il file è stato modificato da un'altra pagina o persona. Ricarica la pagina per evitare di perdere dati.");
-                }
+                if (response.status === 409) throw new Error("\u26A0\uFE0F Conflitto di versione! Il file \u00E8 stato modificato da un'altra pagina o persona. Ricarica la pagina per evitare di perdere dati.");
                 const err = await response.json();
                 throw new Error(err.message || 'Salvataggio fallito');
             }
-            
             const result = await response.json();
             this.sha = result.content.sha;
-            
-            // Disabilitiamo temporaneamente l'ETag per forzare il prossimo download fresco
-            this.lastETag = null; 
-            
+            this.lastETag = null;
             this.showAlert('Salvataggio completato!', 'success', 3000);
-            
-            // Ricarichiamo in background per garantire la consistenza
             await this.loadData();
         } catch (e) {
             console.error('Errore sync:', e);
-            this.showAlert(`Errore salvataggio: ${e.message}`, 'danger', 8000); // Più tempo per leggere l'errore
+            this.showAlert(`Errore salvataggio: ${e.message}`, 'danger', 8000);
         }
     },
 
@@ -763,148 +677,67 @@ const app = {
         if (p) {
             p.hidden = !p.hidden;
             if (!p.hidden && this.isAutoStale(p)) {
-                this.showAlert('Progetto ripristinato, ma è vecchio di 1 mese. Rimuovi o modifica la data di Prod per renderlo visibile senza la spunta.', 'warning', 6000);
+                this.showAlert('Progetto ripristinato, ma \u00E8 vecchio di 1 mese. Rimuovi o modifica la data di Prod per renderlo visibile senza la spunta.', 'warning', 6000);
             }
             await this.syncToGithub();
         }
     },
 
     _sortGantt: function(data, mode) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
         const d = (val) => val ? new Date(val) : new Date(0);
-        const inProgress = (p) => {
-            const prod = p.dataProd ? new Date(p.dataProd) : null;
-            return !prod || prod > today;
-        };
+        const inProgress = (p) => { const prod = p.dataProd ? new Date(p.dataProd) : null; return !prod || prod > today; };
         const sorted = [...data];
         switch (mode) {
             case 'custom':
-                sorted.sort((a, b) => {
-                    const oa = a.ganttOrder !== undefined ? a.ganttOrder : 999999;
-                    const ob = b.ganttOrder !== undefined ? b.ganttOrder : 999999;
-                    return oa - ob;
-                });
-                break;
+                sorted.sort((a, b) => { const oa = a.ganttOrder !== undefined ? a.ganttOrder : 999999; const ob = b.ganttOrder !== undefined ? b.ganttOrder : 999999; return oa - ob; }); break;
             case 'prod_inprogress_first':
-                sorted.sort((a, b) => {
-                    const ia = inProgress(a) ? 0 : 1;
-                    const ib = inProgress(b) ? 0 : 1;
-                    if (ia !== ib) return ia - ib;
-                    return d(a.dataProd) - d(b.dataProd);
-                });
-                break;
+                sorted.sort((a, b) => { const ia = inProgress(a)?0:1; const ib = inProgress(b)?0:1; if (ia!==ib) return ia-ib; return d(a.dataProd)-d(b.dataProd); }); break;
             case 'prod_asc':    sorted.sort((a, b) => d(a.dataProd) - d(b.dataProd)); break;
             case 'prod_desc':   sorted.sort((a, b) => d(b.dataProd) - d(a.dataProd)); break;
             case 'devStart_inprogress_first':
-                sorted.sort((a, b) => {
-                    const ia = inProgress(a) ? 0 : 1;
-                    const ib = inProgress(b) ? 0 : 1;
-                    if (ia !== ib) return ia - ib;
-                    return d(a.devStart) - d(b.devStart);
-                });
-                break;
+                sorted.sort((a, b) => { const ia = inProgress(a)?0:1; const ib = inProgress(b)?0:1; if (ia!==ib) return ia-ib; return d(a.devStart)-d(b.devStart); }); break;
             case 'devStart_asc':  sorted.sort((a, b) => d(a.devStart) - d(b.devStart)); break;
             case 'devStart_desc': sorted.sort((a, b) => d(b.devStart) - d(a.devStart)); break;
             case 'devEnd_inprogress_first':
-                sorted.sort((a, b) => {
-                    const ia = inProgress(a) ? 0 : 1;
-                    const ib = inProgress(b) ? 0 : 1;
-                    if (ia !== ib) return ia - ib;
-                    return d(a.devEnd) - d(b.devEnd);
-                });
-                break;
+                sorted.sort((a, b) => { const ia = inProgress(a)?0:1; const ib = inProgress(b)?0:1; if (ia!==ib) return ia-ib; return d(a.devEnd)-d(b.devEnd); }); break;
             case 'test_inprogress_first':
-                sorted.sort((a, b) => {
-                    const ia = inProgress(a) ? 0 : 1;
-                    const ib = inProgress(b) ? 0 : 1;
-                    if (ia !== ib) return ia - ib;
-                    return d(a.dataTest) - d(b.dataTest);
-                });
-                break;
+                sorted.sort((a, b) => { const ia = inProgress(a)?0:1; const ib = inProgress(b)?0:1; if (ia!==ib) return ia-ib; return d(a.dataTest)-d(b.dataTest); }); break;
             case 'alpha_asc':  sorted.sort((a, b) => (a.nome||'').localeCompare(b.nome||'', 'it')); break;
             case 'alpha_desc': sorted.sort((a, b) => (b.nome||'').localeCompare(a.nome||'', 'it')); break;
         }
         return sorted;
     },
 
-    // --- DRAG AND DROP HANDLERS ---
     handleDragStart: function(e, id) {
         e.dataTransfer.setData('text/plain', id);
         e.dataTransfer.effectAllowed = 'move';
-        setTimeout(() => {
-            const row = e.currentTarget || e.target;
-            if (row && row.classList) row.classList.add('dragging');
-        }, 10);
+        setTimeout(() => { const row = e.currentTarget || e.target; if (row && row.classList) row.classList.add('dragging'); }, 10);
     },
-    
-    handleDragOver: function(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        return false;
-    },
-    
-    handleDragEnter: function(e) {
-        e.preventDefault();
-        const row = e.currentTarget;
-        if (row && row.classList) row.classList.add('drag-over');
-    },
-    
-    handleDragLeave: function(e) {
-        const row = e.currentTarget;
-        // Evitiamo sfarfallii ignorando i leave che avvengono passando sopra elementi figli
-        if (row && row.classList && !row.contains(e.relatedTarget)) {
-            row.classList.remove('drag-over');
-        }
-    },
-    
-    handleDragEnd: function(e) {
-        document.querySelectorAll('.gantt-row').forEach(el => el.classList.remove('dragging', 'drag-over'));
-    },
-    
+    handleDragOver:  function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; },
+    handleDragEnter: function(e) { e.preventDefault(); const row = e.currentTarget; if (row && row.classList) row.classList.add('drag-over'); },
+    handleDragLeave: function(e) { const row = e.currentTarget; if (row && row.classList && !row.contains(e.relatedTarget)) row.classList.remove('drag-over'); },
+    handleDragEnd:   function(e) { document.querySelectorAll('.gantt-row').forEach(el => el.classList.remove('dragging', 'drag-over')); },
     handleDrop: function(e, targetId) {
-        e.preventDefault();
-        e.stopPropagation();
-        
+        e.preventDefault(); e.stopPropagation();
         document.querySelectorAll('.gantt-row').forEach(el => el.classList.remove('dragging', 'drag-over'));
-
         const sourceId = e.dataTransfer.getData('text/plain');
         if (!sourceId || sourceId === targetId) return;
-
         this.reorderGantt(sourceId, targetId);
     },
-    
+
     reorderGantt: async function(sourceId, targetId) {
         let allProjs = this.getProjectsOnly();
-        
-        // Ordiniamo l'array con il custom order attuale (per non perdere il punto di partenza)
-        allProjs.sort((a, b) => {
-            const oa = a.ganttOrder !== undefined ? a.ganttOrder : 999999;
-            const ob = b.ganttOrder !== undefined ? b.ganttOrder : 999999;
-            return oa - ob;
-        });
-        
+        allProjs.sort((a, b) => { const oa = a.ganttOrder!==undefined?a.ganttOrder:999999; const ob = b.ganttOrder!==undefined?b.ganttOrder:999999; return oa-ob; });
         const sourceIdx = allProjs.findIndex(p => p.id === sourceId);
         const targetIdx = allProjs.findIndex(p => p.id === targetId);
-
         if (sourceIdx >= 0 && targetIdx >= 0) {
-            // Sposta l'elemento
             const [moved] = allProjs.splice(sourceIdx, 1);
             allProjs.splice(targetIdx, 0, moved);
-            
-            // Riassegna sequenzialmente ganttOrder da 0 a N
-            allProjs.forEach((p, index) => {
-                p.ganttOrder = index;
-            });
-
-            // Sincronizza questo update nel data principale
-            allProjs.forEach(p => {
-                const original = this.data.find(x => x.id === p.id);
-                if (original) original.ganttOrder = p.ganttOrder;
-            });
-
-            this.renderGantt(); // Aggiorna UI istantaneamente
-            await this.syncToGithub(); // Salva in background
+            allProjs.forEach((p, index) => { p.ganttOrder = index; });
+            allProjs.forEach(p => { const original = this.data.find(x => x.id === p.id); if (original) original.ganttOrder = p.ganttOrder; });
+            this.renderGantt();
+            await this.syncToGithub();
         }
     },
 
@@ -926,10 +759,7 @@ const app = {
         const filtOwn    = document.getElementById('tableOwnerFilter')?.value || '';
         const sortMode   = document.getElementById('tableSortSelect')?.value || 'prod_inprogress_first';
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
+        const today = new Date(); today.setHours(0, 0, 0, 0);
         let filtered = this.getProjectsOnly().filter(p =>
             (showHidden || !this.isHiddenForUI(p)) &&
             (p.nome || '').toLowerCase().includes(search) &&
@@ -937,31 +767,24 @@ const app = {
             (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
         );
         filtered = this._sortGantt(filtered, sortMode);
-
         tbody.innerHTML = filtered.map(p => {
-            const isPast        = p.dataProd && new Date(p.dataProd) <= today;
-            const autoStale     = this.isAutoStale(p);
+            const isPast          = p.dataProd && new Date(p.dataProd) <= today;
+            const autoStale       = this.isAutoStale(p);
             const currentlyHidden = this.isHiddenForUI(p);
-
             let rowCls = '';
             if (currentlyHidden) rowCls = 'class="table-warning opacity-75"';
             else if (isPast)     rowCls = 'class="table-secondary opacity-75"';
-
             const fornBadge = (p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'badge me-1 mb-1')).join('');
             const ownBadge  = (p.owners    || []).map(o => this._badgeSpan('owner', o, 'badge me-1 mb-1')).join('');
-
             const extraRows = [];
-            if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">⏱️ ${p.stimaGgu} gg/u</span>`);
-            if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1">💰 € ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
-
-            const links   = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+            if (p.stimaGgu   != null) extraRows.push(`<span class="badge bg-info text-dark me-1">\u23F1\uFE0F ${p.stimaGgu} gg/u</span>`);
+            if (p.stimaCosto != null) extraRows.push(`<span class="badge bg-warning text-dark me-1">\uD83D\uDCB0 \u20AC ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>`);
+            const links    = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
             const jiraHtml = this.jiraLinksHtml(links);
-
             let statusBadge = '';
-            if (p.hidden)       statusBadge = '<span class="badge bg-dark ms-1">🚫 Archiviato</span>';
-            else if (autoStale) statusBadge = '<span class="badge bg-secondary ms-1">🕐 Auto-archiviato</span>';
-            else if (isPast)    statusBadge = '<span class="badge bg-success ms-1">✅ Rilasciato</span>';
-
+            if (p.hidden)       statusBadge = '<span class="badge bg-dark ms-1">\uD83D\uDEAB Archiviato</span>';
+            else if (autoStale) statusBadge = '<span class="badge bg-secondary ms-1">\uD83D\uDD50 Auto-archiviato</span>';
+            else if (isPast)    statusBadge = '<span class="badge bg-success ms-1">\u2705 Rilasciato</span>';
             return `
             <tr ${rowCls}>
                 <td>
@@ -970,20 +793,17 @@ const app = {
                     ${jiraHtml ? `<div class="mt-1">${jiraHtml}</div>` : ''}
                     ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
                 </td>
-                <td>
-                    <div class="d-flex flex-wrap">${fornBadge}</div>
-                    ${ownBadge ? `<div class="mt-1 d-flex flex-wrap">${ownBadge}</div>` : ''}
-                </td>
+                <td><div class="d-flex flex-wrap">${fornBadge}</div>${ownBadge ? `<div class="mt-1 d-flex flex-wrap">${ownBadge}</div>` : ''}</td>
                 <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
                 <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
-                <td class="small">${this.formatDate(p.devStart)} ➔ ${this.formatDate(p.devEnd)}</td>
+                <td class="small">${this.formatDate(p.devStart)} \u27A0 ${this.formatDate(p.devEnd)}</td>
                 <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
                 <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
                 <td class="small text-muted" style="max-width: 250px; white-space: pre-wrap;">${p.note || ''}</td>
                 <td>
-                    <button class="btn btn-sm ${p.hidden ? 'btn-secondary' : 'btn-outline-secondary'} mb-1" onclick="app.toggleHidden('${p.id}')" title="${p.hidden ? 'Ripristina Progetto' : 'Archivia (Nascondi)'}">${p.hidden ? '👁️' : '🚫'}</button>
-                    <button class="btn btn-sm btn-outline-primary mb-1" onclick="app.openModal('${p.id}')" title="Modifica">✏️</button>
-                    <button class="btn btn-sm btn-outline-danger mb-1" onclick="app.deleteProject('${p.id}')" title="Elimina">🗑️</button>
+                    <button class="btn btn-sm ${p.hidden ? 'btn-secondary' : 'btn-outline-secondary'} mb-1" onclick="app.toggleHidden('${p.id}')" title="${p.hidden ? 'Ripristina Progetto' : 'Archivia (Nascondi)'}">${p.hidden ? '\uD83D\uDC41\uFE0F' : '\uD83D\uDEAB'}</button>
+                    <button class="btn btn-sm btn-outline-primary mb-1" onclick="app.openModal('${p.id}')" title="Modifica">\u270F\uFE0F</button>
+                    <button class="btn btn-sm btn-outline-danger mb-1" onclick="app.deleteProject('${p.id}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>
                 </td>
             </tr>`;
         }).join('');
@@ -992,12 +812,10 @@ const app = {
     renderGantt: function() {
         const container = document.getElementById('gantt-chart');
         if (!container) return;
-
         const filtForn   = document.getElementById('ganttFornitoreFilter')?.value || '';
         const filtOwn    = document.getElementById('ganttOwnerFilter')?.value || '';
         const sortMode   = document.getElementById('ganttSortSelect')?.value || 'prod_inprogress_first';
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
-
         let data = this.getProjectsOnly().filter(p =>
             (showHidden || !this.isHiddenForUI(p)) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
@@ -1005,38 +823,23 @@ const app = {
             (p.devStart || p.devEnd || p.dataTest || p.dataProd || p.dataIA || (p.customMilestones && p.customMilestones.length > 0))
         );
         data = this._sortGantt(data, sortMode);
-
         if (data.length === 0) {
             container.innerHTML = "<p class='text-center p-3 text-muted'>Nessun progetto con date programmate trovato per i filtri selezionati.</p>";
             return;
         }
-
         let minDate = null, maxDate = null;
-        const updateRange = d => {
-            if (!d) return;
-            const dt = new Date(d);
-            if (!minDate || dt < minDate) minDate = dt;
-            if (!maxDate || dt > maxDate) maxDate = dt;
-        };
+        const updateRange = d => { if (!d) return; const dt = new Date(d); if (!minDate || dt < minDate) minDate = dt; if (!maxDate || dt > maxDate) maxDate = dt; };
         data.forEach(p => {
-            [p.dataIA, p.devStart, p.devEnd, p.dataTest, p.dataProd,
-             p.dataUAT, p.dataBS, p.dataScadenzaStima, p.dataConfigSistema].forEach(updateRange);
+            [p.dataIA, p.devStart, p.devEnd, p.dataTest, p.dataProd, p.dataUAT, p.dataBS, p.dataScadenzaStima, p.dataConfigSistema].forEach(updateRange);
             if (p.customMilestones) p.customMilestones.forEach(m => updateRange(m.date));
         });
-
         if (!minDate || !maxDate) { minDate = new Date(); maxDate = new Date(); }
-
         minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
         let maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
         if (maxMonth <= minDate) maxMonth = new Date(minDate.getFullYear(), minDate.getMonth() + 2, 0);
         maxDate = maxMonth;
-
         const totalDays = Math.ceil((maxDate - minDate) / 86400000);
-        const pct = d => {
-            const days = (new Date(d) - minDate) / 86400000;
-            return Math.min(Math.max((days / totalDays) * 100, 0), 100);
-        };
-
+        const pct = d => { const days = (new Date(d) - minDate) / 86400000; return Math.min(Math.max((days / totalDays) * 100, 0), 100); };
         let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
         let cur = new Date(minDate);
         while (cur <= maxDate) {
@@ -1046,63 +849,47 @@ const app = {
             cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
         }
         html += '</div></div></div><div class="gantt-body">';
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
+        const today = new Date(); today.setHours(0, 0, 0, 0);
         const isCustomSort = sortMode === 'custom';
-
         data.forEach(p => {
             const startD = p.devStart ? p.devStart : (p.dataTest || p.dataProd || p.dataIA);
             const endD   = p.devEnd   ? p.devEnd   : startD;
-
             const leftPct   = startD ? pct(startD) : 0;
             const widthPct  = startD && endD ? Math.max(pct(endD) - leftPct, 0.5) : 0;
             const barOpacity = (p.devStart && p.devEnd) ? 1 : 0.2;
-
             const badgesHtml = [
                 ...(p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')),
                 ...(p.owners    || []).map(o => this._badgeSpan('owner', o, 'gantt-supplier-badge mb-1'))
             ].join('');
 
-            const isPast        = p.dataProd && new Date(p.dataProd) <= today;
-            const autoStale     = this.isAutoStale(p);
-            const currentlyHidden = this.isHiddenForUI(p);
+            // Link Jira nel Gantt
+            const ganttJiraLinks = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+            const ganttJiraHtml  = this.jiraLinksHtml(ganttJiraLinks);
 
+            const isPast          = p.dataProd && new Date(p.dataProd) <= today;
+            const autoStale       = this.isAutoStale(p);
+            const currentlyHidden = this.isHiddenForUI(p);
             let rowCls = isPast ? ' gantt-row--released' : '';
             if (currentlyHidden) rowCls += ' opacity-50';
-
             let statusIcon = '';
-            if (p.hidden)       statusIcon = '<span class="badge bg-dark ms-1">🚫</span>';
-            else if (autoStale) statusIcon = '<span class="badge bg-secondary ms-1" title="Auto-archiviato">🕐</span>';
-
+            if (p.hidden)       statusIcon = '<span class="badge bg-dark ms-1">\uD83D\uDEAB</span>';
+            else if (autoStale) statusIcon = '<span class="badge bg-secondary ms-1" title="Auto-archiviato">\uD83D\uDD50</span>';
             let allMilestones = [
-                { date: p.dataIA,            cls: 'ms-ia',         icon: '🤖', label: 'Consegna IA',           always: true  },
-                { date: p.devStart,          cls: 'ms-dev-start',  icon: '▶️',  label: 'Inizio Sviluppo',       always: true  },
-                { date: p.devEnd,            cls: 'ms-dev-end',    icon: '⏹️',  label: 'Fine Sviluppo',         always: true  },
-                { date: p.dataUAT,           cls: 'ms-uat',        icon: '👥', label: 'UAT',                   always: false },
-                { date: p.dataBS,            cls: 'ms-bs',         icon: '💼', label: 'Business Simulation',   always: false },
-                { date: p.dataTest,          cls: 'ms-test',       icon: '🧪', label: 'Rilascio Test',         always: true  },
-                { date: p.dataProd,          cls: 'ms-prod',       icon: '🚀', label: 'Rilascio Prod',         always: true  },
-                { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '📥', label: 'Scad. Stima Fornitore', always: false },
-                { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '🔧', label: 'Config Sistema',        always: false }
+                { date: p.dataIA,            cls: 'ms-ia',         icon: '\uD83E\uDD16', label: 'Consegna IA',           always: true  },
+                { date: p.devStart,          cls: 'ms-dev-start',  icon: '\u25B6\uFE0F', label: 'Inizio Sviluppo',       always: true  },
+                { date: p.devEnd,            cls: 'ms-dev-end',    icon: '\u23F9\uFE0F', label: 'Fine Sviluppo',         always: true  },
+                { date: p.dataUAT,           cls: 'ms-uat',        icon: '\uD83D\uDC65', label: 'UAT',                   always: false },
+                { date: p.dataBS,            cls: 'ms-bs',         icon: '\uD83D\uDCBC', label: 'Business Simulation',   always: false },
+                { date: p.dataTest,          cls: 'ms-test',       icon: '\uD83E\uDDEA', label: 'Rilascio Test',         always: true  },
+                { date: p.dataProd,          cls: 'ms-prod',       icon: '\uD83D\uDE80', label: 'Rilascio Prod',         always: true  },
+                { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '\uD83D\uDCE5', label: 'Scad. Stima Fornitore', always: false },
+                { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '\uD83D\uDD27', label: 'Config Sistema',        always: false }
             ];
-
-            if (p.customMilestones) {
-                p.customMilestones.forEach(cm => {
-                    allMilestones.push({ date: cm.date, cls: 'ms-custom', icon: '⭐', label: cm.label, always: false });
-                });
-            }
-
+            if (p.customMilestones) p.customMilestones.forEach(cm => allMilestones.push({ date: cm.date, cls: 'ms-custom', icon: '\u2B50', label: cm.label, always: false }));
             allMilestones = allMilestones.filter(m => m.date && m.date.trim() !== '');
-
             const dateGroups = {};
             allMilestones.forEach(m => { (dateGroups[m.date] = dateGroups[m.date] || []).push(m); });
-            allMilestones.forEach(m => {
-                const g = dateGroups[m.date];
-                m.offsetPx = (g.indexOf(m) - (g.length - 1) / 2) * 20;
-            });
-
+            allMilestones.forEach(m => { const g = dateGroups[m.date]; m.offsetPx = (g.indexOf(m) - (g.length - 1) / 2) * 20; });
             const milestonesHtml = allMilestones.map(m => {
                 const translateX = (-16 + m.offsetPx).toFixed(0);
                 const inlineColor     = m.cls === 'ms-custom' ? 'color:#198754;' : '';
@@ -1113,18 +900,14 @@ const app = {
                     <span class="ms-line" style="${inlineLineColor}"></span>
                 </div>`;
             }).join('');
-
             const pColors = this._projectColors(p.nome);
-
             let rowAttr = '';
             let dragHandleHtml = '';
-            
             if (isCustomSort) {
                 rowCls += ' draggable';
                 rowAttr = `draggable="true" ondragstart="app.handleDragStart(event, '${p.id}')" ondragover="app.handleDragOver(event)" ondrop="app.handleDrop(event, '${p.id}')" ondragenter="app.handleDragEnter(event)" ondragleave="app.handleDragLeave(event)" ondragend="app.handleDragEnd(event)"`;
-                dragHandleHtml = '<div class="drag-handle" title="Trascina per riordinare">☰</div>';
+                dragHandleHtml = '<div class="drag-handle" title="Trascina per riordinare">\u2630</div>';
             }
-
             html += `
                 <div class="gantt-row${rowCls}" ${rowAttr} style="background-color: ${pColors.bg}; border-left: 4px solid ${pColors.border}; margin-bottom: 4px; border-radius: 4px;">
                     <div class="gantt-project-col">
@@ -1132,39 +915,37 @@ const app = {
                         <div>
                             <strong>${p.nome} ${statusIcon}</strong>
                             <div class="gantt-supplier-list">${badgesHtml}</div>
+                            ${ganttJiraHtml ? `<div class="mt-1">${ganttJiraHtml}</div>` : ''}
                         </div>
                     </div>
                     <div class="gantt-timeline-col" style="position:relative;">
                         <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity}; background-color: ${pColors.barBg}; border: 1px solid ${pColors.barBorder}; box-shadow: none;" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
-                            <span style="color: #212529;">⚙️ Sviluppo</span>
+                            <span style="color: #212529;">\u2699\uFE0F Sviluppo</span>
                         </div>
                         ${milestonesHtml}
                     </div>
                 </div>`;
         });
         html += '</div>';
-
         const hasUAT       = data.some(p => p.dataUAT           && p.dataUAT.trim()           !== '');
         const hasBS        = data.some(p => p.dataBS            && p.dataBS.trim()            !== '');
         const hasScadStima = data.some(p => p.dataScadenzaStima && p.dataScadenzaStima.trim() !== '');
         const hasConfigSis = data.some(p => p.dataConfigSistema && p.dataConfigSistema.trim() !== '');
         const hasCustom    = data.some(p => p.customMilestones  && p.customMilestones.length  > 0);
-
         html += `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">🤖</span> Consegna IA</div>
-            <div class="gantt-legend-item"><span class="legend-ms">▶️</span> Inizio Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">⏹️</span> Fine Sviluppo</div>
-            ${hasUAT       ? '<div class="gantt-legend-item"><span class="legend-ms">👥</span> UAT</div>'                       : ''}
-            ${hasBS        ? '<div class="gantt-legend-item"><span class="legend-ms">💼</span> Business Simulation</div>'        : ''}
-            <div class="gantt-legend-item"><span class="legend-ms">🧪</span> Rilascio Test</div>
-            <div class="gantt-legend-item"><span class="legend-ms">🚀</span> Rilascio Prod</div>
-            ${hasScadStima ? '<div class="gantt-legend-item"><span class="legend-ms">📥</span> Scad. Stima Fornitore</div>'     : ''}
-            ${hasConfigSis ? '<div class="gantt-legend-item"><span class="legend-ms">🔧</span> Config Sistema</div>'            : ''}
-            ${hasCustom    ? '<div class="gantt-legend-item"><span class="legend-ms" style="color:#198754">⭐</span> Milestone Personalizzate</div>' : ''}
+            <div class="gantt-legend-item"><span class="legend-ms">\uD83E\uDD16</span> Consegna IA</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\u25B6\uFE0F</span> Inizio Sviluppo</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\u23F9\uFE0F</span> Fine Sviluppo</div>
+            ${hasUAT       ? '<div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDC65</span> UAT</div>' : ''}
+            ${hasBS        ? '<div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDCBC</span> Business Simulation</div>' : ''}
+            <div class="gantt-legend-item"><span class="legend-ms">\uD83E\uDDEA</span> Rilascio Test</div>
+            <div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDE80</span> Rilascio Prod</div>
+            ${hasScadStima ? '<div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDCE5</span> Scad. Stima Fornitore</div>' : ''}
+            ${hasConfigSis ? '<div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDD27</span> Config Sistema</div>' : ''}
+            ${hasCustom    ? '<div class="gantt-legend-item"><span class="legend-ms" style="color:#198754">\u2B50</span> Milestone Personalizzate</div>' : ''}
         </div>`;
-
         html += '</div>';
         container.innerHTML = html;
     },
@@ -1180,41 +961,30 @@ const app = {
     setEventPref: async function(key, pref) {
         const meta = this.getMeta();
         if (!meta.eventPrefs) meta.eventPrefs = {};
-        
-        if (pref === 'show') {
-            delete meta.eventPrefs[key];
-        } else {
-            meta.eventPrefs[key] = pref;
-        }
-        
-        this.renderCalendar(); // optimistic update
-        await this.syncToGithub(); // background save
+        if (pref === 'show') delete meta.eventPrefs[key];
+        else meta.eventPrefs[key] = pref;
+        this.renderCalendar();
+        await this.syncToGithub();
     },
 
     renderCalendar: function() {
         const container = document.getElementById('calendarContainer');
         if (!container) return;
-
         const filtForn   = document.getElementById('calendarFornitoreFilter')?.value || '';
         const filtOwn    = document.getElementById('calendarOwnerFilter')?.value    || '';
         const filtMile   = document.getElementById('calendarMilestoneFilter')?.value || '';
         const showHidden = document.getElementById('globalShowHidden')?.checked || false;
-        
         const calShowHiddenPrefs = document.getElementById('calShowHiddenPrefs')?.checked || false;
-
         const showProjectMilestones = filtMile !== 'reminders';
         const showCustomMilestones  = (filtMile === '' || filtMile === 'custom');
         const showReminders         = (filtMile === '' || filtMile === 'reminders');
-
         const milestonesToUse = (filtMile && !['custom', 'reminders'].includes(filtMile))
             ? this.MILESTONES.filter(m => m.key === filtMile)
             : this.MILESTONES;
-
         const events = [];
         const meta = this.getMeta();
         const prefs = meta.eventPrefs || {};
         const todayStr = dayjs().format('YYYY-MM-DD');
-
         if (showProjectMilestones) {
             this.getProjectsOnly()
                 .filter(p =>
@@ -1225,14 +995,14 @@ const app = {
                 .forEach(p => {
                     const currentlyHidden = this.isHiddenForUI(p);
                     const autoStale       = this.isAutoStale(p);
-
+                    // Prepara i link Jira del progetto una sola volta
+                    const pJiraLinks = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
                     milestonesToUse.forEach(m => {
                         const v = p[m.key];
                         if (v && v.trim() !== '') {
                             const prefKey = `ms_${p.id}_${m.key}`;
                             const pref = prefs[prefKey];
                             if (pref === 'hide' && !calShowHiddenPrefs) return;
-
                             const pastGray = this._calIsPast(v, m.key);
                             events.push({
                                 date:      dayjs(v),
@@ -1240,6 +1010,7 @@ const app = {
                                 nome:      p.nome,
                                 fornitori: p.fornitori || [],
                                 owners:    p.owners    || [],
+                                jiraLinks: pJiraLinks,
                                 label:     m.label,
                                 badge:     (pastGray || pref === 'gray' || pref === 'hide') ? 'bg-secondary' : m.badge,
                                 pastGray,
@@ -1253,14 +1024,12 @@ const app = {
                             });
                         }
                     });
-
                     if (showCustomMilestones && p.customMilestones) {
                         p.customMilestones.forEach(cm => {
                             if (cm.date && cm.date.trim() !== '') {
                                 const prefKey = `custom_${p.id}_${this._hashString(cm.label)}`;
                                 const pref = prefs[prefKey];
                                 if (pref === 'hide' && !calShowHiddenPrefs) return;
-
                                 const pastGray = this._calIsPast(cm.date, 'custom');
                                 events.push({
                                     date:      dayjs(cm.date),
@@ -1268,7 +1037,8 @@ const app = {
                                     nome:      p.nome,
                                     fornitori: p.fornitori || [],
                                     owners:    p.owners    || [],
-                                    label:     `⭐ ${cm.label}`,
+                                    jiraLinks: pJiraLinks,
+                                    label:     `\u2B50 ${cm.label}`,
                                     badge:     (pastGray || pref === 'gray' || pref === 'hide') ? 'bg-secondary' : 'bg-success',
                                     pastGray,
                                     userGray:  pref === 'gray',
@@ -1284,7 +1054,6 @@ const app = {
                     }
                 });
         }
-
         if (showReminders) {
             const showDone = document.getElementById('rem_show_done')?.checked || false;
             (meta.manualReminders || [])
@@ -1294,47 +1063,42 @@ const app = {
                     const prefKey = `rem_${r.id}`;
                     const pref = prefs[prefKey];
                     if (pref === 'hide' && !calShowHiddenPrefs) return;
-
                     events.push({
-                        date:     dayjs(r.date),
-                        sortKey:  r.date,
-                        nome:     r.title,
+                        date:      dayjs(r.date),
+                        sortKey:   r.date,
+                        nome:      r.title,
                         fornitori: [],
-                        owners:   [],
-                        label:    '📝 Promemoria',
-                        badge:    r.done || pref === 'gray' || pref === 'hide' ? 'bg-secondary' : 'bg-primary',
-                        reminder: true,
-                        done:     !!r.done,
-                        note:     r.note || '',
-                        userGray: pref === 'gray',
+                        owners:    [],
+                        jiraLinks: [],
+                        label:     '\uD83D\uDCDD Promemoria',
+                        badge:     r.done || pref === 'gray' || pref === 'hide' ? 'bg-secondary' : 'bg-primary',
+                        reminder:  true,
+                        done:      !!r.done,
+                        note:      r.note || '',
+                        userGray:  pref === 'gray',
                         isHiddenPref: pref === 'hide',
                         prefKey,
                         pref
                     });
                 });
         }
-
         this.renderReminders();
-
         if (events.length === 0) {
             container.innerHTML = "<div class='col-12'><p class='text-center text-muted p-3'>Nessun evento da visualizzare per i filtri selezionati.</p></div>";
             return;
         }
-
         const groups = {};
         events.forEach(ev => {
             const key = ev.date.format('YYYY-MM');
             if (!groups[key]) groups[key] = { label: ev.date.format('MMMM YYYY'), events: [] };
             groups[key].events.push(ev);
         });
-
         const sortedMonthKeys = Object.keys(groups).sort();
-
         let html = `
         <div class="col-12 mb-4">
             <div class="card shadow-sm border-0 bg-light">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0 rounded-top">
-                    <h5 class="mb-0 fw-bold text-primary">📅 Eventi in Calendario</h5>
+                    <h5 class="mb-0 fw-bold text-primary">\uD83D\uDCC5 Eventi in Calendario</h5>
                     <div class="form-check form-switch m-0">
                         <input class="form-check-input" type="checkbox" id="calShowHiddenPrefs" onchange="app.renderCalendar()" ${calShowHiddenPrefs ? 'checked' : ''}>
                         <label class="form-check-label small text-muted mt-1 ms-1" for="calShowHiddenPrefs">Mostra elementi nascosti</label>
@@ -1343,57 +1107,44 @@ const app = {
                 <div class="card-body p-4">
                     <div class="row g-4">
         `;
-
         sortedMonthKeys.forEach((k) => {
             const g = groups[k];
-            
-            // Ordina prima gli eventi "attivi" (non ingrigiti) e poi quelli ingrigiti
             const sorted = g.events.sort((a, b) => {
                 const aInactive = (a.isHiddenPref || a.hidden || a.userGray || (a.pastGray && !a.reminder) || (a.reminder && a.done)) ? 1 : 0;
                 const bInactive = (b.isHiddenPref || b.hidden || b.userGray || (b.pastGray && !b.reminder) || (b.reminder && b.done)) ? 1 : 0;
-                
-                if (aInactive !== bInactive) {
-                    return aInactive - bInactive; // 0 (active) viene prima di 1 (inactive)
-                }
-                
+                if (aInactive !== bInactive) return aInactive - bInactive;
                 return a.sortKey.localeCompare(b.sortKey);
             });
-
             html += `
             <div class="col-md-6 col-xl-4">
                 <div class="card h-100 shadow-sm border-0">
                     <div class="card-header bg-white py-3 border-bottom">
                         <h6 class="mb-0 fw-bold text-uppercase text-primary d-flex align-items-center justify-content-between">
-                            ${g.label} 
+                            ${g.label}
                             <span class="badge bg-secondary rounded-pill">${sorted.length}</span>
                         </h6>
                     </div>
                     <div class="card-body p-3 bg-white">
                         <div class="d-flex flex-column gap-2">
             `;
-
             sorted.forEach(ev => {
                 const fb = (ev.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge me-1 mb-1')).join('');
                 const ob = (ev.owners    || []).map(o => this._badgeSpan('owner',    o, 'gantt-supplier-badge me-1 mb-1')).join('');
-
+                // Link Jira nel calendario (solo per eventi di progetto, non promemoria)
+                const calJiraHtml = (!ev.reminder && ev.jiraLinks && ev.jiraLinks.length > 0) ? this.jiraLinksHtml(ev.jiraLinks) : '';
                 const isReminder  = !!ev.reminder;
                 const isPastGray  = !!ev.pastGray && !isReminder;
                 const isUserGray  = ev.userGray;
                 const isHiddenPref= ev.isHiddenPref;
                 const isToday     = ev.date.format('YYYY-MM-DD') === todayStr;
-
                 let opacityCls = '';
                 if (isHiddenPref) opacityCls = 'opacity-25';
                 else if (ev.hidden) opacityCls = 'opacity-50';
                 else if (isPastGray || isUserGray) opacityCls = 'opacity-75 cal-event--past';
-
                 const titleCls = (isReminder && ev.done) ? 'text-decoration-line-through' : ((isPastGray || isUserGray || isHiddenPref) ? 'text-muted' : '');
-                
                 let borderCls = 'border shadow-sm';
                 let bgCls = '';
                 let customStyle = '';
-
-                // Applica lo stile
                 if (isReminder) {
                     bgCls = 'bg-warning bg-opacity-10';
                     borderCls = 'border border-warning border-opacity-50 shadow-sm';
@@ -1401,56 +1152,46 @@ const app = {
                     const pColors = app._projectColors(ev.nome);
                     customStyle = `background-color: ${pColors.bg}; border-left: 4px solid ${pColors.border} !important; border-top: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.05);`;
                 }
-
-                // Se l'evento è oggi, diamo maggiore evidenza a prescindere
                 if (isToday) {
                     borderCls = 'border border-danger border-2 shadow';
-                    if (isReminder) {
-                        bgCls = 'bg-warning bg-opacity-25';
-                    } else {
-                        customStyle += ` border-color: #dc3545 !important; border-left: 4px solid #dc3545 !important;`;
-                    }
+                    if (isReminder) bgCls = 'bg-warning bg-opacity-25';
+                    else customStyle += ` border-color: #dc3545 !important; border-left: 4px solid #dc3545 !important;`;
                 }
-
                 let statusIcon = '';
-                if (ev.autoStale)          statusIcon = '<span title="Auto-archiviato">🕐</span>';
-                if (isReminder && ev.done) statusIcon = '<span title="Completato">✅</span>';
-
+                if (ev.autoStale)          statusIcon = '<span title="Auto-archiviato">\uD83D\uDD50</span>';
+                if (isReminder && ev.done) statusIcon = '<span title="Completato">\u2705</span>';
                 html += `
                 <div class="cal-event-item d-flex align-items-start gap-3 p-3 rounded ${opacityCls} ${borderCls} ${bgCls}" style="${customStyle}">
                     <div class="cal-event-date text-center" style="min-width: 50px;">
                         <div class="fw-bold fs-5 ${isToday ? 'text-danger' : (isPastGray || isUserGray || isHiddenPref ? 'text-muted' : (isReminder ? 'text-warning text-dark' : 'text-primary'))}">${ev.date.format('DD')}</div>
                         <div class="small text-uppercase ${isToday ? 'text-danger fw-bold' : (isReminder && !isPastGray && !isUserGray ? 'text-warning text-dark' : 'text-muted')}">${ev.date.format('MMM')}</div>
                     </div>
-                    
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
                             <span class="badge ${ev.badge}">${ev.label}</span>
-                            ${isToday ? '<span class="badge bg-danger animate__animated animate__pulse animate__infinite">OGGI</span>' : ''}
+                            ${isToday ? '<span class="badge bg-danger">OGGI</span>' : ''}
                             ${isHiddenPref ? '<span class="badge bg-dark">Nascosto</span>' : ''}
                             ${isUserGray ? '<span class="badge bg-secondary">Ingrigito</span>' : ''}
                         </div>
                         <div class="fw-semibold fs-6 ${titleCls}">${ev.nome} ${statusIcon}</div>
                         ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2 ms-1">${(ev.note || '').replace(/</g, '&lt;')}</div>` : ''}
+                        ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
                         ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
                     </div>
-
                     <div class="dropdown flex-shrink-0 ms-2">
-                        <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni visibilità" style="line-height: 1;">
-                            <strong>⋮</strong>
+                        <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni visibilit\u00E0" style="line-height: 1;">
+                            <strong>\u22EE</strong>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
-                            ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}', 'hide'); return false;">🚫 Nascondi</a></li>` : ''}
-                            ${ev.pref !== 'gray' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}', 'gray'); return false;">🌫️ Ingrigisci</a></li>` : ''}
-                            ${ev.pref ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 text-success" href="#" onclick="app.setEventPref('${ev.prefKey}', 'show'); return false;">👁️ Mostra Normale</a></li>` : ''}
+                            ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}', 'hide'); return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
+                            ${ev.pref !== 'gray' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}', 'gray'); return false;">\uD83C\uDF2B\uFE0F Ingrigisci</a></li>` : ''}
+                            ${ev.pref ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 text-success" href="#" onclick="app.setEventPref('${ev.prefKey}', 'show'); return false;">\uD83D\uDC41\uFE0F Mostra Normale</a></li>` : ''}
                         </ul>
                     </div>
                 </div>`;
             });
-
             html += `</div></div></div></div>`;
         });
-
         html += `</div></div></div></div>`;
         container.innerHTML = html;
     },
@@ -1461,18 +1202,13 @@ const app = {
 
     showAlert: function(msg, type = 'info', timeout = 3000) {
         const container = document.getElementById('toastContainer');
-        if (!container) return; // Fallback di sicurezza
-
+        if (!container) return;
         const toastId = 'toast-' + Date.now();
-        
-        let icon = 'ℹ️';
-        if (type === 'success') icon = '✅';
-        else if (type === 'danger') icon = '❌';
-        else if (type === 'warning') icon = '⚠️';
-
-        // Usiamo i toast text-bg-* di bootstrap
+        let icon = '\u2139\uFE0F';
+        if (type === 'success') icon = '\u2705';
+        else if (type === 'danger') icon = '\u274C';
+        else if (type === 'warning') icon = '\u26A0\uFE0F';
         const bgClass = type === 'warning' ? 'text-bg-warning' : (type === 'info' ? 'text-bg-info text-dark' : `text-bg-${type}`);
-        
         const toastHtml = `
         <div id="${toastId}" class="toast align-items-center ${bgClass} border-0 mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${timeout}">
             <div class="d-flex">
@@ -1483,16 +1219,11 @@ const app = {
                 <button type="button" class="btn-close ${type === 'warning' ? '' : 'btn-close-white'} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>`;
-
         container.insertAdjacentHTML('beforeend', toastHtml);
         const toastElement = document.getElementById(toastId);
-        
         const toast = new bootstrap.Toast(toastElement);
         toast.show();
-        
-        toastElement.addEventListener('hidden.bs.toast', () => {
-            toastElement.remove();
-        });
+        toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
     }
 };
 
