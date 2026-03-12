@@ -861,11 +861,8 @@ const app = {
                 ...(p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')),
                 ...(p.owners    || []).map(o => this._badgeSpan('owner', o, 'gantt-supplier-badge mb-1'))
             ].join('');
-
-            // Link Jira nel Gantt
             const ganttJiraLinks = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
             const ganttJiraHtml  = this.jiraLinksHtml(ganttJiraLinks);
-
             const isPast          = p.dataProd && new Date(p.dataProd) <= today;
             const autoStale       = this.isAutoStale(p);
             const currentlyHidden = this.isHiddenForUI(p);
@@ -967,6 +964,110 @@ const app = {
         await this.syncToGithub();
     },
 
+    // Renderizza una singola card evento (usata sia negli Highlights che nel calendario mensile)
+    _renderEventCard: function(ev, todayStr, compact) {
+        const fb = (ev.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge me-1 mb-1')).join('');
+        const ob = (ev.owners    || []).map(o => this._badgeSpan('owner',    o, 'gantt-supplier-badge me-1 mb-1')).join('');
+        const calJiraHtml = (!ev.reminder && ev.jiraLinks && ev.jiraLinks.length > 0) ? this.jiraLinksHtml(ev.jiraLinks) : '';
+        const isReminder   = !!ev.reminder;
+        const isPastGray   = !!ev.pastGray && !isReminder;
+        const isUserGray   = !!ev.userGray;
+        const isHiddenPref = !!ev.isHiddenPref;
+        const isToday      = ev.date.format('YYYY-MM-DD') === todayStr;
+        const isExpiredRem = isReminder && !ev.done && ev.date.format('YYYY-MM-DD') < todayStr;
+
+        let opacityCls = '';
+        if (isHiddenPref)                    opacityCls = 'opacity-25';
+        else if (ev.hidden)                  opacityCls = 'opacity-50';
+        else if (isPastGray || isUserGray)   opacityCls = 'opacity-75 cal-event--past';
+
+        const titleCls = (isReminder && ev.done) ? 'text-decoration-line-through' : ((isPastGray || isUserGray || isHiddenPref) ? 'text-muted' : '');
+
+        let borderCls = 'border shadow-sm';
+        let bgCls = '';
+        let customStyle = '';
+        if (isReminder) {
+            bgCls = isExpiredRem ? 'bg-danger bg-opacity-10' : 'bg-warning bg-opacity-10';
+            borderCls = isExpiredRem
+                ? 'border border-danger border-opacity-75 shadow-sm'
+                : 'border border-warning border-opacity-50 shadow-sm';
+        } else {
+            const pColors = app._projectColors(ev.nome);
+            customStyle = `background-color: ${pColors.bg}; border-left: 4px solid ${pColors.border} !important; border-top: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.05);`;
+        }
+        if (isToday && !isReminder) {
+            borderCls = 'border border-danger border-2 shadow';
+            customStyle += ` border-color: #dc3545 !important; border-left: 4px solid #dc3545 !important;`;
+        }
+        if (isToday && isReminder) {
+            borderCls = 'border border-danger border-2 shadow';
+            bgCls = 'bg-warning bg-opacity-25';
+        }
+
+        let statusIcon = '';
+        if (ev.autoStale)          statusIcon = '<span title="Auto-archiviato">\uD83D\uDD50</span>';
+        if (isReminder && ev.done) statusIcon = '<span title="Completato">\u2705</span>';
+
+        // In modalità compact (highlights) mostriamo card più snelle: no data grande, stile lista
+        if (compact) {
+            const dateLbl = ev.date.format('DD/MM');
+            const expiredBadge = isExpiredRem ? '<span class="badge bg-danger ms-1 small">Scaduto</span>' : '';
+            return `
+            <div class="cal-event-item d-flex align-items-start gap-2 p-2 rounded mb-2 ${opacityCls} ${borderCls} ${bgCls}" style="${customStyle} font-size:0.85rem;">
+                <div class="flex-grow-1 min-w-0">
+                    <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
+                        <span class="badge ${ev.badge} me-1" style="font-size:0.7rem;">${ev.label}</span>
+                        <span class="text-muted" style="font-size:0.75rem;">${dateLbl}</span>
+                        ${expiredBadge}
+                        ${isHiddenPref ? '<span class="badge bg-dark" style="font-size:0.65rem;">Nascosto</span>' : ''}
+                        ${isUserGray   ? '<span class="badge bg-secondary" style="font-size:0.65rem;">Ingrigito</span>' : ''}
+                    </div>
+                    <div class="fw-semibold ${titleCls}" style="font-size:0.85rem; word-break:break-word;">${ev.nome} ${statusIcon}</div>
+                    ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2">${(ev.note||'').replace(/</g,'&lt;')}</div>` : ''}
+                    ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
+                    ${fb || ob ? `<div class="mt-1 d-flex flex-wrap">${fb}${ob}</div>` : ''}
+                </div>
+                <div class="dropdown flex-shrink-0">
+                    <button class="btn btn-sm btn-light text-secondary border-0 p-0 px-1" type="button" data-bs-toggle="dropdown" style="line-height:1;"><strong>\u22EE</strong></button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                        ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','hide');return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
+                        ${ev.pref !== 'gray' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','gray');return false;">\uD83C\uDF2B\uFE0F Ingrigisci</a></li>` : ''}
+                        ${ev.pref ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 text-success" href="#" onclick="app.setEventPref('${ev.prefKey}','show');return false;">\uD83D\uDC41\uFE0F Mostra Normale</a></li>` : ''}
+                    </ul>
+                </div>
+            </div>`;
+        }
+
+        // Card normale (calendario mensile)
+        return `
+        <div class="cal-event-item d-flex align-items-start gap-3 p-3 rounded ${opacityCls} ${borderCls} ${bgCls}" style="${customStyle}">
+            <div class="cal-event-date text-center" style="min-width: 50px;">
+                <div class="fw-bold fs-5 ${isToday ? 'text-danger' : (isPastGray || isUserGray || isHiddenPref ? 'text-muted' : (isReminder ? 'text-warning text-dark' : 'text-primary'))}">${ev.date.format('DD')}</div>
+                <div class="small text-uppercase ${isToday ? 'text-danger fw-bold' : (isReminder && !isPastGray && !isUserGray ? 'text-warning text-dark' : 'text-muted')}">${ev.date.format('MMM')}</div>
+            </div>
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                    <span class="badge ${ev.badge}">${ev.label}</span>
+                    ${isToday ? '<span class="badge bg-danger">OGGI</span>' : ''}
+                    ${isHiddenPref ? '<span class="badge bg-dark">Nascosto</span>' : ''}
+                    ${isUserGray ? '<span class="badge bg-secondary">Ingrigito</span>' : ''}
+                </div>
+                <div class="fw-semibold fs-6 ${titleCls}">${ev.nome} ${statusIcon}</div>
+                ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2 ms-1">${(ev.note||'').replace(/</g,'&lt;')}</div>` : ''}
+                ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
+                ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
+            </div>
+            <div class="dropdown flex-shrink-0 ms-2">
+                <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni visibilit\u00E0" style="line-height: 1;"><strong>\u22EE</strong></button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                    ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','hide');return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
+                    ${ev.pref !== 'gray' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','gray');return false;">\uD83C\uDF2B\uFE0F Ingrigisci</a></li>` : ''}
+                    ${ev.pref ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 text-success" href="#" onclick="app.setEventPref('${ev.prefKey}','show');return false;">\uD83D\uDC41\uFE0F Mostra Normale</a></li>` : ''}
+                </ul>
+            </div>
+        </div>`;
+    },
+
     renderCalendar: function() {
         const container = document.getElementById('calendarContainer');
         if (!container) return;
@@ -985,6 +1086,7 @@ const app = {
         const meta = this.getMeta();
         const prefs = meta.eventPrefs || {};
         const todayStr = dayjs().format('YYYY-MM-DD');
+
         if (showProjectMilestones) {
             this.getProjectsOnly()
                 .filter(p =>
@@ -995,7 +1097,6 @@ const app = {
                 .forEach(p => {
                     const currentlyHidden = this.isHiddenForUI(p);
                     const autoStale       = this.isAutoStale(p);
-                    // Prepara i link Jira del progetto una sola volta
                     const pJiraLinks = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
                     milestonesToUse.forEach(m => {
                         const v = p[m.key];
@@ -1005,22 +1106,12 @@ const app = {
                             if (pref === 'hide' && !calShowHiddenPrefs) return;
                             const pastGray = this._calIsPast(v, m.key);
                             events.push({
-                                date:      dayjs(v),
-                                sortKey:   v,
-                                nome:      p.nome,
-                                fornitori: p.fornitori || [],
-                                owners:    p.owners    || [],
-                                jiraLinks: pJiraLinks,
-                                label:     m.label,
-                                badge:     (pastGray || pref === 'gray' || pref === 'hide') ? 'bg-secondary' : m.badge,
-                                pastGray,
-                                userGray:  pref === 'gray',
-                                isHiddenPref: pref === 'hide',
-                                prefKey,
-                                pref,
-                                milestoneKey: m.key,
-                                autoStale,
-                                hidden:    currentlyHidden
+                                date: dayjs(v), sortKey: v, nome: p.nome,
+                                fornitori: p.fornitori || [], owners: p.owners || [], jiraLinks: pJiraLinks,
+                                label: m.label,
+                                badge: (pastGray || pref === 'gray' || pref === 'hide') ? 'bg-secondary' : m.badge,
+                                pastGray, userGray: pref === 'gray', isHiddenPref: pref === 'hide',
+                                prefKey, pref, milestoneKey: m.key, autoStale, hidden: currentlyHidden
                             });
                         }
                     });
@@ -1032,28 +1123,19 @@ const app = {
                                 if (pref === 'hide' && !calShowHiddenPrefs) return;
                                 const pastGray = this._calIsPast(cm.date, 'custom');
                                 events.push({
-                                    date:      dayjs(cm.date),
-                                    sortKey:   cm.date,
-                                    nome:      p.nome,
-                                    fornitori: p.fornitori || [],
-                                    owners:    p.owners    || [],
-                                    jiraLinks: pJiraLinks,
-                                    label:     `\u2B50 ${cm.label}`,
-                                    badge:     (pastGray || pref === 'gray' || pref === 'hide') ? 'bg-secondary' : 'bg-success',
-                                    pastGray,
-                                    userGray:  pref === 'gray',
-                                    isHiddenPref: pref === 'hide',
-                                    prefKey,
-                                    pref,
-                                    milestoneKey: 'custom',
-                                    autoStale,
-                                    hidden:    currentlyHidden
+                                    date: dayjs(cm.date), sortKey: cm.date, nome: p.nome,
+                                    fornitori: p.fornitori || [], owners: p.owners || [], jiraLinks: pJiraLinks,
+                                    label: `\u2B50 ${cm.label}`,
+                                    badge: (pastGray || pref === 'gray' || pref === 'hide') ? 'bg-secondary' : 'bg-success',
+                                    pastGray, userGray: pref === 'gray', isHiddenPref: pref === 'hide',
+                                    prefKey, pref, milestoneKey: 'custom', autoStale, hidden: currentlyHidden
                                 });
                             }
                         });
                     }
                 });
         }
+
         if (showReminders) {
             const showDone = document.getElementById('rem_show_done')?.checked || false;
             (meta.manualReminders || [])
@@ -1064,36 +1146,32 @@ const app = {
                     const pref = prefs[prefKey];
                     if (pref === 'hide' && !calShowHiddenPrefs) return;
                     events.push({
-                        date:      dayjs(r.date),
-                        sortKey:   r.date,
-                        nome:      r.title,
-                        fornitori: [],
-                        owners:    [],
-                        jiraLinks: [],
-                        label:     '\uD83D\uDCDD Promemoria',
-                        badge:     r.done || pref === 'gray' || pref === 'hide' ? 'bg-secondary' : 'bg-primary',
-                        reminder:  true,
-                        done:      !!r.done,
-                        note:      r.note || '',
-                        userGray:  pref === 'gray',
-                        isHiddenPref: pref === 'hide',
-                        prefKey,
-                        pref
+                        date: dayjs(r.date), sortKey: r.date,
+                        nome: r.title, fornitori: [], owners: [], jiraLinks: [],
+                        label: '\uD83D\uDCDD Promemoria',
+                        badge: r.done || pref === 'gray' || pref === 'hide' ? 'bg-secondary' : 'bg-primary',
+                        reminder: true, done: !!r.done, note: r.note || '',
+                        userGray: pref === 'gray', isHiddenPref: pref === 'hide',
+                        prefKey, pref
                     });
                 });
         }
+
         this.renderReminders();
+
         if (events.length === 0) {
             container.innerHTML = "<div class='col-12'><p class='text-center text-muted p-3'>Nessun evento da visualizzare per i filtri selezionati.</p></div>";
             return;
         }
-        const groups = {};
-        events.forEach(ev => {
-            const key = ev.date.format('YYYY-MM');
-            if (!groups[key]) groups[key] = { label: ev.date.format('MMMM YYYY'), events: [] };
-            groups[key].events.push(ev);
-        });
-        const sortedMonthKeys = Object.keys(groups).sort();
+
+        // --- HIGHLIGHTS: promemoria (oggi + scaduti non completati) + milestone di oggi ---
+        const hlReminders  = events.filter(ev => ev.reminder && !ev.done && ev.sortKey <= todayStr && !ev.isHiddenPref);
+        const hlMilestones = events.filter(ev => !ev.reminder && ev.sortKey === todayStr && !ev.isHiddenPref);
+        const hasHighlights = hlReminders.length > 0 || hlMilestones.length > 0;
+
+        hlReminders.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+        hlMilestones.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
         let html = `
         <div class="col-12 mb-4">
             <div class="card shadow-sm border-0 bg-light">
@@ -1105,8 +1183,51 @@ const app = {
                     </div>
                 </div>
                 <div class="card-body p-4">
-                    <div class="row g-4">
-        `;
+                    <div class="row g-4">`;
+
+        // Sezione HIGHLIGHTS
+        if (hasHighlights) {
+            html += `
+            <div class="col-12">
+                <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fff8e1 0%, #e8f5e9 100%); border-left: 4px solid #ffc107 !important;">
+                    <div class="card-header border-0 pb-0 pt-3 px-3" style="background:transparent;">
+                        <h6 class="fw-bold mb-0" style="color:#856404;">\u26A1 Highlights &mdash; <span class="text-muted fw-normal" style="font-size:0.85rem;">Oggi ${dayjs().format('DD/MM/YYYY')}</span></h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-3">`;
+
+            // Colonna sinistra: promemoria (oggi + scaduti)
+            html += `<div class="col-md-5">`;
+            if (hlReminders.length > 0) {
+                html += `<div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">\uD83D\uDCDD Promemoria attivi</div>`;
+                hlReminders.forEach(ev => { html += this._renderEventCard(ev, todayStr, true); });
+            } else {
+                html += `<div class="text-muted small fst-italic p-2">Nessun promemoria attivo o scaduto.</div>`;
+            }
+            html += `</div>`;
+
+            // Colonna destra: milestone di oggi
+            html += `<div class="col-md-7">`;
+            if (hlMilestones.length > 0) {
+                html += `<div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">\uD83D\uDE80 Milestone di oggi</div>`;
+                hlMilestones.forEach(ev => { html += this._renderEventCard(ev, todayStr, true); });
+            } else {
+                html += `<div class="text-muted small fst-italic p-2">Nessuna milestone automatica per oggi.</div>`;
+            }
+            html += `</div>`;
+
+            html += `</div></div></div></div>`; // chiude row, card-body, card, col-12
+        }
+
+        // --- Calendario mensile (tutti gli eventi, escluse le righe già mostrate in highlights) ---
+        const groups = {};
+        events.forEach(ev => {
+            const key = ev.date.format('YYYY-MM');
+            if (!groups[key]) groups[key] = { label: ev.date.format('MMMM YYYY'), events: [] };
+            groups[key].events.push(ev);
+        });
+        const sortedMonthKeys = Object.keys(groups).sort();
+
         sortedMonthKeys.forEach((k) => {
             const g = groups[k];
             const sorted = g.events.sort((a, b) => {
@@ -1125,73 +1246,11 @@ const app = {
                         </h6>
                     </div>
                     <div class="card-body p-3 bg-white">
-                        <div class="d-flex flex-column gap-2">
-            `;
-            sorted.forEach(ev => {
-                const fb = (ev.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge me-1 mb-1')).join('');
-                const ob = (ev.owners    || []).map(o => this._badgeSpan('owner',    o, 'gantt-supplier-badge me-1 mb-1')).join('');
-                // Link Jira nel calendario (solo per eventi di progetto, non promemoria)
-                const calJiraHtml = (!ev.reminder && ev.jiraLinks && ev.jiraLinks.length > 0) ? this.jiraLinksHtml(ev.jiraLinks) : '';
-                const isReminder  = !!ev.reminder;
-                const isPastGray  = !!ev.pastGray && !isReminder;
-                const isUserGray  = ev.userGray;
-                const isHiddenPref= ev.isHiddenPref;
-                const isToday     = ev.date.format('YYYY-MM-DD') === todayStr;
-                let opacityCls = '';
-                if (isHiddenPref) opacityCls = 'opacity-25';
-                else if (ev.hidden) opacityCls = 'opacity-50';
-                else if (isPastGray || isUserGray) opacityCls = 'opacity-75 cal-event--past';
-                const titleCls = (isReminder && ev.done) ? 'text-decoration-line-through' : ((isPastGray || isUserGray || isHiddenPref) ? 'text-muted' : '');
-                let borderCls = 'border shadow-sm';
-                let bgCls = '';
-                let customStyle = '';
-                if (isReminder) {
-                    bgCls = 'bg-warning bg-opacity-10';
-                    borderCls = 'border border-warning border-opacity-50 shadow-sm';
-                } else {
-                    const pColors = app._projectColors(ev.nome);
-                    customStyle = `background-color: ${pColors.bg}; border-left: 4px solid ${pColors.border} !important; border-top: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.05);`;
-                }
-                if (isToday) {
-                    borderCls = 'border border-danger border-2 shadow';
-                    if (isReminder) bgCls = 'bg-warning bg-opacity-25';
-                    else customStyle += ` border-color: #dc3545 !important; border-left: 4px solid #dc3545 !important;`;
-                }
-                let statusIcon = '';
-                if (ev.autoStale)          statusIcon = '<span title="Auto-archiviato">\uD83D\uDD50</span>';
-                if (isReminder && ev.done) statusIcon = '<span title="Completato">\u2705</span>';
-                html += `
-                <div class="cal-event-item d-flex align-items-start gap-3 p-3 rounded ${opacityCls} ${borderCls} ${bgCls}" style="${customStyle}">
-                    <div class="cal-event-date text-center" style="min-width: 50px;">
-                        <div class="fw-bold fs-5 ${isToday ? 'text-danger' : (isPastGray || isUserGray || isHiddenPref ? 'text-muted' : (isReminder ? 'text-warning text-dark' : 'text-primary'))}">${ev.date.format('DD')}</div>
-                        <div class="small text-uppercase ${isToday ? 'text-danger fw-bold' : (isReminder && !isPastGray && !isUserGray ? 'text-warning text-dark' : 'text-muted')}">${ev.date.format('MMM')}</div>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                            <span class="badge ${ev.badge}">${ev.label}</span>
-                            ${isToday ? '<span class="badge bg-danger">OGGI</span>' : ''}
-                            ${isHiddenPref ? '<span class="badge bg-dark">Nascosto</span>' : ''}
-                            ${isUserGray ? '<span class="badge bg-secondary">Ingrigito</span>' : ''}
-                        </div>
-                        <div class="fw-semibold fs-6 ${titleCls}">${ev.nome} ${statusIcon}</div>
-                        ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2 ms-1">${(ev.note || '').replace(/</g, '&lt;')}</div>` : ''}
-                        ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
-                        ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
-                    </div>
-                    <div class="dropdown flex-shrink-0 ms-2">
-                        <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni visibilit\u00E0" style="line-height: 1;">
-                            <strong>\u22EE</strong>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
-                            ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}', 'hide'); return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
-                            ${ev.pref !== 'gray' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}', 'gray'); return false;">\uD83C\uDF2B\uFE0F Ingrigisci</a></li>` : ''}
-                            ${ev.pref ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 text-success" href="#" onclick="app.setEventPref('${ev.prefKey}', 'show'); return false;">\uD83D\uDC41\uFE0F Mostra Normale</a></li>` : ''}
-                        </ul>
-                    </div>
-                </div>`;
-            });
+                        <div class="d-flex flex-column gap-2">`;
+            sorted.forEach(ev => { html += this._renderEventCard(ev, todayStr, false); });
             html += `</div></div></div></div>`;
         });
+
         html += `</div></div></div></div>`;
         container.innerHTML = html;
     },
