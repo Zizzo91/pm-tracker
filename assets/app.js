@@ -491,52 +491,8 @@ const app = {
     },
 
     renderReminders: function() {
-        const list = document.getElementById('remindersList');
-        if (!list) return;
-        const showDone = document.getElementById('rem_show_done')?.checked || false;
-        const meta  = this.getMeta();
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const items = (meta.manualReminders || [])
-            .filter(r => r && r.date && r.title)
-            .filter(r => showDone || !r.done)
-            .sort((a, b) => {
-                const d = (a.date || '').localeCompare(b.date || '');
-                if (d !== 0) return d;
-                return (a.title || '').localeCompare(b.title || '', 'it');
-            });
-        if (items.length === 0) {
-            list.innerHTML = `<div class="text-muted small">Nessun promemoria da mostrare.</div>`;
-            return;
-        }
-        const editingId = this._editingReminderId;
-        list.innerHTML = items.map(r => {
-            const isExpired  = !r.done && new Date(r.date) < today;
-            const isEditing  = r.id === editingId;
-            const cls        = isEditing ? 'border-warning border-2' : (r.done ? 'opacity-50' : (isExpired ? 'opacity-75' : ''));
-            const titleCls   = r.done ? 'text-decoration-line-through' : '';
-            const badge      = r.done ? 'bg-secondary' : (isExpired ? 'bg-danger' : 'bg-primary');
-            const btnText    = r.done ? '\u21A9\uFE0F' : '\u2705';
-            const btnTitle   = r.done ? 'Segna come non completato' : 'Segna come completato';
-            const editingBadge = isEditing ? '<span class="badge bg-warning text-dark ms-1">\u270F\uFE0F In modifica</span>' : '';
-            return `
-            <div class="d-flex justify-content-between align-items-start border rounded p-2 mb-2 ${cls}">
-                <div class="pe-2">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="badge ${badge}">\uD83D\uDCDD</span>
-                        <span class="small text-muted">${dayjs(r.date).format('DD/MM/YYYY')}</span>
-                        <span class="fw-semibold ${titleCls}">${(r.title || '').replace(/</g, '&lt;')}</span>
-                        ${isExpired ? '<span class="badge bg-danger ms-1 small">Scaduto</span>' : ''}
-                        ${editingBadge}
-                    </div>
-                    ${r.note ? `<div class="small text-muted mt-1">${(r.note || '').replace(/</g, '&lt;')}</div>` : ''}
-                </div>
-                <div class="d-flex gap-2 flex-shrink-0">
-                    <button class="btn btn-outline-warning btn-sm" onclick="app.editReminder('${r.id}')" title="Modifica">\u270F\uFE0F</button>
-                    <button class="btn btn-outline-success btn-sm" onclick="app.toggleReminderDone('${r.id}')" title="${btnTitle}">${btnText}</button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="app.deleteReminder('${r.id}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>
-                </div>
-            </div>`;
-        }).join('');
+        
+        
         this._updateReminderFormUI();
     },
 
@@ -1057,7 +1013,7 @@ const app = {
                 ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
                 ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
             </div>
-            <div class="dropdown flex-shrink-0 ms-2">
+            ${isReminder ? `<button class="btn btn-sm btn-outline-warning me-1" onclick="app.editReminder('${ev.reminderId}')" title="Modifica">\u270F\uFE0F Modifica</button><button class="btn btn-sm btn-outline-danger me-1" onclick="app.deleteReminder('${ev.reminderId}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>` : ''}<div class="dropdown flex-shrink-0 ms-2">
                 <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni visibilit\u00E0" style="line-height: 1;"><strong>\u22EE</strong></button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
                     ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','hide');return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
@@ -1150,7 +1106,7 @@ const app = {
                         nome: r.title, fornitori: [], owners: [], jiraLinks: [],
                         label: '\uD83D\uDCDD Promemoria',
                         badge: r.done || pref === 'gray' || pref === 'hide' ? 'bg-secondary' : 'bg-primary',
-                        reminder: true, done: !!r.done, note: r.note || '',
+                        reminder: true, reminderId: r.id, done: !!r.done, note: r.note || '',
                         userGray: pref === 'gray', isHiddenPref: pref === 'hide',
                         prefKey, pref
                     });
