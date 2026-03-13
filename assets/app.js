@@ -491,9 +491,16 @@ const app = {
     },
 
     renderReminders: function() {
-        
-        
         this._updateReminderFormUI();
+    },
+
+    _formatDoneAt: function(doneAt) {
+        if (!doneAt) return '';
+        try {
+            const d = new Date(doneAt);
+            const pad = n => String(n).padStart(2, '0');
+            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        } catch(e) { return ''; }
     },
 
     saveProject: async function() {
@@ -964,7 +971,17 @@ const app = {
         if (ev.autoStale)          statusIcon = '<span title="Auto-archiviato">\uD83D\uDD50</span>';
         if (isReminder && ev.done) statusIcon = '<span title="Completato">\u2705</span>';
 
-        // In modalità compact (highlights) mostriamo card più snelle: no data grande, stile lista
+        // Riga doneAt (data/ora completamento), mostrata in piccolo sotto il titolo
+        const doneAtHtml = (isReminder && ev.done && ev.doneAt)
+            ? `<div class="text-muted mt-1" style="font-size:0.72rem;">\u2705 Completato il ${this._formatDoneAt(ev.doneAt)}</div>`
+            : '';
+
+        // Bottoni CTA per i promemoria
+        const reminderCtaHtml = isReminder
+            ? `<button class="btn btn-sm ${ev.done ? 'btn-success' : 'btn-outline-success'} me-1" onclick="app.toggleReminderDone('${ev.reminderId}')" title="${ev.done ? 'Riapri' : 'Segna fatto'}">${ev.done ? '\u21A9\uFE0F Riapri' : '\u2705 Fatto'}</button><button class="btn btn-sm btn-outline-warning me-1" onclick="app.editReminder('${ev.reminderId}')" title="Modifica">\u270F\uFE0F Modifica</button><button class="btn btn-sm btn-outline-danger me-1" onclick="app.deleteReminder('${ev.reminderId}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>`
+            : '';
+
+        // In modalità compact (highlights) mostriamo card più snelle
         if (compact) {
             const dateLbl = ev.date.format('DD/MM');
             const expiredBadge = isExpiredRem ? '<span class="badge bg-danger ms-1 small">Scaduto</span>' : '';
@@ -979,9 +996,11 @@ const app = {
                         ${isUserGray   ? '<span class="badge bg-secondary" style="font-size:0.65rem;">Ingrigito</span>' : ''}
                     </div>
                     <div class="fw-semibold ${titleCls}" style="font-size:0.85rem; word-break:break-word;">${ev.nome} ${statusIcon}</div>
+                    ${doneAtHtml}
                     ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2">${(ev.note||'').replace(/</g,'&lt;')}</div>` : ''}
                     ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
                     ${fb || ob ? `<div class="mt-1 d-flex flex-wrap">${fb}${ob}</div>` : ''}
+                    ${isReminder ? `<div class="d-flex flex-wrap gap-1 mt-2">${reminderCtaHtml}</div>` : ''}
                 </div>
                 <div class="dropdown flex-shrink-0">
                     <button class="btn btn-sm btn-light text-secondary border-0 p-0 px-1" type="button" data-bs-toggle="dropdown" style="line-height:1;"><strong>\u22EE</strong></button>
@@ -1009,11 +1028,13 @@ const app = {
                     ${isUserGray ? '<span class="badge bg-secondary">Ingrigito</span>' : ''}
                 </div>
                 <div class="fw-semibold fs-6 ${titleCls}">${ev.nome} ${statusIcon}</div>
+                ${doneAtHtml}
                 ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2 ms-1">${(ev.note||'').replace(/</g,'&lt;')}</div>` : ''}
                 ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
                 ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
             </div>
-            ${isReminder ? `<button class="btn btn-sm ${ev.done ? 'btn-success' : 'btn-outline-success'} me-1" onclick="app.toggleReminderDone('${ev.reminderId}')" title="${ev.done ? 'Riapri' : 'Segna fatto'}">${ev.done ? '\u21A9\uFE0F Riapri' : '\u2705 Fatto'}</button><button class="btn btn-sm btn-outline-warning me-1" onclick="app.editReminder('${ev.reminderId}')" title="Modifica">\u270F\uFE0F Modifica</button><button class="btn btn-sm btn-outline-danger me-1" onclick="app.deleteReminder('${ev.reminderId}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>` : ''}<div class="dropdown flex-shrink-0 ms-2">
+            ${reminderCtaHtml ? `<div class="d-flex flex-column gap-1 flex-shrink-0">${reminderCtaHtml}</div>` : ''}
+            <div class="dropdown flex-shrink-0 ms-2">
                 <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni visibilit\u00E0" style="line-height: 1;"><strong>\u22EE</strong></button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
                     ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','hide');return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
@@ -1106,7 +1127,8 @@ const app = {
                         nome: r.title, fornitori: [], owners: [], jiraLinks: [],
                         label: '\uD83D\uDCDD Promemoria',
                         badge: r.done || pref === 'gray' || pref === 'hide' ? 'bg-secondary' : 'bg-primary',
-                        reminder: true, reminderId: r.id, done: !!r.done, note: r.note || '',
+                        reminder: true, reminderId: r.id, done: !!r.done, doneAt: r.doneAt || null,
+                        note: r.note || '',
                         userGray: pref === 'gray', isHiddenPref: pref === 'hide',
                         prefKey, pref
                     });
