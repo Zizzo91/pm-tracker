@@ -1013,7 +1013,7 @@ const app = {
                 ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
                 ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
             </div>
-            ${isReminder ? `<button class="btn btn-sm btn-outline-warning me-1" onclick="app.editReminder('${ev.reminderId}')" title="Modifica">\u270F\uFE0F Modifica</button><button class="btn btn-sm btn-outline-danger me-1" onclick="app.deleteReminder('${ev.reminderId}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>` : ''}<div class="dropdown flex-shrink-0 ms-2">
+            ${isReminder ? `<button class="btn btn-sm ${ev.done ? 'btn-success' : 'btn-outline-success'} me-1" onclick="app.toggleReminderDone('${ev.reminderId}')" title="${ev.done ? 'Riapri' : 'Segna fatto'}">${ev.done ? '\u21A9\uFE0F Riapri' : '\u2705 Fatto'}</button><button class="btn btn-sm btn-outline-warning me-1" onclick="app.editReminder('${ev.reminderId}')" title="Modifica">\u270F\uFE0F Modifica</button><button class="btn btn-sm btn-outline-danger me-1" onclick="app.deleteReminder('${ev.reminderId}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>` : ''}<div class="dropdown flex-shrink-0 ms-2">
                 <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni visibilit\u00E0" style="line-height: 1;"><strong>\u22EE</strong></button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
                     ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','hide');return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
