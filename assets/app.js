@@ -33,6 +33,13 @@ const app = {
 
     // ─── HELPERS GENERICI ────────────────────────────────────────────────────
 
+    // Getter centralizzato per "oggi a mezzanotte" — evita duplicazione in tutto il file
+    get _today() {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    },
+
     _getVal: function(id) {
         const el = document.getElementById(id);
         return el ? el.value : '';
@@ -150,7 +157,7 @@ const app = {
             if (!p.dataProd || p.dataProd.trim() === '') return false;
             const prodDate = new Date(p.dataProd);
             if (isNaN(prodDate.getTime())) return false;
-            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const today = this._today;
             const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
             return prodDate < oneMonthAgo;
         } catch (e) { console.error('Errore in isAutoStale:', e); return false; }
@@ -373,7 +380,9 @@ const app = {
             this.lastETag = response.headers.get('ETag');
             const json = await response.json();
             this.sha  = json.sha;
-            this.data = JSON.parse(decodeURIComponent(escape(atob(json.content)))).map(p => this.normalizeProject(p));
+            // Fix: sostituito escape() deprecato con TextDecoder (standard moderno)
+            const raw = Uint8Array.from(atob(json.content.replace(/\s/g, '')), c => c.charCodeAt(0));
+            this.data = JSON.parse(new TextDecoder().decode(raw)).map(p => this.normalizeProject(p));
             this.getMeta();
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
@@ -477,7 +486,8 @@ const app = {
         await this.syncToGithub();
     },
 
-    renderReminders: function() { this._updateReminderFormUI(); },
+    // Rinominato da renderReminders: aggiorna solo lo stato del form, non renderizza nulla
+    _syncReminderFormState: function() { this._updateReminderFormUI(); },
 
     _formatDoneAt: function(doneAt) {
         if (!doneAt) return '';
@@ -645,7 +655,7 @@ const app = {
     // ─── SORT ────────────────────────────────────────────────────────────────
 
     _sortGantt: function(data, mode) {
-        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const today = this._today;
         const d  = val => val ? new Date(val) : new Date(0);
         const ip = p   => { const prod = p.dataProd ? new Date(p.dataProd) : null; return !prod || prod > today; };
         const inProgressFirst = field => (a, b) => {
@@ -722,7 +732,7 @@ const app = {
         const filtOwn    = this._getVal('tableOwnerFilter');
         const sortMode   = this._getVal('tableSortSelect') || 'prod_inprogress_first';
         const showHidden = this._getChecked('globalShowHidden');
-        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const today      = this._today;
 
         let filtered = this.getProjectsOnly().filter(p =>
             (showHidden || !this.isHiddenForUI(p)) &&
@@ -732,57 +742,59 @@ const app = {
         );
         filtered = this._sortGantt(filtered, sortMode);
 
-        tbody.innerHTML = filtered.map(p => {
-            const isPast    = p.dataProd && new Date(p.dataProd) <= today;
-            const autoStale = this.isAutoStale(p);
-            const isHidden  = this.isHiddenForUI(p);
-            const rowCls    = isHidden ? 'class="table-warning opacity-75"' : isPast ? 'class="table-secondary opacity-75"' : '';
+        tbody.innerHTML = filtered.map(p => this._htmlTableRow(p, today)).join('');
+    },
 
-            const fornBadge = (p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'badge me-1 mb-1')).join('');
-            const ownBadge  = (p.owners    || []).map(o => this._badgeSpan('owner',    o, 'badge me-1 mb-1')).join('');
+    _htmlTableRow: function(p, today) {
+        const isPast    = p.dataProd && new Date(p.dataProd) <= today;
+        const autoStale = this.isAutoStale(p);
+        const isHidden  = this.isHiddenForUI(p);
+        const rowCls    = isHidden ? 'class="table-warning opacity-75"' : isPast ? 'class="table-secondary opacity-75"' : '';
 
-            const progressHtml = (p.progress != null)
-                ? `<div class="progress mt-1" style="height:6px;min-width:80px;" title="Avanzamento: ${p.progress}%">
-                     <div class="progress-bar ${p.progress >= 100 ? 'bg-success' : 'bg-primary'}" style="width:${p.progress}%"></div>
-                   </div>
-                   <div class="text-muted" style="font-size:0.7rem;">${p.progress}%</div>`
-                : '';
+        const fornBadge = (p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'badge me-1 mb-1')).join('');
+        const ownBadge  = (p.owners    || []).map(o => this._badgeSpan('owner',    o, 'badge me-1 mb-1')).join('');
 
-            const extraRows = [
-                p.stimaGgu   != null ? `<span class="badge bg-info text-dark me-1">\u23F1\uFE0F ${p.stimaGgu} gg/u</span>` : '',
-                p.stimaCosto != null ? `<span class="badge bg-warning text-dark me-1">\uD83D\uDCB0 \u20AC ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ''
-            ].filter(Boolean);
+        const progressHtml = (p.progress != null)
+            ? `<div class="progress mt-1" style="height:6px;min-width:80px;" title="Avanzamento: ${p.progress}%">
+                 <div class="progress-bar ${p.progress >= 100 ? 'bg-success' : 'bg-primary'}" style="width:${p.progress}%"></div>
+               </div>
+               <div class="text-muted" style="font-size:0.7rem;">${p.progress}%</div>`
+            : '';
 
-            const links    = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
-            const jiraHtml = this.jiraLinksHtml(links);
+        const extraRows = [
+            p.stimaGgu   != null ? `<span class="badge bg-info text-dark me-1">\u23F1\uFE0F ${p.stimaGgu} gg/u</span>` : '',
+            p.stimaCosto != null ? `<span class="badge bg-warning text-dark me-1">\uD83D\uDCB0 \u20AC ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ''
+        ].filter(Boolean);
 
-            const statusBadge = p.hidden   ? '<span class="badge bg-dark ms-1">\uD83D\uDEAB Archiviato</span>'
-                              : autoStale  ? '<span class="badge bg-secondary ms-1">\uD83D\uDD50 Auto-archiviato</span>'
-                              : isPast     ? '<span class="badge bg-success ms-1">\u2705 Rilasciato</span>'
-                              : '';
+        const links    = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+        const jiraHtml = this.jiraLinksHtml(links);
 
-            return `
-            <tr ${rowCls}>
-                <td>
-                    <strong>${p.nome || 'Senza nome'}</strong> ${statusBadge}
-                    ${jiraHtml  ? `<div class="mt-1">${jiraHtml}</div>` : ''}
-                    ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
-                </td>
-                <td><div class="d-flex flex-wrap">${fornBadge}</div>${ownBadge ? `<div class="mt-1 d-flex flex-wrap">${ownBadge}</div>` : ''}</td>
-                <td>${progressHtml}</td>
-                <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
-                <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
-                <td class="small">${this.formatDate(p.devStart)} \u27A0 ${this.formatDate(p.devEnd)}</td>
-                <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
-                <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
-                <td class="small text-muted" style="max-width:250px;white-space:pre-wrap;">${p.note || ''}</td>
-                <td>
-                    <button class="btn btn-sm ${p.hidden ? 'btn-secondary' : 'btn-outline-secondary'} mb-1" onclick="app.toggleHidden('${p.id}')" title="${p.hidden ? 'Ripristina Progetto' : 'Archivia (Nascondi)'}">${p.hidden ? '\uD83D\uDC41\uFE0F' : '\uD83D\uDEAB'}</button>
-                    <button class="btn btn-sm btn-outline-primary mb-1"  onclick="app.openModal('${p.id}')"    title="Modifica">\u270F\uFE0F</button>
-                    <button class="btn btn-sm btn-outline-danger mb-1"   onclick="app.deleteProject('${p.id}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>
-                </td>
-            </tr>`;
-        }).join('');
+        const statusBadge = p.hidden   ? '<span class="badge bg-dark ms-1">\uD83D\uDEAB Archiviato</span>'
+                          : autoStale  ? '<span class="badge bg-secondary ms-1">\uD83D\uDD50 Auto-archiviato</span>'
+                          : isPast     ? '<span class="badge bg-success ms-1">\u2705 Rilasciato</span>'
+                          : '';
+
+        return `
+        <tr ${rowCls}>
+            <td>
+                <strong>${p.nome || 'Senza nome'}</strong> ${statusBadge}
+                ${jiraHtml  ? `<div class="mt-1">${jiraHtml}</div>` : ''}
+                ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
+            </td>
+            <td><div class="d-flex flex-wrap">${fornBadge}</div>${ownBadge ? `<div class="mt-1 d-flex flex-wrap">${ownBadge}</div>` : ''}</td>
+            <td>${progressHtml}</td>
+            <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
+            <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
+            <td class="small">${this.formatDate(p.devStart)} \u27A0 ${this.formatDate(p.devEnd)}</td>
+            <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
+            <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
+            <td class="small text-muted" style="max-width:250px;white-space:pre-wrap;">${p.note || ''}</td>
+            <td>
+                <button class="btn btn-sm ${p.hidden ? 'btn-secondary' : 'btn-outline-secondary'} mb-1" onclick="app.toggleHidden('${p.id}')" title="${p.hidden ? 'Ripristina Progetto' : 'Archivia (Nascondi)'}">${p.hidden ? '\uD83D\uDC41\uFE0F' : '\uD83D\uDEAB'}</button>
+                <button class="btn btn-sm btn-outline-primary mb-1"  onclick="app.openModal('${p.id}')"    title="Modifica">\u270F\uFE0F</button>
+                <button class="btn btn-sm btn-outline-danger mb-1"   onclick="app.deleteProject('${p.id}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>
+            </td>
+        </tr>`;
     },
 
     // ─── RENDER GANTT ────────────────────────────────────────────────────────
@@ -808,6 +820,20 @@ const app = {
             return;
         }
 
+        const { minDate, maxDate, totalDays, pct } = this._ganttDateRange(data);
+        const today        = this._today;
+        const isCustomSort = sortMode === 'custom';
+        const todayPct     = pct(today).toFixed(2);
+        const todayLabel   = dayjs(today).format('DD/MM');
+
+        let html = this._ganttBuildHeader(minDate, maxDate, totalDays);
+        html += '<div class="gantt-body">';
+        data.forEach(p => { html += this._htmlGanttRow(p, today, pct, todayPct, todayLabel, isCustomSort); });
+        html += this._ganttBuildLegend(data);
+        container.innerHTML = html;
+    },
+
+    _ganttDateRange: function(data) {
         let minDate = null, maxDate = null;
         const updateRange = d => {
             if (!d) return;
@@ -824,10 +850,12 @@ const app = {
         let maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
         if (maxMonth <= minDate) maxMonth = new Date(minDate.getFullYear(), minDate.getMonth() + 2, 0);
         maxDate = maxMonth;
-
         const totalDays = Math.ceil((maxDate - minDate) / 86400000);
         const pct = d => { const days = (new Date(d) - minDate) / 86400000; return Math.min(Math.max((days / totalDays) * 100, 0), 100); };
+        return { minDate, maxDate, totalDays, pct };
+    },
 
+    _ganttBuildHeader: function(minDate, maxDate, totalDays) {
         let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
         let cur = new Date(minDate);
         while (cur <= maxDate) {
@@ -835,105 +863,106 @@ const app = {
             html += `<div class="gantt-month" style="width:${((days/totalDays)*100).toFixed(2)}%">${dayjs(cur).format('MMM YYYY')}</div>`;
             cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
         }
-        html += '</div></div></div><div class="gantt-body">';
+        html += '</div></div></div>';
+        return html;
+    },
 
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const isCustomSort = sortMode === 'custom';
-        const todayPct = pct(today).toFixed(2);
-        const todayLabel = dayjs(today).format('DD/MM');
+    _htmlGanttRow: function(p, today, pct, todayPct, todayLabel, isCustomSort) {
+        const startD = p.devStart || p.dataTest || p.dataProd || p.dataIA;
+        const endD   = p.devEnd   || startD;
+        const leftPct  = startD ? pct(startD) : 0;
+        const widthPct = (startD && endD) ? Math.max(pct(endD) - leftPct, 0.5) : 0;
+        const barOpacity = (p.devStart && p.devEnd) ? 1 : 0.2;
 
-        data.forEach(p => {
-            const startD = p.devStart || p.dataTest || p.dataProd || p.dataIA;
-            const endD   = p.devEnd   || startD;
-            const leftPct  = startD ? pct(startD) : 0;
-            const widthPct = (startD && endD) ? Math.max(pct(endD) - leftPct, 0.5) : 0;
-            const barOpacity = (p.devStart && p.devEnd) ? 1 : 0.2;
+        const badgesHtml = [
+            ...(p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')),
+            ...(p.owners    || []).map(o => this._badgeSpan('owner',    o, 'gantt-supplier-badge mb-1'))
+        ].join('');
+        const ganttJiraLinks = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+        const ganttJiraHtml  = this.jiraLinksHtml(ganttJiraLinks);
+        const isPast    = p.dataProd && new Date(p.dataProd) <= today;
+        const autoStale = this.isAutoStale(p);
+        const isHidden  = this.isHiddenForUI(p);
 
-            const badgesHtml = [
-                ...(p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')),
-                ...(p.owners    || []).map(o => this._badgeSpan('owner',    o, 'gantt-supplier-badge mb-1'))
-            ].join('');
-            const ganttJiraLinks = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
-            const ganttJiraHtml  = this.jiraLinksHtml(ganttJiraLinks);
-            const isPast    = p.dataProd && new Date(p.dataProd) <= today;
-            const autoStale = this.isAutoStale(p);
-            const isHidden  = this.isHiddenForUI(p);
+        let rowCls = isPast ? ' gantt-row--released' : '';
+        if (isHidden) rowCls += ' opacity-50';
 
-            let rowCls = isPast ? ' gantt-row--released' : '';
-            if (isHidden) rowCls += ' opacity-50';
+        const statusIcon = p.hidden   ? '<span class="badge bg-dark ms-1">\uD83D\uDEAB</span>'
+                         : autoStale  ? '<span class="badge bg-secondary ms-1" title="Auto-archiviato">\uD83D\uDD50</span>'
+                         : '';
 
-            const statusIcon = p.hidden   ? '<span class="badge bg-dark ms-1">\uD83D\uDEAB</span>'
-                             : autoStale  ? '<span class="badge bg-secondary ms-1" title="Auto-archiviato">\uD83D\uDD50</span>'
-                             : '';
+        const ganttProgressHtml = (p.progress != null)
+            ? `<div class="progress mt-1" style="height:4px;" title="Avanzamento: ${p.progress}%">
+                 <div class="progress-bar ${p.progress >= 100 ? 'bg-success' : 'bg-primary'}" style="width:${p.progress}%"></div>
+               </div>`
+            : '';
 
-            const ganttProgressHtml = (p.progress != null)
-                ? `<div class="progress mt-1" style="height:4px;" title="Avanzamento: ${p.progress}%">
-                     <div class="progress-bar ${p.progress >= 100 ? 'bg-success' : 'bg-primary'}" style="width:${p.progress}%"></div>
-                   </div>`
-                : '';
+        const milestonesHtml = this._htmlGanttMilestones(p, pct);
+        const pColors = this._projectColors(p.nome);
+        let rowAttr = '', dragHandleHtml = '';
+        if (isCustomSort) {
+            rowCls += ' draggable';
+            rowAttr = `draggable="true" ondragstart="app.handleDragStart(event,'${p.id}')" ondragover="app.handleDragOver(event)" ondrop="app.handleDrop(event,'${p.id}')" ondragenter="app.handleDragEnter(event)" ondragleave="app.handleDragLeave(event)" ondragend="app.handleDragEnd(event)"`;
+            dragHandleHtml = '<div class="drag-handle" title="Trascina per riordinare">\u2630</div>';
+        }
 
-            let allMilestones = [
-                { date: p.dataIA,            cls: 'ms-ia',         icon: '\uD83E\uDD16', label: 'Consegna IA',           always: true  },
-                { date: p.devStart,          cls: 'ms-dev-start',  icon: '\u25B6\uFE0F', label: 'Inizio Sviluppo',       always: true  },
-                { date: p.devEnd,            cls: 'ms-dev-end',    icon: '\u23F9\uFE0F', label: 'Fine Sviluppo',         always: true  },
-                { date: p.dataUAT,           cls: 'ms-uat',        icon: '\uD83D\uDC65', label: 'UAT',                   always: false },
-                { date: p.dataBS,            cls: 'ms-bs',         icon: '\uD83D\uDCBC', label: 'Business Simulation',   always: false },
-                { date: p.dataTest,          cls: 'ms-test',       icon: '\uD83E\uDDEA', label: 'Rilascio Test',         always: true  },
-                { date: p.dataProd,          cls: 'ms-prod',       icon: '\uD83D\uDE80', label: 'Rilascio Prod',         always: true  },
-                { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '\uD83D\uDCE5', label: 'Scad. Stima Fornitore', always: false },
-                { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '\uD83D\uDD27', label: 'Config Sistema',        always: false }
-            ];
-            (p.customMilestones || []).forEach(cm => allMilestones.push({ date: cm.date, cls: 'ms-custom', icon: '\u2B50', label: cm.label, always: false }));
-            allMilestones = allMilestones.filter(m => m.date && m.date.trim() !== '');
-
-            const dateGroups = {};
-            allMilestones.forEach(m => { (dateGroups[m.date] = dateGroups[m.date] || []).push(m); });
-            allMilestones.forEach(m => { m.offsetPx = (dateGroups[m.date].indexOf(m) - (dateGroups[m.date].length - 1) / 2) * 20; });
-
-            const milestonesHtml = allMilestones.map(m => {
-                const isCustom   = m.cls === 'ms-custom';
-                const translateX = (-16 + m.offsetPx).toFixed(0);
-                return `<div class="gantt-milestone ${m.cls}" style="left:${pct(m.date).toFixed(2)}%;transform:translateX(${translateX}px);" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
-                    <span class="ms-date"${isCustom ? ' style="color:#198754;"' : ''}>${dayjs(m.date).format('DD/MM')}</span>
-                    <span class="ms-icon">${m.icon}</span>
-                    <span class="ms-line"${isCustom ? ' style="background:#198754;"' : ''}></span>
-                </div>`;
-            }).join('');
-
-            const pColors = this._projectColors(p.nome);
-            let rowAttr = '', dragHandleHtml = '';
-            if (isCustomSort) {
-                rowCls += ' draggable';
-                rowAttr = `draggable="true" ondragstart="app.handleDragStart(event,'${p.id}')" ondragover="app.handleDragOver(event)" ondrop="app.handleDrop(event,'${p.id}')" ondragenter="app.handleDragEnter(event)" ondragleave="app.handleDragLeave(event)" ondragend="app.handleDragEnd(event)"`;
-                dragHandleHtml = '<div class="drag-handle" title="Trascina per riordinare">\u2630</div>';
-            }
-
-            html += `
-            <div class="gantt-row${rowCls}" ${rowAttr} style="background-color:${pColors.bg};border-left:4px solid ${pColors.border};margin-bottom:4px;border-radius:4px;">
-                <div class="gantt-project-col">
-                    ${dragHandleHtml}
-                    <div>
-                        <strong>${p.nome} ${statusIcon}</strong>
-                        ${ganttProgressHtml}
-                        <div class="gantt-supplier-list">${badgesHtml}</div>
-                        ${ganttJiraHtml ? `<div class="mt-1">${ganttJiraHtml}</div>` : ''}
-                    </div>
+        return `
+        <div class="gantt-row${rowCls}" ${rowAttr} style="background-color:${pColors.bg};border-left:4px solid ${pColors.border};margin-bottom:4px;border-radius:4px;">
+            <div class="gantt-project-col">
+                ${dragHandleHtml}
+                <div>
+                    <strong>${p.nome} ${statusIcon}</strong>
+                    ${ganttProgressHtml}
+                    <div class="gantt-supplier-list">${badgesHtml}</div>
+                    ${ganttJiraHtml ? `<div class="mt-1">${ganttJiraHtml}</div>` : ''}
                 </div>
-                <div class="gantt-timeline-col" style="position:relative;">
-                    <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity};background-color:${pColors.barBg};border:1px solid ${pColors.barBorder};box-shadow:none;" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
-                        <span style="color:#212529;">\u2699\uFE0F Sviluppo</span>
-                    </div>
-                    ${milestonesHtml}
-                    <div class="gantt-today-line" style="position:absolute;top:0;bottom:0;left:${todayPct}%;width:2px;background:rgba(220,53,69,0.65);pointer-events:none;z-index:5;" title="Oggi: ${dayjs(today).format('DD/MM/YYYY')}">
-                        <span style="position:absolute;top:2px;left:4px;font-size:0.65rem;font-weight:700;color:#dc3545;white-space:nowrap;line-height:1;">${todayLabel}</span>
-                    </div>
+            </div>
+            <div class="gantt-timeline-col" style="position:relative;">
+                <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity};background-color:${pColors.barBg};border:1px solid ${pColors.barBorder};box-shadow:none;" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
+                    <span style="color:#212529;">\u2699\uFE0F Sviluppo</span>
                 </div>
+                ${milestonesHtml}
+                <div class="gantt-today-line" style="position:absolute;top:0;bottom:0;left:${todayPct}%;width:2px;background:rgba(220,53,69,0.65);pointer-events:none;z-index:5;" title="Oggi: ${dayjs(today).format('DD/MM/YYYY')}">
+                    <span style="position:absolute;top:2px;left:4px;font-size:0.65rem;font-weight:700;color:#dc3545;white-space:nowrap;line-height:1;">${todayLabel}</span>
+                </div>
+            </div>
+        </div>`;
+    },
+
+    _htmlGanttMilestones: function(p, pct) {
+        let allMilestones = [
+            { date: p.dataIA,            cls: 'ms-ia',         icon: '\uD83E\uDD16', label: 'Consegna IA',           always: true  },
+            { date: p.devStart,          cls: 'ms-dev-start',  icon: '\u25B6\uFE0F', label: 'Inizio Sviluppo',       always: true  },
+            { date: p.devEnd,            cls: 'ms-dev-end',    icon: '\u23F9\uFE0F', label: 'Fine Sviluppo',         always: true  },
+            { date: p.dataUAT,           cls: 'ms-uat',        icon: '\uD83D\uDC65', label: 'UAT',                   always: false },
+            { date: p.dataBS,            cls: 'ms-bs',         icon: '\uD83D\uDCBC', label: 'Business Simulation',   always: false },
+            { date: p.dataTest,          cls: 'ms-test',       icon: '\uD83E\uDDEA', label: 'Rilascio Test',         always: true  },
+            { date: p.dataProd,          cls: 'ms-prod',       icon: '\uD83D\uDE80', label: 'Rilascio Prod',         always: true  },
+            { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '\uD83D\uDCE5', label: 'Scad. Stima Fornitore', always: false },
+            { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '\uD83D\uDD27', label: 'Config Sistema',        always: false }
+        ];
+        (p.customMilestones || []).forEach(cm => allMilestones.push({ date: cm.date, cls: 'ms-custom', icon: '\u2B50', label: cm.label, always: false }));
+        allMilestones = allMilestones.filter(m => m.date && m.date.trim() !== '');
+
+        const dateGroups = {};
+        allMilestones.forEach(m => { (dateGroups[m.date] = dateGroups[m.date] || []).push(m); });
+        allMilestones.forEach(m => { m.offsetPx = (dateGroups[m.date].indexOf(m) - (dateGroups[m.date].length - 1) / 2) * 20; });
+
+        return allMilestones.map(m => {
+            const isCustom   = m.cls === 'ms-custom';
+            const translateX = (-16 + m.offsetPx).toFixed(0);
+            return `<div class="gantt-milestone ${m.cls}" style="left:${pct(m.date).toFixed(2)}%;transform:translateX(${translateX}px);" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
+                <span class="ms-date"${isCustom ? ' style="color:#198754;"' : ''}>${dayjs(m.date).format('DD/MM')}</span>
+                <span class="ms-icon">${m.icon}</span>
+                <span class="ms-line"${isCustom ? ' style="background:#198754;"' : ''}></span>
             </div>`;
-        });
+        }).join('');
+    },
 
+    _ganttBuildLegend: function(data) {
         const has = key => data.some(p => p[key] && p[key].trim && p[key].trim() !== '');
         const hasCustom = data.some(p => p.customMilestones && p.customMilestones.length > 0);
-        html += `
+        return `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
             <div class="gantt-legend-item"><span class="legend-ms">\uD83E\uDD16</span> Consegna IA</div>
@@ -947,16 +976,14 @@ const app = {
             ${has('dataConfigSistema') ? '<div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDD27</span> Config Sistema</div>' : ''}
             ${hasCustom               ? '<div class="gantt-legend-item"><span class="legend-ms" style="color:#198754">\u2B50</span> Milestone Personalizzate</div>' : ''}
         </div></div>`;
-        container.innerHTML = html;
     },
 
     // ─── RENDER CALENDAR ─────────────────────────────────────────────────────
 
     _calIsPast: function(dateStr, milestoneKey) {
         if (!dateStr) return false;
-        const today = new Date(); today.setHours(0, 0, 0, 0);
         if ((this.ALWAYS_HIGHLIGHT_KEYS || []).includes(milestoneKey)) return false;
-        return new Date(dateStr) < today;
+        return new Date(dateStr) < this._today;
     },
 
     setEventPref: async function(key, pref) {
@@ -1152,7 +1179,7 @@ const app = {
                 });
         }
 
-        this.renderReminders();
+        this._syncReminderFormState();
 
         if (events.length === 0) {
             container.innerHTML = "<div class='col-12'><p class='text-center text-muted p-3'>Nessun evento da visualizzare per i filtri selezionati.</p></div>";
