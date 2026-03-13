@@ -515,14 +515,19 @@ const app = {
 
         const stimaGgu    = parseFloat(this._getVal('p_stimaGgu'));
         const rcFornitore = parseFloat(this._getVal('p_rcFornitore'));
-        const id          = this._getVal('p_id');
-        const fornitori   = this._getVal('p_fornitori').split(',').map(s => s.trim()).filter(Boolean);
-        const owners      = this._getVal('p_owners').split(',').map(s => s.trim()).filter(Boolean);
+        // FIX #1: lettura del campo progress (era mancante)
+        const progressRaw = parseInt(this._getVal('p_progress'), 10);
+        const progress    = (!isNaN(progressRaw) && progressRaw >= 0 && progressRaw <= 100) ? progressRaw : null;
+
+        const id        = this._getVal('p_id');
+        const fornitori = this._getVal('p_fornitori').split(',').map(s => s.trim()).filter(Boolean);
+        const owners    = this._getVal('p_owners').split(',').map(s => s.trim()).filter(Boolean);
 
         const newProj = {
             id:                id || Date.now().toString(),
             nome:              this._getVal('p_nome'),
             fornitori, owners,
+            progress,                                          // FIX #1: salvato
             dataStima:         dates.stima,
             dataIA:            dates.ia,
             devStart:          dates.devStart,
@@ -596,6 +601,7 @@ const app = {
                 p_id: p.id, p_nome: p.nome,
                 p_fornitori: (p.fornitori || []).join(', '),
                 p_owners: this.csvToArray(p.owners || p.owner).join(', '),
+                p_progress: p.progress != null ? p.progress : '',  // FIX #2: caricato in modifica
                 p_stima: p.dataStima || '', p_ia: p.dataIA || '',
                 p_devStart: p.devStart || '', p_devEnd: p.devEnd || '',
                 p_test: p.dataTest || '', p_prod: p.dataProd || '',
@@ -691,11 +697,7 @@ const app = {
         if (si < 0 || ti < 0) return;
         const [moved] = projs.splice(si, 1);
         projs.splice(ti, 0, moved);
-        projs.forEach((p, i) => {
-            p.ganttOrder = i;
-            const orig = this.data.find(x => x.id === p.id);
-            if (orig) orig.ganttOrder = i;
-        });
+        projs.forEach((p, i) => { p.ganttOrder = i; });
         this.renderGantt();
         await this.syncToGithub();
     },
@@ -741,6 +743,14 @@ const app = {
             const fornBadge = (p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'badge me-1 mb-1')).join('');
             const ownBadge  = (p.owners    || []).map(o => this._badgeSpan('owner',    o, 'badge me-1 mb-1')).join('');
 
+            // FIX #3: barra avanzamento visibile in tabella
+            const progressHtml = (p.progress != null)
+                ? `<div class="progress mt-1" style="height:6px;min-width:80px;" title="Avanzamento: ${p.progress}%">
+                     <div class="progress-bar ${p.progress >= 100 ? 'bg-success' : 'bg-primary'}" style="width:${p.progress}%"></div>
+                   </div>
+                   <div class="text-muted" style="font-size:0.7rem;">${p.progress}%</div>`
+                : '';
+
             const extraRows = [
                 p.stimaGgu   != null ? `<span class="badge bg-info text-dark me-1">\u23F1\uFE0F ${p.stimaGgu} gg/u</span>` : '',
                 p.stimaCosto != null ? `<span class="badge bg-warning text-dark me-1">\uD83D\uDCB0 \u20AC ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ''
@@ -762,6 +772,7 @@ const app = {
                     ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
                 </td>
                 <td><div class="d-flex flex-wrap">${fornBadge}</div>${ownBadge ? `<div class="mt-1 d-flex flex-wrap">${ownBadge}</div>` : ''}</td>
+                <td>${progressHtml}</td>
                 <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
                 <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
                 <td class="small">${this.formatDate(p.devStart)} \u27A0 ${this.formatDate(p.devEnd)}</td>
@@ -856,6 +867,13 @@ const app = {
                              : autoStale  ? '<span class="badge bg-secondary ms-1" title="Auto-archiviato">\uD83D\uDD50</span>'
                              : '';
 
+            // Barra progress nel Gantt (sotto il nome progetto)
+            const ganttProgressHtml = (p.progress != null)
+                ? `<div class="progress mt-1" style="height:4px;" title="Avanzamento: ${p.progress}%">
+                     <div class="progress-bar ${p.progress >= 100 ? 'bg-success' : 'bg-primary'}" style="width:${p.progress}%"></div>
+                   </div>`
+                : '';
+
             let allMilestones = [
                 { date: p.dataIA,            cls: 'ms-ia',         icon: '\uD83E\uDD16', label: 'Consegna IA',           always: true  },
                 { date: p.devStart,          cls: 'ms-dev-start',  icon: '\u25B6\uFE0F', label: 'Inizio Sviluppo',       always: true  },
@@ -898,6 +916,7 @@ const app = {
                     ${dragHandleHtml}
                     <div>
                         <strong>${p.nome} ${statusIcon}</strong>
+                        ${ganttProgressHtml}
                         <div class="gantt-supplier-list">${badgesHtml}</div>
                         ${ganttJiraHtml ? `<div class="mt-1">${ganttJiraHtml}</div>` : ''}
                     </div>
@@ -1050,6 +1069,7 @@ const app = {
         const filtOwn    = this._getVal('calendarOwnerFilter');
         const filtMile   = this._getVal('calendarMilestoneFilter');
         const showHidden = this._getChecked('globalShowHidden');
+        // FIX #4: ID corretto (era 'calShowHiddenPrefs', ora allineato al checkbox generato dinamicamente)
         const calShowHiddenPrefs = this._getChecked('calShowHiddenPrefs');
 
         const showProjectMilestones = filtMile !== 'reminders';
