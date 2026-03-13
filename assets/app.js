@@ -839,6 +839,8 @@ const app = {
 
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const isCustomSort = sortMode === 'custom';
+        const todayPct = pct(today).toFixed(2);
+        const todayLabel = dayjs(today).format('DD/MM');
 
         data.forEach(p => {
             const startD = p.devStart || p.dataTest || p.dataProd || p.dataIA;
@@ -922,7 +924,9 @@ const app = {
                         <span style="color:#212529;">\u2699\uFE0F Sviluppo</span>
                     </div>
                     ${milestonesHtml}
-                    <div class="gantt-today-line" style="position:absolute;top:0;bottom:0;left:${pct(today).toFixed(2)}%;width:2px;background:rgba(220,53,69,0.65);pointer-events:none;z-index:5;" title="Oggi: ${dayjs(today).format('DD/MM/YYYY')}"></div>
+                    <div class="gantt-today-line" style="position:absolute;top:0;bottom:0;left:${todayPct}%;width:2px;background:rgba(220,53,69,0.65);pointer-events:none;z-index:5;" title="Oggi: ${dayjs(today).format('DD/MM/YYYY')}">
+                        <span style="position:absolute;top:2px;left:4px;font-size:0.65rem;font-weight:700;color:#dc3545;white-space:nowrap;line-height:1;">${todayLabel}</span>
+                    </div>
                 </div>
             </div>`;
         });
