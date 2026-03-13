@@ -272,16 +272,10 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
-<script src="assets/app.js?v=28"></script>
-<script src="assets/app.data.js?v=1"></script>
-<script src="assets/app.editor.js?v=1"></script>
-<script src="assets/app.reminders.js?v=1"></script>
-<script src="assets/app.render.js?v=1"></script>
-<script src="assets/app.calendar.js?v=1"></script>
+<script src="assets/app.js?v=27"></script>
 <script>
   dayjs.locale('it');
 
-  // Opzioni di ordinamento centralizzate (populate via JS per evitare duplicazioni HTML)
   const SORT_OPTIONS = [
     { value: 'prod_inprogress_first', label: '🚀 Prod: in corso prima, poi passate' },
     { value: 'prod_asc',              label: '📅 Rilascio Prod (prima → ultima)' },
@@ -306,7 +300,6 @@
   populateSortSelect('tableSortSelect');
   populateSortSelect('ganttSortSelect', [{ value: 'custom', label: '✋ Manuale (Drag & Drop)' }]);
 
-  // Service Worker con path dinamico
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       const base = location.pathname.endsWith('/')
