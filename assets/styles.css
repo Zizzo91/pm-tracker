@@ -24,6 +24,38 @@ body {
   overflow: hidden;
 }
 
+/* === BRAND UTILITY CLASSES === */
+.bg-brand    { background-color: #003DA5 !important; }
+.bg-accent   { background-color: #FFD200 !important; }
+.text-brand  { color: #003DA5 !important; }
+.text-accent { color: #FFD200 !important; }
+
+.btn-accent {
+  background-color: #FFD200;
+  color: #003DA5;
+  border: none;
+  font-weight: 600;
+}
+.btn-accent:hover { background-color: #e6be00; color: #003DA5; }
+
+.btn-brand {
+  background-color: #003DA5;
+  color: #fff;
+  border: none;
+}
+.btn-brand:hover { background-color: #002d80; color: #fff; }
+
+.btn-ghost-white {
+  background-color: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+}
+.btn-ghost-white:hover { background-color: rgba(255,255,255,0.25); color: #fff; }
+
+/* Dimensioni standard filtri/sort select */
+.sort-select   { min-width: 220px; }
+.filter-select { min-width: 180px; }
+
 /* === HEADER === */
 .header { background: linear-gradient(135deg, #003DA5 0%, #0055cc 100%); color: white; padding: 30px; text-align: center; }
 .header h1 { font-size: 2.5rem; margin-bottom: 10px; color: #FFD200; }
@@ -81,13 +113,11 @@ body {
 }
 
 /* === NAV TABS === */
-/* Wrapper tab: sfondo bianco sotto i tab per garantire contrasto */
 #mainTab {
   background-color: #ffffff;
   padding: 8px 8px 0 8px;
   border-radius: 8px 8px 0 0;
 }
-/* Tab inattivo: sfondo bianco, testo blu, bordo grigio */
 #mainTab .nav-link {
   color: #003DA5 !important;
   background-color: #f0f4ff !important;
@@ -97,14 +127,12 @@ body {
   margin-right: 4px;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
-/* Hover: giallo con testo blu */
 #mainTab .nav-link:hover:not(.active) {
   background-color: #fff3b0 !important;
   color: #003DA5 !important;
   border-color: #FFD200 !important;
   border-bottom-color: transparent !important;
 }
-/* Tab attivo: giallo Telepass, testo blu scuro, bordo giallo */
 #mainTab .nav-link.active {
   color: #003DA5 !important;
   background-color: #FFD200 !important;
