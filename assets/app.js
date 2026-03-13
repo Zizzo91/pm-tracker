@@ -104,7 +104,7 @@ const app = {
     // ─── META / DATI ────────────────────────────────────────────────────────
 
     isMeta: function(p) {
-        return !!p && ((p.type && p.type === 'meta') || p.id === this.META_ID);
+        return !!p && (p.type === 'meta' || p.id === this.META_ID);
     },
 
     getMeta: function() {
@@ -130,7 +130,7 @@ const app = {
     },
 
     normalizeProject: function(p) {
-        if (p && ((p.type && p.type === 'meta') || p.id === this.META_ID)) {
+        if (p && (p.type === 'meta' || p.id === this.META_ID)) {
             return { ...p, id: p.id || this.META_ID, type: 'meta',
                 manualReminders: Array.isArray(p.manualReminders) ? p.manualReminders : [],
                 eventPrefs: p.eventPrefs || {} };
@@ -139,6 +139,8 @@ const app = {
             owners:           this.csvToArray(p.owners || p.owner),
             fornitori:        this.csvToArray(p.fornitori),
             customMilestones: Array.isArray(p.customMilestones) ? p.customMilestones : [],
+            // FIX CRITICO #2: progress normalizzato — p.progress === 0 è falsy senza questa guardia
+            progress:         p.progress != null ? p.progress : null,
             hidden:           !!p.hidden
         };
     },
@@ -481,9 +483,7 @@ const app = {
     _formatDoneAt: function(doneAt) {
         if (!doneAt) return '';
         try {
-            const d = new Date(doneAt);
-            const pad = n => String(n).padStart(2, '0');
-            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            return dayjs(doneAt).format('DD/MM/YYYY HH:mm');
         } catch(e) { return ''; }
     },
 
@@ -515,7 +515,6 @@ const app = {
 
         const stimaGgu    = parseFloat(this._getVal('p_stimaGgu'));
         const rcFornitore = parseFloat(this._getVal('p_rcFornitore'));
-        // FIX #1: lettura del campo progress (era mancante)
         const progressRaw = parseInt(this._getVal('p_progress'), 10);
         const progress    = (!isNaN(progressRaw) && progressRaw >= 0 && progressRaw <= 100) ? progressRaw : null;
 
@@ -527,7 +526,7 @@ const app = {
             id:                id || Date.now().toString(),
             nome:              this._getVal('p_nome'),
             fornitori, owners,
-            progress,                                          // FIX #1: salvato
+            progress,
             dataStima:         dates.stima,
             dataIA:            dates.ia,
             devStart:          dates.devStart,
@@ -556,6 +555,8 @@ const app = {
                 this.data[idx] = newProj;
             }
         } else {
+            // FIX CRITICO #1: assegna ganttOrder al nuovo progetto per evitare posizione indefinita
+            newProj.ganttOrder = this.getProjectsOnly().length;
             this.data.push(newProj);
         }
         await this.syncToGithub();
@@ -601,7 +602,7 @@ const app = {
                 p_id: p.id, p_nome: p.nome,
                 p_fornitori: (p.fornitori || []).join(', '),
                 p_owners: this.csvToArray(p.owners || p.owner).join(', '),
-                p_progress: p.progress != null ? p.progress : '',  // FIX #2: caricato in modifica
+                p_progress: p.progress != null ? p.progress : '',
                 p_stima: p.dataStima || '', p_ia: p.dataIA || '',
                 p_devStart: p.devStart || '', p_devEnd: p.devEnd || '',
                 p_test: p.dataTest || '', p_prod: p.dataProd || '',
@@ -649,7 +650,6 @@ const app = {
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const d  = val => val ? new Date(val) : new Date(0);
         const ip = p   => { const prod = p.dataProd ? new Date(p.dataProd) : null; return !prod || prod > today; };
-        // Helper per ordinamento "in corso prima poi per data campo"
         const inProgressFirst = field => (a, b) => {
             const diff = (ip(a) ? 0 : 1) - (ip(b) ? 0 : 1);
             return diff !== 0 ? diff : d(a[field]) - d(b[field]);
@@ -743,7 +743,6 @@ const app = {
             const fornBadge = (p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'badge me-1 mb-1')).join('');
             const ownBadge  = (p.owners    || []).map(o => this._badgeSpan('owner',    o, 'badge me-1 mb-1')).join('');
 
-            // FIX #3: barra avanzamento visibile in tabella
             const progressHtml = (p.progress != null)
                 ? `<div class="progress mt-1" style="height:6px;min-width:80px;" title="Avanzamento: ${p.progress}%">
                      <div class="progress-bar ${p.progress >= 100 ? 'bg-success' : 'bg-primary'}" style="width:${p.progress}%"></div>
@@ -867,7 +866,6 @@ const app = {
                              : autoStale  ? '<span class="badge bg-secondary ms-1" title="Auto-archiviato">\uD83D\uDD50</span>'
                              : '';
 
-            // Barra progress nel Gantt (sotto il nome progetto)
             const ganttProgressHtml = (p.progress != null)
                 ? `<div class="progress mt-1" style="height:4px;" title="Avanzamento: ${p.progress}%">
                      <div class="progress-bar ${p.progress >= 100 ? 'bg-success' : 'bg-primary'}" style="width:${p.progress}%"></div>
@@ -1069,7 +1067,8 @@ const app = {
         const filtOwn    = this._getVal('calendarOwnerFilter');
         const filtMile   = this._getVal('calendarMilestoneFilter');
         const showHidden = this._getChecked('globalShowHidden');
-        // FIX #4: ID corretto (era 'calShowHiddenPrefs', ora allineato al checkbox generato dinamicamente)
+        // FIX CRITICO #3: leggi calShowHiddenPrefs PRIMA di sovrascrivere container.innerHTML
+        // Il checkbox è generato dinamicamente dentro questo container, quindi va letto prima del reset del DOM
         const calShowHiddenPrefs = this._getChecked('calShowHiddenPrefs');
 
         const showProjectMilestones = filtMile !== 'reminders';
