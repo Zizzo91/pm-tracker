@@ -971,17 +971,19 @@ const app = {
         if (ev.autoStale)          statusIcon = '<span title="Auto-archiviato">\uD83D\uDD50</span>';
         if (isReminder && ev.done) statusIcon = '<span title="Completato">\u2705</span>';
 
-        // Riga doneAt (data/ora completamento), mostrata in piccolo sotto il titolo
+        // Data/ora completamento mostrata sotto il titolo (solo se done)
         const doneAtHtml = (isReminder && ev.done && ev.doneAt)
             ? `<div class="text-muted mt-1" style="font-size:0.72rem;">\u2705 Completato il ${this._formatDoneAt(ev.doneAt)}</div>`
             : '';
 
-        // Bottoni CTA per i promemoria
-        const reminderCtaHtml = isReminder
-            ? `<button class="btn btn-sm ${ev.done ? 'btn-success' : 'btn-outline-success'} me-1" onclick="app.toggleReminderDone('${ev.reminderId}')" title="${ev.done ? 'Riapri' : 'Segna fatto'}">${ev.done ? '\u21A9\uFE0F Riapri' : '\u2705 Fatto'}</button><button class="btn btn-sm btn-outline-warning me-1" onclick="app.editReminder('${ev.reminderId}')" title="Modifica">\u270F\uFE0F Modifica</button><button class="btn btn-sm btn-outline-danger me-1" onclick="app.deleteReminder('${ev.reminderId}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>`
-            : '';
+        // Voci del menu 3 puntini per i promemoria (in cima, prima delle voci visibilità)
+        const reminderMenuItems = isReminder ? `
+            <li><a class="dropdown-item py-2 ${ev.done ? 'text-secondary' : 'text-success fw-semibold'}" href="#" onclick="app.toggleReminderDone('${ev.reminderId}');return false;">${ev.done ? '\u21A9\uFE0F Riapri' : '\u2705 Segna come fatto'}</a></li>
+            <li><a class="dropdown-item py-2" href="#" onclick="app.editReminder('${ev.reminderId}');return false;">\u270F\uFE0F Modifica</a></li>
+            <li><a class="dropdown-item py-2 text-danger" href="#" onclick="app.deleteReminder('${ev.reminderId}');return false;">\uD83D\uDDD1\uFE0F Elimina</a></li>
+            <li><hr class="dropdown-divider"></li>` : '';
 
-        // In modalità compact (highlights) mostriamo card più snelle
+        // Card compact (Highlights)
         if (compact) {
             const dateLbl = ev.date.format('DD/MM');
             const expiredBadge = isExpiredRem ? '<span class="badge bg-danger ms-1 small">Scaduto</span>' : '';
@@ -1000,11 +1002,11 @@ const app = {
                     ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2">${(ev.note||'').replace(/</g,'&lt;')}</div>` : ''}
                     ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
                     ${fb || ob ? `<div class="mt-1 d-flex flex-wrap">${fb}${ob}</div>` : ''}
-                    ${isReminder ? `<div class="d-flex flex-wrap gap-1 mt-2">${reminderCtaHtml}</div>` : ''}
                 </div>
                 <div class="dropdown flex-shrink-0">
                     <button class="btn btn-sm btn-light text-secondary border-0 p-0 px-1" type="button" data-bs-toggle="dropdown" style="line-height:1;"><strong>\u22EE</strong></button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                        ${reminderMenuItems}
                         ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','hide');return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
                         ${ev.pref !== 'gray' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','gray');return false;">\uD83C\uDF2B\uFE0F Ingrigisci</a></li>` : ''}
                         ${ev.pref ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 text-success" href="#" onclick="app.setEventPref('${ev.prefKey}','show');return false;">\uD83D\uDC41\uFE0F Mostra Normale</a></li>` : ''}
@@ -1033,10 +1035,10 @@ const app = {
                 ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
                 ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
             </div>
-            ${reminderCtaHtml ? `<div class="d-flex flex-column gap-1 flex-shrink-0">${reminderCtaHtml}</div>` : ''}
             <div class="dropdown flex-shrink-0 ms-2">
-                <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni visibilit\u00E0" style="line-height: 1;"><strong>\u22EE</strong></button>
+                <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni" style="line-height: 1;"><strong>\u22EE</strong></button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                    ${reminderMenuItems}
                     ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','hide');return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
                     ${ev.pref !== 'gray' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','gray');return false;">\uD83C\uDF2B\uFE0F Ingrigisci</a></li>` : ''}
                     ${ev.pref ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 text-success" href="#" onclick="app.setEventPref('${ev.prefKey}','show');return false;">\uD83D\uDC41\uFE0F Mostra Normale</a></li>` : ''}
@@ -1142,7 +1144,7 @@ const app = {
             return;
         }
 
-        // --- HIGHLIGHTS: promemoria (oggi + scaduti non completati) + milestone di oggi ---
+        // --- HIGHLIGHTS ---
         const hlReminders  = events.filter(ev => ev.reminder && !ev.done && ev.sortKey <= todayStr && !ev.isHiddenPref);
         const hlMilestones = events.filter(ev => !ev.reminder && ev.sortKey === todayStr && !ev.isHiddenPref);
         const hasHighlights = hlReminders.length > 0 || hlMilestones.length > 0;
@@ -1163,7 +1165,6 @@ const app = {
                 <div class="card-body p-4">
                     <div class="row g-4">`;
 
-        // Sezione HIGHLIGHTS
         if (hasHighlights) {
             html += `
             <div class="col-12">
@@ -1174,7 +1175,6 @@ const app = {
                     <div class="card-body p-3">
                         <div class="row g-3">`;
 
-            // Colonna sinistra: promemoria (oggi + scaduti)
             html += `<div class="col-md-5">`;
             if (hlReminders.length > 0) {
                 html += `<div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">\uD83D\uDCDD Promemoria attivi</div>`;
@@ -1184,7 +1184,6 @@ const app = {
             }
             html += `</div>`;
 
-            // Colonna destra: milestone di oggi
             html += `<div class="col-md-7">`;
             if (hlMilestones.length > 0) {
                 html += `<div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">\uD83D\uDE80 Milestone di oggi</div>`;
@@ -1194,10 +1193,10 @@ const app = {
             }
             html += `</div>`;
 
-            html += `</div></div></div></div>`; // chiude row, card-body, card, col-12
+            html += `</div></div></div></div>`;
         }
 
-        // --- Calendario mensile (tutti gli eventi, escluse le righe già mostrate in highlights) ---
+        // --- Calendario mensile ---
         const groups = {};
         events.forEach(ev => {
             const key = ev.date.format('YYYY-MM');
