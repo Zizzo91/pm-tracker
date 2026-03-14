@@ -587,10 +587,15 @@ const app = {
                 throw new Error(err.message || 'Salvataggio fallito');
             }
             const result = await response.json();
+            // Punto 4: aggiorna sha locale dalla risposta del PUT, senza ri-scaricare il file da GitHub.
+            // this.data è già aggiornato (è lo stesso oggetto appena serializzato e inviato).
             this.sha = result.content.sha;
             this.lastETag = null;
             this.showAlert('Salvataggio completato!', 'success', 3000);
-            await this.loadData();
+            this.getMeta();
+            this.populateFornitoreFilters();
+            this.populateOwnerFilters();
+            this.renderAll();
         } catch (e) {
             console.error('Errore sync:', e);
             this.showAlert(`Errore salvataggio: ${e.message}`, 'danger', 8000);
