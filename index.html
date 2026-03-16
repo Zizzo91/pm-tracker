@@ -156,36 +156,55 @@
                 </div>
             </div>
 
-            <!-- Promemoria manuali -->
+            <!-- Card Promemoria manuali -->
             <div class="card shadow-sm mb-3">
-                <div class="card-body">
+                <!-- Header sempre visibile -->
+                <div class="card-body pb-2">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div class="fw-semibold">📝 Promemoria manuali</div>
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="rem_show_done" onchange="app.renderCalendar()">
-                            <label class="form-check-label small" for="rem_show_done">Mostra completati</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="rem_show_done" onchange="app.renderCalendar()">
+                                <label class="form-check-label small" for="rem_show_done">Mostra completati</label>
+                            </div>
+                            <button class="btn btn-success btn-sm" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#remFormCollapse"
+                                aria-expanded="false" aria-controls="remFormCollapse"
+                                id="remFormToggleBtn">
+                                + Nuovo promemoria
+                            </button>
                         </div>
                     </div>
-                    <div id="rem_edit_banner" class="alert alert-warning d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3" style="display:none!important">
-                        <span>✏️ <strong>Modalità modifica</strong> &mdash; stai modificando un promemoria esistente.</span>
-                    </div>
-                    <div class="row g-2 mt-1 align-items-end">
-                        <div class="col-12 col-md-3">
-                            <label class="form-label small mb-1">Data</label>
-                            <input type="date" class="form-control form-control-sm" id="rem_date">
+                </div>
+
+                <!-- Form collassabile -->
+                <div class="collapse" id="remFormCollapse">
+                    <div class="card-body pt-0 border-top">
+                        <div id="rem_edit_banner" class="alert alert-warning d-flex align-items-center gap-2 mt-2 mb-2 py-2 px-3" style="display:none!important">
+                            <span>✏️ <strong>Modalità modifica</strong> &mdash; stai modificando un promemoria esistente.</span>
                         </div>
-                        <div class="col-12 col-md-5">
-                            <label class="form-label small mb-1">Titolo</label>
-                            <input type="text" class="form-control form-control-sm" id="rem_title" placeholder="Es: Mandare mail a fornitore, Preparare demo...">
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label small mb-1">Nota (opzionale)</label>
-                            <input type="text" class="form-control form-control-sm" id="rem_note" placeholder="Dettagli rapidi...">
-                        </div>
-                        <div class="col-12 d-flex gap-2 mt-1">
-                            <button class="btn btn-primary btn-sm" id="rem_add_btn" onclick="app.addReminder()">+ Aggiungi promemoria</button>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="app.clearReminderInputs()">Pulisci</button>
-                            <button class="btn btn-outline-warning btn-sm" id="rem_cancel_btn" style="display:none" onclick="app.clearReminderInputs()">✖ Annulla modifica</button>
+                        <div class="row g-2 mt-1 align-items-end">
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small mb-1">Data</label>
+                                <input type="date" class="form-control form-control-sm" id="rem_date">
+                            </div>
+                            <div class="col-12 col-md-5">
+                                <label class="form-label small mb-1">Titolo</label>
+                                <input type="text" class="form-control form-control-sm" id="rem_title" placeholder="Es: Mandare mail a fornitore, Preparare demo...">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small mb-1">Nota (opzionale)</label>
+                                <input type="text" class="form-control form-control-sm" id="rem_note" placeholder="Dettagli rapidi...">
+                            </div>
+                            <div class="col-12 d-flex gap-2 mt-1">
+                                <button class="btn btn-primary btn-sm" id="rem_add_btn" onclick="app.addReminder()">✔ Salva promemoria</button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="app.clearReminderInputs()">Pulisci</button>
+                                <button class="btn btn-outline-warning btn-sm" id="rem_cancel_btn" style="display:none" onclick="app.clearReminderInputs()">✖ Annulla modifica</button>
+                                <button class="btn btn-outline-secondary btn-sm ms-auto" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#remFormCollapse">
+                                    ▲ Chiudi
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -297,7 +316,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
-<script src="assets/app.js?v=30"></script>
+<script src="assets/app.js?v=31"></script>
 <script>
   dayjs.locale('it');
 
@@ -328,7 +347,7 @@
   // === BADGE FILTRI CALENDARIO ===
   function updateCalFilterBadge() {
     let count = 0;
-    const ms  = document.getElementById('calendarMilestoneFilter');
+    const ms   = document.getElementById('calendarMilestoneFilter');
     const forn = document.getElementById('calendarFornitoreFilter');
     const own  = document.getElementById('calendarOwnerFilter');
     const tog  = document.getElementById('calShowHiddenPrefs');
@@ -351,12 +370,20 @@
     const forn = document.getElementById('calendarFornitoreFilter');
     const own  = document.getElementById('calendarOwnerFilter');
     const tog  = document.getElementById('calShowHiddenPrefs');
-    if (ms)   ms.value   = '';
-    if (forn) forn.value = '';
-    if (own)  own.value  = '';
+    if (ms)   ms.value    = '';
+    if (forn) forn.value  = '';
+    if (own)  own.value   = '';
     if (tog)  tog.checked = false;
     updateCalFilterBadge();
     if (typeof app !== 'undefined') app.renderCalendar();
+  }
+
+  // === HELPER: apre il form promemoria (usato da app.js in modalità modifica) ===
+  function openReminderForm() {
+    const el = document.getElementById('remFormCollapse');
+    if (el && !el.classList.contains('show')) {
+      bootstrap.Collapse.getOrCreateInstance(el).show();
+    }
   }
 
   if ('serviceWorker' in navigator) {
