@@ -308,58 +308,67 @@ body {
   position: sticky;
   top: 0;
   z-index: 30;
-  padding-bottom: 4px;       /* piccola spaziatura visiva prima del contenuto che scorre sotto */
+  padding-bottom: 6px;
+  background: linear-gradient(to bottom, #f8f9fa 85%, transparent 100%);
   transition: box-shadow 0.25s ease;
 }
-/* Classe aggiunta via IntersectionObserver quando il wrapper è "incollato" */
 .cal-highlights-wrapper.is-stuck {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.13);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 /* Card vera e propria */
 .cal-highlights-card {
   background: linear-gradient(135deg, #fffbea 0%, #e8f5e9 100%);
-  border-radius: 10px;
-  border: 2px solid #ffc107 !important;
-  border-left: 5px solid #ff9800 !important;
-  box-shadow: 0 4px 18px rgba(255, 152, 0, 0.20), 0 1px 4px rgba(0,0,0,0.06);
+  border-radius: 12px;
+  border: 3px solid #ff9800 !important;
+  border-left: 6px solid #e65100 !important;
+  box-shadow: 0 6px 24px rgba(255, 152, 0, 0.28), 0 2px 6px rgba(0,0,0,0.08);
   overflow: hidden;
 }
 
 /* Header interno della card highlights */
 .cal-highlights-header {
-  background: linear-gradient(90deg, #fff8e1 0%, #fffde7 100%);
-  border-bottom: 2px solid #ffe082;
-  padding: 10px 16px;
+  background: linear-gradient(90deg, #fff3cd 0%, #fffde7 100%);
+  border-bottom: 3px solid #ffc107;
+  padding: 12px 18px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 /* Icona ⚡ grande */
 .cal-highlights-icon {
-  font-size: 1.65rem;
+  font-size: 2rem;
   line-height: 1;
-  filter: drop-shadow(0 1px 4px rgba(255, 140, 0, 0.55));
+  filter: drop-shadow(0 2px 6px rgba(255, 140, 0, 0.7));
   flex-shrink: 0;
+  animation: pulse-icon 2s ease-in-out infinite;
+}
+@keyframes pulse-icon {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.12); }
 }
 
 /* Titolo "Highlights" */
 .cal-highlights-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #7b4f00;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #6d3a00;
   margin: 0;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(255,200,0,0.18);
 }
 
 /* Data a destra nell'header */
 .cal-highlights-date {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: #a07000;
-  font-weight: 500;
+  font-weight: 600;
   margin-left: auto;
   white-space: nowrap;
+  background: rgba(255,255,255,0.6);
+  border-radius: 20px;
+  padding: 2px 10px;
 }
 
 /* === UTILITY === */
