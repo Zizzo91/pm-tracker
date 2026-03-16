@@ -108,6 +108,19 @@ const app = {
         this.searchTimeout = setTimeout(() => this.renderTable(), 300);
     },
 
+    // Scorre il calendario fino alla card del mese corrente
+    scrollToToday: function() {
+        const todayKey = dayjs().format('YYYY-MM');
+        // Le card mese vengono renderizzate con data-month="YYYY-MM"
+        const monthCard = document.querySelector(`[data-month="${todayKey}"]`);
+        if (monthCard) {
+            monthCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            // Mese corrente non presente nel calendario (nessun evento): avvisa l'utente
+            this.showAlert('Nessun evento nel mese corrente.', 'info', 2500);
+        }
+    },
+
     // ─── META / DATI ────────────────────────────────────────────────────────
 
     isMeta: function(p) {
@@ -1246,7 +1259,7 @@ const app = {
                 return diff !== 0 ? diff : a.sortKey.localeCompare(b.sortKey);
             });
             html += `
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-4" data-month="${k}">
                 <div class="card h-100 shadow-sm border-0">
                     <div class="card-header bg-white py-3 border-bottom">
                         <h6 class="mb-0 fw-bold text-uppercase text-primary d-flex align-items-center justify-content-between">
