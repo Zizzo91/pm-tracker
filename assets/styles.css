@@ -306,3 +306,25 @@ body {
 .text-xs { font-size: 0.75rem; }
 .ms-1 { margin-left: 0.25rem; }
 .p-3 { padding: 1rem; }
+
+/* === BANNER OFFLINE / ONLINE === */
+.offline-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  transition: opacity 0.3s ease;
+}
+.offline-banner--offline {
+  background-color: #dc3545;
+  color: #fff;
+}
+.offline-banner--online {
+  background-color: #00A651;
+  color: #fff;
+}

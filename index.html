@@ -12,6 +12,14 @@
 </head>
 <body class="bg-light">
 
+<!-- Banner Offline/Online -->
+<div id="offlineBanner" class="offline-banner offline-banner--offline" style="display:none;" role="alert" aria-live="assertive">
+    📵 Sei offline — le modifiche non verranno salvate finché la connessione non viene ripristinata.
+</div>
+<div id="onlineBanner" class="offline-banner offline-banner--online" style="display:none;" role="status" aria-live="polite">
+    ✅ Connessione ripristinata!
+</div>
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-brand mb-4">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold text-accent" href="#">▶ PM Tracker</a>
@@ -272,7 +280,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
-<script src="assets/app.js?v=28"></script>
+<script src="assets/app.js?v=29"></script>
 <script>
   dayjs.locale('it');
 
@@ -310,6 +318,33 @@
         .catch(err => console.warn('SW errore:', err));
     });
   }
+
+  // === BANNER OFFLINE / ONLINE ===
+  (function () {
+    const offlineBanner = document.getElementById('offlineBanner');
+    const onlineBanner  = document.getElementById('onlineBanner');
+    let onlineTimer = null;
+
+    function showOffline() {
+      if (onlineTimer) { clearTimeout(onlineTimer); onlineTimer = null; }
+      onlineBanner.style.display  = 'none';
+      offlineBanner.style.display = 'block';
+    }
+
+    function showOnline() {
+      offlineBanner.style.display = 'none';
+      onlineBanner.style.display  = 'block';
+      onlineTimer = setTimeout(() => {
+        onlineBanner.style.display = 'none';
+      }, 3000);
+    }
+
+    window.addEventListener('offline', showOffline);
+    window.addEventListener('online',  showOnline);
+
+    // Mostra subito se la pagina si apre già offline
+    if (!navigator.onLine) showOffline();
+  })();
 </script>
 </body>
 </html>
