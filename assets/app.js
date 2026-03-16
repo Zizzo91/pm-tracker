@@ -587,7 +587,10 @@ const app = {
     syncToGithub: async function() {
         this.showAlert('Salvataggio in corso...', 'info', 2000);
         try {
-            const content  = btoa(unescape(encodeURIComponent(JSON.stringify(this.data, null, 2))));
+            // Fix bug #6: sostituisce btoa(unescape(encodeURIComponent())) deprecato
+            // con TextEncoder, identico al pattern già usato in loadData
+            const encoded = new TextEncoder().encode(JSON.stringify(this.data, null, 2));
+            const content = btoa(String.fromCharCode(...encoded));
             const url      = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}`;
             const response = await fetch(url, {
                 method: 'PUT',
