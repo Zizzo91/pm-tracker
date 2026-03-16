@@ -10,6 +10,7 @@ const app = {
     MAX_CUSTOM_MILESTONES: 5,
     META_ID: '__pm_tracker_meta__',
     _editingReminderId: null,
+    _highlightsObserver: null,
 
     ALWAYS_HIGHLIGHT_KEYS: ['devStart', 'devEnd', 'dataTest'],
 
@@ -33,7 +34,6 @@ const app = {
 
     // ─── HELPERS GENERICI ────────────────────────────────────────────────────
 
-    // Getter centralizzato per "oggi a mezzanotte" — evita duplicazione in tutto il file
     get _today() {
         const d = new Date();
         d.setHours(0, 0, 0, 0);
@@ -55,7 +55,6 @@ const app = {
         return el ? el.checked : false;
     },
 
-    // Popola uno o più <select> di filtro con un array di valori
     _populateFilterSelects: function(ids, values, currentValues = {}) {
         ids.forEach(id => {
             const sel = document.getElementById(id);
@@ -71,7 +70,6 @@ const app = {
         });
     },
 
-    // Aggiorna stato (disabled + testo) di un bottone con limite dinamico
     _updateDynamicBtn: function(btnEl, count, max, labelNormal, labelLimit) {
         if (!btnEl) return;
         btnEl.disabled = count >= max;
@@ -108,17 +106,34 @@ const app = {
         this.searchTimeout = setTimeout(() => this.renderTable(), 300);
     },
 
-    // Scorre il calendario fino alla card del mese corrente
     scrollToToday: function() {
         const todayKey = dayjs().format('YYYY-MM');
-        // Le card mese vengono renderizzate con data-month="YYYY-MM"
         const monthCard = document.querySelector(`[data-month="${todayKey}"]`);
         if (monthCard) {
             monthCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
-            // Mese corrente non presente nel calendario (nessun evento): avvisa l'utente
             this.showAlert('Nessun evento nel mese corrente.', 'info', 2500);
         }
+    },
+
+    // ─── STICKY HIGHLIGHTS OBSERVER ──────────────────────────────────────────
+
+    _initHighlightsSticky: function() {
+        if (this._highlightsObserver) {
+            this._highlightsObserver.disconnect();
+            this._highlightsObserver = null;
+        }
+        const wrapper = document.querySelector('.cal-highlights-wrapper');
+        if (!wrapper) return;
+        // Sentinel: elemento 1px sopra il wrapper; quando esce dal viewport il wrapper è "incollato"
+        const sentinel = document.createElement('div');
+        sentinel.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:1px;pointer-events:none;';
+        wrapper.parentNode.insertBefore(sentinel, wrapper);
+        this._highlightsObserver = new IntersectionObserver(
+            ([entry]) => wrapper.classList.toggle('is-stuck', !entry.isIntersecting),
+            { threshold: 0 }
+        );
+        this._highlightsObserver.observe(sentinel);
     },
 
     // ─── META / DATI ────────────────────────────────────────────────────────
@@ -393,7 +408,6 @@ const app = {
             this.lastETag = response.headers.get('ETag');
             const json = await response.json();
             this.sha  = json.sha;
-            // Fix: sostituito escape() deprecato con TextDecoder (standard moderno)
             const raw = Uint8Array.from(atob(json.content.replace(/\s/g, '')), c => c.charCodeAt(0));
             this.data = JSON.parse(new TextDecoder().decode(raw)).map(p => this.normalizeProject(p));
             this.getMeta();
@@ -499,7 +513,6 @@ const app = {
         await this.syncToGithub();
     },
 
-    // Rinominato da renderReminders: aggiorna solo lo stato del form, non renderizza nulla
     _syncReminderFormState: function() { this._updateReminderFormUI(); },
 
     _formatDoneAt: function(doneAt) {
@@ -587,8 +600,6 @@ const app = {
     syncToGithub: async function() {
         this.showAlert('Salvataggio in corso...', 'info', 2000);
         try {
-            // Fix bug #6: sostituisce btoa(unescape(encodeURIComponent())) deprecato
-            // con TextEncoder, identico al pattern già usato in loadData
             const encoded = new TextEncoder().encode(JSON.stringify(this.data, null, 2));
             const content = btoa(String.fromCharCode(...encoded));
             const url      = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}`;
@@ -603,8 +614,6 @@ const app = {
                 throw new Error(err.message || 'Salvataggio fallito');
             }
             const result = await response.json();
-            // Punto 4: aggiorna sha locale dalla risposta del PUT, senza ri-scaricare il file da GitHub.
-            // this.data è già aggiornato (è lo stesso oggetto appena serializzato e inviato).
             this.sha = result.content.sha;
             this.lastETag = null;
             this.showAlert('Salvataggio completato!', 'success', 3000);
@@ -1223,16 +1232,18 @@ const app = {
                         <label class="form-check-label small text-muted mt-1 ms-1" for="calShowHiddenPrefs">Mostra elementi nascosti</label>
                     </div>
                 </div>
-                <div class="card-body p-4"><div class="row g-4">`;
+                <div class="card-body p-4"><div class="row g-4" style="position:relative;">`;
 
         if (hasHighlights) {
             html += `
-            <div class="col-12">
-                <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#fff8e1 0%,#e8f5e9 100%);border-left:4px solid #ffc107 !important;">
-                    <div class="card-header border-0 pb-0 pt-3 px-3" style="background:transparent;">
-                        <h6 class="fw-bold mb-0" style="color:#856404;">\u26A1 Highlights &mdash; <span class="text-muted fw-normal" style="font-size:0.85rem;">Oggi ${dayjs().format('DD/MM/YYYY')}</span></h6>
+            <div class="col-12 cal-highlights-wrapper">
+                <div class="cal-highlights-card">
+                    <div class="cal-highlights-header">
+                        <span class="cal-highlights-icon">&#x26A1;</span>
+                        <span class="cal-highlights-title">Highlights</span>
+                        <span class="cal-highlights-date">Oggi &mdash; ${dayjs().format('DD/MM/YYYY')}</span>
                     </div>
-                    <div class="card-body p-3"><div class="row g-3">
+                    <div class="p-3"><div class="row g-3">
                         <div class="col-md-5">
                             ${hlReminders.length > 0
                                 ? `<div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">\uD83D\uDCDD Promemoria attivi</div>${hlReminders.map(ev => this._renderEventCard(ev, todayStr, true)).join('')}`
@@ -1279,6 +1290,9 @@ const app = {
 
         html += `</div></div></div></div>`;
         container.innerHTML = html;
+
+        // Attiva IntersectionObserver per lo sticky shadow sull'highlights wrapper
+        this._initHighlightsSticky();
     },
 
     // ─── UTILITY ─────────────────────────────────────────────────────────────
