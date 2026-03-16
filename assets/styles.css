@@ -302,41 +302,64 @@ body {
 .cal-event-date { font-weight: bold; color: #003DA5; width: 60px; display: inline-block; }
 
 /* === HIGHLIGHTS CARD === */
-.cal-highlight-card {
-  border: 3px solid #ffc107 !important;
-  border-left: 6px solid #ff9800 !important;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #fffde7 0%, #e8f5e9 100%) !important;
-  box-shadow: 0 4px 18px rgba(255,193,7,0.28), 0 1px 6px rgba(0,0,0,0.07) !important;
-}
-.cal-highlight-sticky {
+
+/* Wrapper sticky: rimane in cima al #calendarContainer mentre si scrolla */
+.cal-highlights-wrapper {
   position: sticky;
   top: 0;
   z-index: 30;
-  /* leggero margine per non toccare il bordo superiore del contenitore */
-  padding-top: 2px;
+  padding-bottom: 4px;       /* piccola spaziatura visiva prima del contenuto che scorre sotto */
+  transition: box-shadow 0.25s ease;
 }
-.cal-highlight-header {
-  background: linear-gradient(90deg, #fff8e1 0%, #fff3cd 100%);
-  border-bottom: 2px solid rgba(255,193,7,0.4);
-  border-radius: 10px 10px 0 0;
-  padding: 10px 16px 8px;
+/* Classe aggiunta via IntersectionObserver quando il wrapper è "incollato" */
+.cal-highlights-wrapper.is-stuck {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.13);
 }
-.cal-highlight-icon {
-  font-size: 1.6rem;
+
+/* Card vera e propria */
+.cal-highlights-card {
+  background: linear-gradient(135deg, #fffbea 0%, #e8f5e9 100%);
+  border-radius: 10px;
+  border: 2px solid #ffc107 !important;
+  border-left: 5px solid #ff9800 !important;
+  box-shadow: 0 4px 18px rgba(255, 152, 0, 0.20), 0 1px 4px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+/* Header interno della card highlights */
+.cal-highlights-header {
+  background: linear-gradient(90deg, #fff8e1 0%, #fffde7 100%);
+  border-bottom: 2px solid #ffe082;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Icona ⚡ grande */
+.cal-highlights-icon {
+  font-size: 1.65rem;
   line-height: 1;
-  filter: drop-shadow(0 1px 3px rgba(255,150,0,0.5));
+  filter: drop-shadow(0 1px 4px rgba(255, 140, 0, 0.55));
+  flex-shrink: 0;
 }
-.cal-highlight-title {
+
+/* Titolo "Highlights" */
+.cal-highlights-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #7c4a00;
+  color: #7b4f00;
+  margin: 0;
   letter-spacing: 0.01em;
 }
-.cal-highlight-date {
+
+/* Data a destra nell'header */
+.cal-highlights-date {
   font-size: 0.82rem;
   color: #a07000;
   font-weight: 500;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 /* === UTILITY === */
