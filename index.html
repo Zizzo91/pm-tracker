@@ -104,38 +104,55 @@
 
         <!-- Tab 3: Calendario (DEFAULT) -->
         <div class="tab-pane fade show active" id="calendarView">
-            <div class="d-flex justify-content-end mb-3 flex-wrap gap-2">
-                <div class="d-flex align-items-center gap-2 me-auto">
-                    <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" onclick="app.scrollToToday()">📍 Vai a Oggi</button>
-                    <div class="form-check form-switch ms-2 mb-0 mt-1">
-                        <input class="form-check-input" type="checkbox" id="calShowHiddenPrefs" onchange="app.renderCalendar()">
-                        <label class="form-check-label small fw-semibold text-muted" for="calShowHiddenPrefs">Mostra milestone nascoste</label>
+
+            <!-- Riga principale: navigazione + toggle + bottone filtri -->
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <button class="btn btn-outline-primary btn-sm" onclick="app.scrollToToday()">📍 Vai a Oggi</button>
+                <div class="form-check form-switch ms-2 mb-0">
+                    <input class="form-check-input" type="checkbox" id="calShowHiddenPrefs" onchange="app.renderCalendar(); updateCalFilterBadge()">
+                    <label class="form-check-label small fw-semibold text-muted" for="calShowHiddenPrefs">Mostra milestone nascoste</label>
+                </div>
+                <div class="ms-auto">
+                    <button class="btn btn-sm btn-outline-secondary" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#calFilterPanel"
+                        aria-expanded="false" aria-controls="calFilterPanel"
+                        id="calFilterToggleBtn">
+                        🔧 Filtri <span id="calFilterBadge" class="badge bg-danger ms-1" style="display:none">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pannello filtri collassabile -->
+            <div class="collapse mb-3" id="calFilterPanel">
+                <div class="card card-body py-2 px-3 border-secondary">
+                    <div class="d-flex flex-wrap gap-3 align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 small fw-semibold">🏷️ Milestone:</label>
+                            <select id="calendarMilestoneFilter" class="form-select form-select-sm" style="min-width:210px" onchange="app.renderCalendar(); updateCalFilterBadge()">
+                                <option value="">Tutte le milestone</option>
+                                <option value="dataIA">🤖 Consegna IA</option>
+                                <option value="devStart">▶️ Inizio Sviluppo</option>
+                                <option value="devEnd">⏹️ Fine Sviluppo</option>
+                                <option value="dataUAT">👥 UAT</option>
+                                <option value="dataBS">💼 Business Simulation</option>
+                                <option value="dataTest">🧪 Rilascio Test</option>
+                                <option value="dataProd">🚀 Rilascio Prod</option>
+                                <option value="dataScadenzaStima">📥 Scad. Stima Fornitore</option>
+                                <option value="dataConfigSistema">🔧 Config Sistema</option>
+                                <option value="custom">⭐ Milestone Personalizzate</option>
+                                <option value="reminders">📝 Promemoria manuali</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
+                            <select id="calendarFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar(); updateCalFilterBadge()"><option value="">Tutti</option></select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 small fw-semibold">👤 Owner:</label>
+                            <select id="calendarOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar(); updateCalFilterBadge()"><option value="">Tutti</option></select>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm ms-auto" onclick="resetCalFilters()">✖ Reset filtri</button>
                     </div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 small fw-semibold">🏷️ Milestone:</label>
-                    <select id="calendarMilestoneFilter" class="form-select form-select-sm" style="min-width:210px" onchange="app.renderCalendar()">
-                        <option value="">Tutte le milestone</option>
-                        <option value="dataIA">🤖 Consegna IA</option>
-                        <option value="devStart">▶️ Inizio Sviluppo</option>
-                        <option value="devEnd">⏹️ Fine Sviluppo</option>
-                        <option value="dataUAT">👥 UAT</option>
-                        <option value="dataBS">💼 Business Simulation</option>
-                        <option value="dataTest">🧪 Rilascio Test</option>
-                        <option value="dataProd">🚀 Rilascio Prod</option>
-                        <option value="dataScadenzaStima">📥 Scad. Stima Fornitore</option>
-                        <option value="dataConfigSistema">🔧 Config Sistema</option>
-                        <option value="custom">⭐ Milestone Personalizzate</option>
-                        <option value="reminders">📝 Promemoria manuali</option>
-                    </select>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
-                    <select id="calendarFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar()"><option value="">Tutti</option></select>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 small fw-semibold">👤 Owner:</label>
-                    <select id="calendarOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar()"><option value="">Tutti</option></select>
                 </div>
             </div>
 
@@ -280,7 +297,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
-<script src="assets/app.js?v=29"></script>
+<script src="assets/app.js?v=30"></script>
 <script>
   dayjs.locale('it');
 
@@ -307,6 +324,40 @@
 
   populateSortSelect('tableSortSelect');
   populateSortSelect('ganttSortSelect', [{ value: 'custom', label: '✋ Manuale (Drag & Drop)' }]);
+
+  // === BADGE FILTRI CALENDARIO ===
+  function updateCalFilterBadge() {
+    let count = 0;
+    const ms  = document.getElementById('calendarMilestoneFilter');
+    const forn = document.getElementById('calendarFornitoreFilter');
+    const own  = document.getElementById('calendarOwnerFilter');
+    const tog  = document.getElementById('calShowHiddenPrefs');
+    if (ms   && ms.value)    count++;
+    if (forn && forn.value)  count++;
+    if (own  && own.value)   count++;
+    if (tog  && tog.checked) count++;
+    const badge = document.getElementById('calFilterBadge');
+    if (!badge) return;
+    if (count > 0) {
+      badge.textContent = count;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function resetCalFilters() {
+    const ms   = document.getElementById('calendarMilestoneFilter');
+    const forn = document.getElementById('calendarFornitoreFilter');
+    const own  = document.getElementById('calendarOwnerFilter');
+    const tog  = document.getElementById('calShowHiddenPrefs');
+    if (ms)   ms.value   = '';
+    if (forn) forn.value = '';
+    if (own)  own.value  = '';
+    if (tog)  tog.checked = false;
+    updateCalFilterBadge();
+    if (typeof app !== 'undefined') app.renderCalendar();
+  }
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -342,7 +393,6 @@
     window.addEventListener('offline', showOffline);
     window.addEventListener('online',  showOnline);
 
-    // Mostra subito se la pagina si apre già offline
     if (!navigator.onLine) showOffline();
   })();
 </script>
