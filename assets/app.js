@@ -413,6 +413,8 @@ const app = {
             this.getMeta();
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
+            this.populateDataTestFilters();
+            this.populateDataProdFilters();
             this.renderAll();
             this.showAlert('Dati scaricati con successo!', 'success', 2000);
         } catch (error) {
@@ -440,6 +442,30 @@ const app = {
                 values
             );
         } catch (e) { console.error('populateOwnerFilters error', e); }
+    },
+
+    populateDataTestFilters: function() {
+        try {
+            const values = [...new Set(this.getProjectsOnly().flatMap(p => p.dataTest || []))]
+                .filter(v => v)
+                .sort((a, b) => new Date(a) - new Date(b))
+                .map(d => d.substring(0, 10));
+            const labels = {};
+            values.forEach(v => { labels[v] = this.formatDate(v); });
+            this._populateFilterSelects(['ganttDataTestFilter'], values, labels);
+        } catch (e) { console.error('populateDataTestFilters error', e); }
+    },
+
+    populateDataProdFilters: function() {
+        try {
+            const values = [...new Set(this.getProjectsOnly().flatMap(p => p.dataProd || []))]
+                .filter(v => v)
+                .sort((a, b) => new Date(a) - new Date(b))
+                .map(d => d.substring(0, 10));
+            const labels = {};
+            values.forEach(v => { labels[v] = this.formatDate(v); });
+            this._populateFilterSelects(['ganttDataProdFilter'], values, labels);
+        } catch (e) { console.error('populateDataProdFilters error', e); }
     },
 
     // ─── PROMEMORIA ──────────────────────────────────────────────────────────
@@ -620,6 +646,8 @@ const app = {
             this.getMeta();
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
+            this.populateDataTestFilters();
+            this.populateDataProdFilters();
             this.renderAll();
         } catch (e) {
             console.error('Errore sync:', e);
@@ -834,6 +862,8 @@ const app = {
         if (!container) return;
         const filtForn   = this._getVal('ganttFornitoreFilter');
         const filtOwn    = this._getVal('ganttOwnerFilter');
+        const filtDataTest = this._getVal('ganttDataTestFilter');
+        const filtDataProd = this._getVal('ganttDataProdFilter');
         const sortMode   = this._getVal('ganttSortSelect') || 'prod_inprogress_first';
         const showHidden = this._getChecked('globalShowHidden');
 
@@ -841,6 +871,8 @@ const app = {
             (showHidden || !this.isHiddenForUI(p)) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
             (!filtOwn  || (p.owners    && p.owners.includes(filtOwn))) &&
+            (!filtDataTest || (p.dataTest && p.dataTest.startsWith(filtDataTest))) &&
+            (!filtDataProd || (p.dataProd && p.dataProd.startsWith(filtDataProd))) &&
             (p.devStart || p.devEnd || p.dataTest || p.dataProd || p.dataIA || (p.customMilestones && p.customMilestones.length > 0))
         );
         data = this._sortGantt(data, sortMode);

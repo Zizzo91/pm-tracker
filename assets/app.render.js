@@ -110,6 +110,8 @@ Object.assign(app, {
         if (!container) return;
         const filtForn   = this._getVal('ganttFornitoreFilter');
         const filtOwn    = this._getVal('ganttOwnerFilter');
+        const filtDataTest = this._getVal('ganttDataTestFilter');
+        const filtDataProd = this._getVal('ganttDataProdFilter');
         const sortMode   = this._getVal('ganttSortSelect') || 'prod_inprogress_first';
         const showHidden = this._getChecked('globalShowHidden');
 
@@ -117,6 +119,8 @@ Object.assign(app, {
             (showHidden || !this.isHiddenForUI(p)) &&
             (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
             (!filtOwn  || (p.owners    && p.owners.includes(filtOwn))) &&
+            (!filtDataTest || (p.dataTest && p.dataTest.startsWith(filtDataTest))) &&
+            (!filtDataProd || (p.dataProd && p.dataProd.startsWith(filtDataProd))) &&
             (p.devStart || p.devEnd || p.dataTest || p.dataProd || p.dataIA || (p.customMilestones && p.customMilestones.length > 0))
         );
         data = this._sortGantt(data, sortMode);

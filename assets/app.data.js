@@ -135,6 +135,30 @@ Object.assign(app, {
         } catch (e) { console.error('populateOwnerFilters error', e); }
     },
 
+    populateDataTestFilters: function() {
+        try {
+            const values = [...new Set(this.getProjectsOnly().flatMap(p => p.dataTest || []))]
+                .filter(v => v)
+                .sort((a, b) => new Date(a) - new Date(b))
+                .map(d => d.substring(0, 10));
+            const labels = {};
+            values.forEach(v => { labels[v] = this.formatDate(v); });
+            this._populateFilterSelects(['ganttDataTestFilter'], values, labels);
+        } catch (e) { console.error('populateDataTestFilters error', e); }
+    },
+
+    populateDataProdFilters: function() {
+        try {
+            const values = [...new Set(this.getProjectsOnly().flatMap(p => p.dataProd || []))]
+                .filter(v => v)
+                .sort((a, b) => new Date(a) - new Date(b))
+                .map(d => d.substring(0, 10));
+            const labels = {};
+            values.forEach(v => { labels[v] = this.formatDate(v); });
+            this._populateFilterSelects(['ganttDataProdFilter'], values, labels);
+        } catch (e) { console.error('populateDataProdFilters error', e); }
+    },
+
     // ─── SORT ────────────────────────────────────────────────────────────────
 
     _sortGantt: function(data, mode) {
