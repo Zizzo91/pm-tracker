@@ -8,24 +8,27 @@
     "owners": [
       "Simone"
     ],
-    "dataStima": "",
+    "progress": null,
+    "dataStima": null,
     "dataIA": null,
     "devStart": "2026-02-23",
     "devEnd": "2026-03-20",
-    "dataTest": "2026-04-03",
-    "dataProd": "2026-05-05",
+    "dataTest": "2026-04-23",
+    "dataProd": "2026-06-09",
     "dataUAT": null,
     "dataBS": null,
     "jiraLinks": [
       "https://telepass.atlassian.net/browse/DPS-2596"
     ],
+    "customMilestones": [],
     "dataScadenzaStima": null,
     "dataConfigSistema": "2026-03-03",
     "stimaGgu": 20,
     "rcFornitore": 400,
     "stimaCosto": 8000,
-    "customMilestones": [],
-    "hidden": false
+    "note": "",
+    "hidden": false,
+    "ganttOrder": 3
   },
   {
     "id": "1772009744530",
@@ -53,7 +56,9 @@
     "rcFornitore": 400,
     "stimaCosto": 4000,
     "customMilestones": [],
-    "hidden": false
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 4
   },
   {
     "id": "1772009902765",
@@ -64,24 +69,27 @@
     "owners": [
       "Simone"
     ],
-    "dataStima": "",
+    "progress": null,
+    "dataStima": null,
     "dataIA": null,
-    "devStart": "2026-04-16",
-    "devEnd": "2026-05-15",
-    "dataTest": "2026-05-15",
-    "dataProd": "2026-06-23",
+    "devStart": null,
+    "devEnd": null,
+    "dataTest": null,
+    "dataProd": null,
     "dataUAT": null,
     "dataBS": null,
     "jiraLinks": [
       "https://telepass.atlassian.net/browse/DPS-2472"
     ],
+    "customMilestones": [],
     "dataScadenzaStima": null,
     "dataConfigSistema": "2026-04-16",
     "stimaGgu": 35,
     "rcFornitore": 400,
     "stimaCosto": 14000,
-    "customMilestones": [],
-    "hidden": false
+    "note": "",
+    "hidden": true,
+    "ganttOrder": 5
   },
   {
     "id": "1772012800744",
@@ -109,7 +117,9 @@
     "rcFornitore": 400,
     "stimaCosto": 4000,
     "customMilestones": [],
-    "hidden": false
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 8
   },
   {
     "id": "1772014826609",
@@ -137,7 +147,9 @@
     "rcFornitore": 364,
     "stimaCosto": 1820,
     "customMilestones": [],
-    "hidden": false
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 6
   },
   {
     "id": "1772015383415",
@@ -149,24 +161,27 @@
       "Simone",
       "Andrea"
     ],
-    "dataStima": "",
+    "progress": null,
+    "dataStima": null,
     "dataIA": null,
-    "devStart": "2026-04-27",
-    "devEnd": "2026-06-04",
-    "dataTest": "2026-06-11",
-    "dataProd": "2026-06-23",
+    "devStart": null,
+    "devEnd": null,
+    "dataTest": null,
+    "dataProd": null,
     "dataUAT": null,
     "dataBS": null,
     "jiraLinks": [
       "https://telepass.atlassian.net/browse/SLF-4854"
     ],
+    "customMilestones": [],
     "dataScadenzaStima": null,
     "dataConfigSistema": null,
     "stimaGgu": 40,
     "rcFornitore": 400,
     "stimaCosto": 16000,
-    "customMilestones": [],
-    "hidden": false
+    "note": "",
+    "hidden": true,
+    "ganttOrder": 7
   },
   {
     "id": "1772015597105",
@@ -192,7 +207,9 @@
     "rcFornitore": 364,
     "stimaCosto": 2184,
     "customMilestones": [],
-    "hidden": false
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 9
   },
   {
     "id": "1772015731800",
@@ -220,35 +237,9 @@
     "rcFornitore": 400,
     "stimaCosto": 4800,
     "customMilestones": [],
-    "hidden": false
-  },
-  {
-    "id": "1772017506539",
-    "nome": "Riskshield",
-    "fornitori": [
-      "Accenture"
-    ],
-    "owners": [
-      "Flavia"
-    ],
-    "dataStima": "2026-02-18",
-    "dataIA": "2026-02-26",
-    "devStart": "2026-02-23",
-    "devEnd": "2026-03-06",
-    "dataTest": "2026-03-06",
-    "dataProd": "2026-03-19",
-    "dataUAT": null,
-    "dataBS": null,
-    "jiraLinks": [
-      "https://telepass.atlassian.net/browse/RISKSHIELD-267"
-    ],
-    "dataScadenzaStima": "2026-02-18",
-    "dataConfigSistema": null,
-    "stimaGgu": 15,
-    "rcFornitore": 364,
-    "stimaCosto": 5460,
-    "customMilestones": [],
-    "hidden": false
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 13
   },
   {
     "id": "1772018580311",
@@ -279,7 +270,9 @@
     "rcFornitore": null,
     "stimaCosto": null,
     "note": "",
-    "hidden": false
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 15
   },
   {
     "id": "1772019429452",
@@ -308,7 +301,9 @@
     "rcFornitore": null,
     "stimaCosto": null,
     "note": "Ancora in attesa di un feedback da data platform",
-    "hidden": false
+    "hidden": true,
+    "progress": null,
+    "ganttOrder": 10
   },
   {
     "id": "1772029183107",
@@ -321,6 +316,517 @@
     ],
     "dataStima": null,
     "dataIA": null,
+    "devStart": "2026-05-25",
+    "devEnd": "2026-06-22",
+    "dataTest": "2026-06-23",
+    "dataProd": "2026-07-15",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/MKTG-577"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": "2026-03-06",
+    "dataConfigSistema": null,
+    "stimaGgu": 25,
+    "rcFornitore": 400,
+    "stimaCosto": 10000,
+    "note": "",
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 11
+  },
+  {
+    "id": "__pm_tracker_meta__",
+    "type": "meta",
+    "manualReminders": [
+      {
+        "id": "1772534097950",
+        "date": "2026-03-03",
+        "title": "Chiedere ad Andrea della stima di Casa e salute",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-03T10:34:57.950Z",
+        "doneAt": "2026-03-03T16:08:25.624Z"
+      },
+      {
+        "id": "1772534120968",
+        "date": "2026-03-03",
+        "title": "Chiedere a Michele del commento per Check iban",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-03T10:35:20.968Z",
+        "doneAt": "2026-03-05T08:06:13.026Z"
+      },
+      {
+        "id": "1772536274182",
+        "date": "2026-03-03",
+        "title": "Chiedere ad Andrea chi e come estrarre i dati di revolut per metterli nella coda giusta",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-03T11:11:14.182Z",
+        "doneAt": "2026-03-03T16:08:21.182Z"
+      },
+      {
+        "id": "1772615515069",
+        "date": "2026-03-04",
+        "title": "Aggiornare i jira di ZTL Palermo con relativi rilasci",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-04T09:11:55.069Z",
+        "doneAt": "2026-03-05T08:06:16.523Z"
+      },
+      {
+        "id": "1772699973088",
+        "date": "2026-03-05",
+        "title": "Fare flusso Rate",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-05T08:39:33.088Z",
+        "doneAt": "2026-03-05T13:59:30.413Z"
+      },
+      {
+        "id": "1772699983833",
+        "date": "2026-03-05",
+        "title": "Vedere budget Nuovo Plus",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-05T08:39:43.833Z",
+        "doneAt": "2026-03-05T14:23:08.061Z"
+      },
+      {
+        "id": "1772699994204",
+        "date": "2026-03-05",
+        "title": "Dire a Flavia di mulesoft a fine maggio",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-05T08:39:54.204Z",
+        "doneAt": "2026-03-05T13:59:34.009Z"
+      },
+      {
+        "id": "1772720213199",
+        "date": "2026-03-06",
+        "title": "Sara deve rispondere per TPay x su DPS-2815",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-05T14:16:53.199Z",
+        "doneAt": "2026-03-10T16:26:59.239Z"
+      },
+      {
+        "id": "1773063431213",
+        "date": "2026-03-09",
+        "title": "Inserire costi ZTL Palermo",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-09T13:37:11.213Z",
+        "doneAt": "2026-03-09T16:35:57.391Z"
+      },
+      {
+        "id": "1773074152089",
+        "date": "2026-03-10",
+        "title": "Chiedere ad Andrea di food&drink",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-09T16:35:52.089Z",
+        "doneAt": "2026-03-10T16:26:56.188Z"
+      },
+      {
+        "id": "1773160035987",
+        "date": "2026-03-11",
+        "title": "Fornire customerCode a Peruggini",
+        "note": "Io ho capito solo impatti contentful, lei dice che tu gli hai detto impatti su BE.",
+        "done": true,
+        "createdAt": "2026-03-10T16:27:15.987Z",
+        "doneAt": "2026-03-11T09:38:47.050Z"
+      },
+      {
+        "id": "1773237029228",
+        "date": "2026-03-11",
+        "title": "Vedere differenza tra v1 e v2 di attiva servizi",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-11T13:50:29.228Z",
+        "doneAt": "2026-03-11T15:31:36.855Z"
+      },
+      {
+        "id": "1773237567381",
+        "date": "2026-03-11",
+        "title": "Dire a Fabiola di pagopa",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-11T13:59:27.381Z",
+        "doneAt": "2026-03-11T15:31:32.954Z"
+      },
+      {
+        "id": "1773243506849",
+        "date": "2026-03-12",
+        "title": "attesa risposta da Giacomo per TPay X PagoPA",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-11T15:38:26.849Z",
+        "doneAt": "2026-03-11T16:51:15.877Z"
+      },
+      {
+        "id": "1773247616685",
+        "date": "2026-03-12",
+        "title": "Scrivere a Sara e Andrea Ciambella per il problema di targa1",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-11T16:46:56.685Z",
+        "doneAt": "2026-03-13T16:03:16.295Z"
+      },
+      {
+        "id": "1773221918905",
+        "date": "2026-03-13",
+        "title": "caricare nuova causale",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-11T09:38:38.905Z",
+        "doneAt": "2026-03-13T15:20:49.599Z",
+        "updatedAt": "2026-03-12T11:21:36.639Z"
+      },
+      {
+        "id": "1773236204864",
+        "date": "2026-03-13",
+        "title": "Preparare query per SR per pagoPA",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-11T13:36:44.864Z",
+        "doneAt": "2026-03-11T15:37:58.739Z"
+      },
+      {
+        "id": "1773237963026",
+        "date": "2026-03-13",
+        "title": "fare macrostima per shopping cart",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-11T14:06:03.026Z",
+        "doneAt": "2026-03-13T16:03:26.189Z"
+      },
+      {
+        "id": "1773399988839",
+        "date": "2026-03-13",
+        "title": "Chiedere ad Andrea che fare con i codici operazioni",
+        "note": "https://teams.microsoft.com/l/message/19:5c8ff1fa-d2d3-4eec-ab22-6079147ff050_e4557f84-1787-4729-8baf-27468207f262@unq.gbl.spaces/1773415387573?context=%7B%22contextType%22%3A%22chat%22%7D",
+        "done": true,
+        "createdAt": "2026-03-13T11:06:28.839Z",
+        "doneAt": "2026-03-13T16:03:40.131Z",
+        "updatedAt": "2026-03-13T15:48:49.171Z"
+      },
+      {
+        "id": "1772719956465",
+        "date": "2026-03-16",
+        "title": "Chiedere ad andrea il budget di Voip",
+        "note": "Era sul file dell'anno scorso se non addirittura in quello di Vincenzo",
+        "done": true,
+        "createdAt": "2026-03-05T14:12:36.465Z",
+        "doneAt": "2026-03-13T16:03:52.121Z",
+        "updatedAt": "2026-03-13T15:49:10.336Z"
+      },
+      {
+        "id": "1773417895629",
+        "date": "2026-03-16",
+        "title": "Attivare casa e salute scrivendo a Panichi",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-13T16:04:55.629Z",
+        "doneAt": "2026-03-16T13:56:03.736Z",
+        "updatedAt": "2026-03-13T16:17:38.940Z"
+      },
+      {
+        "id": "1773678278345",
+        "date": "2026-03-17",
+        "title": "Fare SR per PAGOPA X con Fabiola",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-16T16:24:38.345Z",
+        "doneAt": "2026-03-23T10:45:49.812Z"
+      },
+      {
+        "id": "1773842050307",
+        "date": "2026-03-18",
+        "title": "Chiedere ad Andrea di quell'inc, che dobbiamo fare?",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-18T13:54:10.307Z",
+        "doneAt": "2026-04-08T12:50:47.039Z"
+      },
+      {
+        "id": "1774005953312",
+        "date": "2026-03-20",
+        "title": "Fissare call per KO SEDA & Onfido da canali con Andrea post pasquetta",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-20T11:25:53.313Z",
+        "doneAt": "2026-04-02T07:16:12.964Z"
+      },
+      {
+        "id": "1774005864607",
+        "date": "2026-03-20",
+        "title": "Fissare call con Biagio per casa e salute per 24/03",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-20T11:24:24.607Z",
+        "doneAt": "2026-03-23T08:07:06.551Z",
+        "updatedAt": "2026-03-20T11:27:03.887Z"
+      },
+      {
+        "id": "1773675005839",
+        "date": "2026-03-23",
+        "title": "Comunicare nuovi codici operazione a Capizzi e Mulesoft",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-16T15:30:05.839Z",
+        "doneAt": "2026-04-16T14:49:58.160Z",
+        "updatedAt": "2026-03-20T11:26:41.487Z"
+      },
+      {
+        "id": "1775124277803",
+        "date": "2026-04-07",
+        "title": "Dire ad Andrea Ciambella se query corretta o meno",
+        "note": "https://telepass.atlassian.net/browse/DPS-2964?focusedCommentId=375427",
+        "done": true,
+        "createdAt": "2026-04-02T10:04:37.803Z",
+        "doneAt": "2026-04-16T14:49:55.468Z"
+      },
+      {
+        "id": "1775124325318",
+        "date": "2026-04-07",
+        "title": "Discutere con andrea di casa e salute",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-04-02T10:05:25.318Z",
+        "doneAt": "2026-04-08T12:50:32.426Z"
+      },
+      {
+        "id": "1775124413634",
+        "date": "2026-04-07",
+        "title": "Discutere con Andrea di contratti G&G",
+        "note": "Mail di Simone Nigro del 02/04 alle 11.34: https://telepass.atlassian.net/browse/DPS-2871",
+        "done": true,
+        "createdAt": "2026-04-02T10:06:53.634Z",
+        "doneAt": "2026-04-08T12:45:47.280Z"
+      },
+      {
+        "id": "1775137564443",
+        "date": "2026-04-07",
+        "title": "Chiedere ad andrea per furto dispositivo",
+        "note": "Vedi mail sara di 02/04 alle 15.40",
+        "done": true,
+        "createdAt": "2026-04-02T13:46:04.443Z",
+        "doneAt": "2026-04-08T12:45:52.335Z"
+      },
+      {
+        "id": "1775544749432",
+        "date": "2026-04-07",
+        "title": "Chiedere ad andrea della lista movimenti",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-04-07T06:52:29.432Z",
+        "doneAt": "2026-04-08T12:50:27.345Z"
+      },
+      {
+        "id": "1775544880129",
+        "date": "2026-04-07",
+        "title": "Chiedere ad andrea di codici operazione cambio iban",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-04-07T06:54:40.129Z",
+        "doneAt": "2026-04-08T12:50:24.070Z"
+      },
+      {
+        "id": "1773823698996",
+        "date": "2026-04-16",
+        "title": "Dire a Biagio nuova tabella e nuovo codice operazione KO SEDA",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-03-18T08:48:18.996Z",
+        "doneAt": "2026-04-16T14:50:07.391Z"
+      },
+      {
+        "id": "1776679432210",
+        "date": "2026-04-22",
+        "title": "Chiedere ad Andrea della TETSNS",
+        "note": "",
+        "done": true,
+        "createdAt": "2026-04-20T10:03:52.210Z",
+        "doneAt": "2026-04-27T13:12:05.371Z"
+      },
+      {
+        "id": "1776848912776",
+        "date": "2026-04-23",
+        "title": "Chiedere ad Andrea del nuovo modello DIRF1",
+        "note": "È normale che non si parli della TETSNS?",
+        "done": true,
+        "createdAt": "2026-04-22T09:08:32.776Z",
+        "doneAt": "2026-04-27T13:12:13.250Z"
+      },
+      {
+        "id": "1777024541763",
+        "date": "2026-04-27",
+        "title": "Chiedere a Sara di far stimare la modifica del testo a settembre",
+        "note": "",
+        "done": false,
+        "createdAt": "2026-04-24T09:55:41.763Z",
+        "doneAt": null
+      }
+    ],
+    "eventPrefs": {
+      "ms_1772015731800_devStart": "gray",
+      "ms_1772015597105_devEnd": "gray",
+      "ms_1772015597105_dataTest": "gray",
+      "ms_1772015731800_devEnd": "gray",
+      "ms_1772017506539_dataScadenzaStima": "hide",
+      "ms_1772009349631_dataConfigSistema": "gray",
+      "ms_1772015597105_devStart": "hide",
+      "ms_1772018580311_dataTest": "gray",
+      "ms_1773244674453_devStart": "gray",
+      "ms_1772009349631_devStart": "gray",
+      "ms_1772015731800_dataTest": "gray"
+    },
+    "owners": [],
+    "fornitori": [],
+    "customMilestones": [],
+    "hidden": false
+  },
+  {
+    "id": "1772720469095",
+    "nome": "Nuovo Plus/Gold",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": null,
+    "dataIA": "2026-03-10",
+    "devStart": "2026-03-09",
+    "devEnd": "2026-05-15",
+    "dataTest": "2026-05-29",
+    "dataProd": "2026-07-15",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/TELPISO-8084",
+      "https://telepass.atlassian.net/browse/TELPISO-8072",
+      "https://telepass.atlassian.net/browse/TELPISO-8021",
+      "https://telepass.atlassian.net/browse/TELPISO-8016"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 95,
+    "rcFornitore": 400,
+    "stimaCosto": 38000,
+    "note": "in attesa di stime per la parte di NOTE spese su sito. Alcune cose, tipo kostelia, arriveranno dopo.",
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 12
+  },
+  {
+    "id": "1773244674453",
+    "nome": "Revolut su code PEGA",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "dataStima": null,
+    "dataIA": null,
+    "devStart": "2026-02-26",
+    "devEnd": "2026-03-06",
+    "dataTest": "2026-03-06",
+    "dataProd": "2026-04-20",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/DPS-2765"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 6,
+    "rcFornitore": 400,
+    "stimaCosto": 2400,
+    "note": "",
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 1
+  },
+  {
+    "id": "1773654522014",
+    "nome": "Riskshield",
+    "fornitori": [
+      "Accenture"
+    ],
+    "owners": [
+      "Flavia"
+    ],
+    "dataStima": "2026-02-18",
+    "dataIA": "2026-03-03",
+    "devStart": "2026-02-23",
+    "devEnd": "2026-03-06",
+    "dataTest": "2026-03-06",
+    "dataProd": "2026-04-20",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/RISKSHIELD-267"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": "2026-02-18",
+    "dataConfigSistema": null,
+    "stimaGgu": null,
+    "rcFornitore": null,
+    "stimaCosto": null,
+    "note": "",
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 16
+  },
+  {
+    "id": "1773654646103",
+    "nome": "Salvataggio tipo Obu in onboarding",
+    "fornitori": [
+      "Accenture"
+    ],
+    "owners": [
+      "Flavia"
+    ],
+    "dataStima": "2026-03-11",
+    "dataIA": "2026-04-10",
+    "devStart": "2026-04-06",
+    "devEnd": "2026-04-13",
+    "dataTest": "2026-04-14",
+    "dataProd": null,
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/DPS-2845"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": "2026-03-11",
+    "dataConfigSistema": null,
+    "stimaGgu": null,
+    "rcFornitore": null,
+    "stimaCosto": null,
+    "note": "",
+    "hidden": false,
+    "progress": null,
+    "ganttOrder": 17
+  },
+  {
+    "id": "1773654751203",
+    "nome": "Casa&Salute - acquisto in app",
+    "fornitori": [
+      "Accenture"
+    ],
+    "owners": [
+      "Flavia"
+    ],
+    "dataStima": "2026-03-27",
+    "dataIA": null,
     "devStart": null,
     "devEnd": null,
     "dataTest": null,
@@ -328,20 +834,239 @@
     "dataUAT": null,
     "dataBS": null,
     "jiraLinks": [
-      "https://telepass.atlassian.net/browse/MKTG-577"
+      "https://telepass.atlassian.net/browse/INSURANCE-2612"
     ],
-    "customMilestones": [
-      {
-        "label": "Creare story e richiedere pianificazione a ENG",
-        "date": "2026-02-27"
-      }
-    ],
-    "dataScadenzaStima": "2026-03-06",
+    "customMilestones": [],
+    "dataScadenzaStima": null,
     "dataConfigSistema": null,
     "stimaGgu": null,
     "rcFornitore": null,
     "stimaCosto": null,
-    "note": "Aperta story, in attesa stime",
-    "hidden": false
+    "note": "",
+    "hidden": true,
+    "progress": null,
+    "ganttOrder": 18
+  },
+  {
+    "id": "1774004802356",
+    "nome": "Casa&Salute",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Andrea",
+      "Simone"
+    ],
+    "progress": 1,
+    "dataStima": null,
+    "dataIA": null,
+    "devStart": null,
+    "devEnd": null,
+    "dataTest": null,
+    "dataProd": null,
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/INSURANCE-2618",
+      "https://telepass.atlassian.net/browse/INSURANCE-2626"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": null,
+    "rcFornitore": null,
+    "stimaCosto": null,
+    "note": "",
+    "hidden": true,
+    "ganttOrder": 0
+  },
+  {
+    "id": "1775115060412",
+    "nome": "Modifica puntamenti AgentForce",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Andrea",
+      "Simone"
+    ],
+    "progress": null,
+    "dataStima": null,
+    "dataIA": null,
+    "devStart": "2026-03-30",
+    "devEnd": "2026-03-30",
+    "dataTest": "2026-03-30",
+    "dataProd": null,
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/SLF-4545"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 1,
+    "rcFornitore": 400,
+    "stimaCosto": 400,
+    "note": "",
+    "hidden": true,
+    "ganttOrder": 2
+  },
+  {
+    "id": "1775115577153",
+    "nome": "Repricing viacard (furto dispositivo)",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "progress": null,
+    "dataStima": "2026-04-07",
+    "dataIA": null,
+    "devStart": "2026-04-14",
+    "devEnd": "2026-04-22",
+    "dataTest": "2026-04-23",
+    "dataProd": "2026-05-05",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/REP-74"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": "2026-04-07",
+    "dataConfigSistema": null,
+    "stimaGgu": 10,
+    "rcFornitore": 400,
+    "stimaCosto": 4000,
+    "note": "",
+    "hidden": false,
+    "ganttOrder": 14
+  },
+  {
+    "id": "1776325327413",
+    "nome": "Vendita twin burger king",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Simone",
+      "Andrea"
+    ],
+    "progress": null,
+    "dataStima": null,
+    "dataIA": null,
+    "devStart": "2026-04-01",
+    "devEnd": "2026-04-20",
+    "dataTest": "2026-04-23",
+    "dataProd": "2026-05-05",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/RCH-541"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 30,
+    "rcFornitore": 400,
+    "stimaCosto": 12000,
+    "note": "",
+    "hidden": false,
+    "ganttOrder": 19
+  },
+  {
+    "id": "1776326100794",
+    "nome": "Repricing base (furto dispositivo)",
+    "fornitori": [
+      "ENG"
+    ],
+    "owners": [
+      "Andrea"
+    ],
+    "progress": null,
+    "dataStima": null,
+    "dataIA": null,
+    "devStart": "2026-04-14",
+    "devEnd": "2026-04-22",
+    "dataTest": "2026-04-23",
+    "dataProd": "2026-05-05",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/DPS-3024"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 1,
+    "rcFornitore": 400,
+    "stimaCosto": 400,
+    "note": "",
+    "hidden": false,
+    "ganttOrder": 20
+  },
+  {
+    "id": "1776765505727",
+    "nome": "Sempre Light",
+    "fornitori": [
+      "ENG"
+    ],
+    "owners": [
+      "Simone"
+    ],
+    "progress": null,
+    "dataStima": "2026-05-08",
+    "dataIA": null,
+    "devStart": null,
+    "devEnd": null,
+    "dataTest": "2026-07-16",
+    "dataProd": "2026-09-07",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/DPS-3083"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": null,
+    "rcFornitore": null,
+    "stimaCosto": null,
+    "note": "",
+    "hidden": false,
+    "ganttOrder": 21
+  },
+  {
+    "id": "1777037103135",
+    "nome": "CodiceID",
+    "fornitori": [
+      "Engineering"
+    ],
+    "owners": [
+      "Andrea",
+      "Simone"
+    ],
+    "progress": null,
+    "dataStima": "2026-04-10",
+    "dataIA": null,
+    "devStart": "2026-05-20",
+    "devEnd": "2026-05-25",
+    "dataTest": "2026-05-25",
+    "dataProd": "2026-06-09",
+    "dataUAT": null,
+    "dataBS": null,
+    "jiraLinks": [
+      "https://telepass.atlassian.net/browse/CPS-2828"
+    ],
+    "customMilestones": [],
+    "dataScadenzaStima": null,
+    "dataConfigSistema": null,
+    "stimaGgu": 5,
+    "rcFornitore": 400,
+    "stimaCosto": 2000,
+    "note": "",
+    "hidden": false,
+    "ganttOrder": 22
   }
 ]
