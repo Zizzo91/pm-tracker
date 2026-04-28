@@ -88,6 +88,8 @@ const app = {
                 if (el) el.addEventListener('input', () => this.calcCosto());
             });
 
+            this.initExternalLinks();
+
             const savedCfg = localStorage.getItem('pm_tracker_config');
             if (savedCfg) {
                 this.config = JSON.parse(savedCfg);
@@ -99,6 +101,19 @@ const app = {
             console.error(err);
             this.showAlert(`Errore critico avvio: ${err.message}`, 'danger');
         }
+    },
+
+    initExternalLinks: function() {
+        document.querySelectorAll('a[href]').forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+            if (href.startsWith('http://') || href.startsWith('https://')) {
+                link.addEventListener('click', e => {
+                    e.preventDefault();
+                    window.open(href, '_system');
+                });
+            }
+        });
     },
 
     debouncedRenderTable: function() {
