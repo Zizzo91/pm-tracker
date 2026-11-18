@@ -326,7 +326,8 @@ body {
   border: 3px solid #ff9800 !important;
   border-left: 6px solid #e65100 !important;
   box-shadow: 0 6px 24px rgba(255, 152, 0, 0.28), 0 2px 6px rgba(0,0,0,0.08);
-  overflow: hidden;
+  /* NB: niente overflow:hidden, altrimenti i menu ⋮ degli eventi vengono tagliati */
+  overflow: visible;
 }
 
 /* Header interno della card highlights */
@@ -337,6 +338,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  /* angoli superiori coerenti con il bordo della card (12px - 3px) */
+  border-radius: 9px 9px 0 0;
 }
 
 /* Icona ⚡ grande */

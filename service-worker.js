@@ -1,7 +1,7 @@
 // PM Tracker - Service Worker offline-aware
 // Strategia: cache-first per asset statici, network-only per API (Supabase/GitHub)
 
-const SW_VERSION = 'v4';
+const SW_VERSION = 'v5';
 const CACHE_NAME = `pm-tracker-${SW_VERSION}`;
 
 // Asset statici da pre-cachare all'installazione.
@@ -88,9 +88,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Asset locali (JS, CSS, immagini): cache-first
+  // Asset locali (JS, CSS, immagini): cache-first.
+  // ignoreSearch: la pagina chiede "app.js?v=33" ma in cache l'asset è salvato
+  // senza query string (precache) — senza questo, offline gli asset mancherebbero.
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    caches.match(event.request, { ignoreSearch: true }).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
         if (response.ok) {

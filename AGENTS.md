@@ -10,7 +10,7 @@ Progressive Web App per la gestione progetti e timeline di sviluppo. Include vis
 pm-tracker-main 4/
 ├── index.html                        — UI Bootstrap 5, tabs (lista, Gantt, calendario), login PIN
 ├── manifest.json                     — PWA manifest
-├── service-worker.js                 — Service Worker (sw v3: network-only per Supabase/GitHub)
+├── service-worker.js                 — Service Worker (v5: precache relativo, network-first per HTML, network-only per Supabase/GitHub)
 ├── redirect.html                     — Pagina redirect
 ├── configurazioni app.txt            — Note locali (⚠️ contiene un PAT, non committare)
 ├── data/projects.json                — Snapshot pre-migrazione (backup storico, non più letto dall'app)
