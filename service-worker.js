@@ -1,24 +1,32 @@
 // PM Tracker - Service Worker offline-aware
 // Strategia: cache-first per asset statici, network-only per API (Supabase/GitHub)
 
-const SW_VERSION = 'v3';
+const SW_VERSION = 'v4';
 const CACHE_NAME = `pm-tracker-${SW_VERSION}`;
 
-// Asset statici da pre-cachare all'installazione
+// Asset statici da pre-cachare all'installazione.
+// Percorsi RELATIVI alla posizione dello SW: su GitHub Pages l'app vive in
+// /pm-tracker/, quindi "/" risolverebbe alla radice del dominio (404).
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/assets/app.js',
-  '/assets/supabase-config.js',
-  '/assets/styles.css',
-  '/manifest.json'
+  './',
+  './index.html',
+  './assets/app.js',
+  './assets/supabase-config.js',
+  './assets/styles.css',
+  './manifest.json'
 ];
 
 // ─── INSTALL: pre-cacha gli asset statici ────────────────────────────────────
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then(cache =>
+      // add singolo: un asset mancante non deve far fallire l'intera installazione
+      Promise.all(STATIC_ASSETS.map(url => cache.add(url).catch(err => {
+        console.warn('Precache fallito per', url, err && err.message);
+        return null;
+      })))
+    )
   );
 });
 
@@ -65,7 +73,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Asset locali (HTML, JS, CSS, immagini): cache-first
+  // Navigazioni (HTML): network-first, così un deploy si vede subito.
+  // Offline: fallback alla pagina in cache.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(m => m || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Asset locali (JS, CSS, immagini): cache-first
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
