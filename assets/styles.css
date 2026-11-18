@@ -91,7 +91,9 @@ body {
 .btn-success:hover { background: #008c44; }
 
 /* === FIX MODAL: forza sfondo bianco e testo scuro === */
-.modal-dialog, .modal-content, .modal-body, .modal-footer {
+/* NB: escluso .modal-dialog, che è solo il contenitore: con modal-dialog-centered
+   è alto quanto lo schermo e diventerebbe un blocco bianco pieno. */
+.modal-content, .modal-body, .modal-footer {
   background-color: #ffffff !important;
   color: #212529 !important;
   color-scheme: light !important;
@@ -143,8 +145,8 @@ body {
 
 /* === GANTT CHART === */
 .gantt-custom {
-  max-height: 600px;
-  overflow: auto;
+  /* Pagina intera: nessun box con altezza fissa, scorre la pagina */
+  overflow: visible;
   margin: 0;
   border: 1px solid #dee2e6;
   border-radius: 8px;
@@ -159,6 +161,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
 }
 .gantt-project-col {
   min-width: 200px; width: 200px; padding: 12px;
@@ -397,4 +400,37 @@ body {
 .offline-banner--online {
   background-color: #00A651;
   color: #fff;
+}
+
+/* ── PICKER FORNITORI (modal progetto) ───────────────────────────────── */
+#fornitoriPickerMenu .dropdown-item:active,
+#fornitoriPickerMenu .dropdown-item:focus {
+  background-color: #f1f3f5;
+  color: inherit;
+}
+.fornitori-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.55rem;
+}
+.fornitori-chip .chip-x {
+  background: none;
+  border: 0;
+  color: inherit;
+  opacity: 0.8;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+.fornitori-chip .chip-x:hover { opacity: 1; }
+
+/* ── LOGIN PIN ───────────────────────────────────────────────────────── */
+.pin-input {
+  letter-spacing: 0.5em;
+  font-size: 1.4rem;
+  text-indent: 0.5em;
 }

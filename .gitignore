@@ -1,0 +1,12 @@
+# Supabase CLI (link/migrazioni locali)
+supabase/
+.supabase/
+
+# Segreti
+.env
+.env.*
+*.secret
+!*.env.example
+
+node_modules/
+.DS_Store

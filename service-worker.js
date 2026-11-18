@@ -1,7 +1,7 @@
 // PM Tracker - Service Worker offline-aware
-// Strategia: cache-first per asset statici, network-first per API GitHub con fallback graceful
+// Strategia: cache-first per asset statici, network-only per API (Supabase/GitHub)
 
-const SW_VERSION = 'v2';
+const SW_VERSION = 'v3';
 const CACHE_NAME = `pm-tracker-${SW_VERSION}`;
 
 // Asset statici da pre-cachare all'installazione
@@ -9,6 +9,8 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/assets/app.js',
+  '/assets/supabase-config.js',
+  '/assets/styles.css',
   '/manifest.json'
 ];
 
@@ -35,9 +37,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Le chiamate API GitHub vanno sempre in rete (dati sempre freschi).
+  // Le chiamate API (Supabase, GitHub) vanno sempre in rete: dati sempre freschi.
   // Se offline, risponde con un JSON di errore leggibile dall'app.
-  if (url.hostname === 'api.github.com') {
+  if (url.hostname === 'api.github.com' || url.hostname.endsWith('.supabase.co')) {
     event.respondWith(
       fetch(event.request).catch(() =>
         new Response(

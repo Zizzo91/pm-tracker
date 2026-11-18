@@ -1,11 +1,20 @@
 const app = {
     data: [],
-    config: { owner: '', repo: '', token: '', path: 'data/projects.json' },
+    // Backup GitHub opzionale (disattivo di default): i dati vivono su Supabase.
+    config: { owner: '', repo: '', token: '', path: 'data/projects.json', enabled: false },
+    sb: null,               // client Supabase
+    serverUpdatedAt: null,  // updated_at dell'ultima riga letta/scritta (controllo conflitti)
+    userEmail: '',          // email dell'utente loggato (per il modal Impostazioni)
     sha: null,
     lastETag: null,
     searchTimeout: null,
     editorModal: null,
     settingsModal: null,
+    loginModal: null,
+    _fornitoriSelected: [],
+
+    // Fornitori proposti nel menu "Nuovo Progetto" (uniti a quelli già presenti nei dati)
+    FORNITORI_PRESET: ['Engineering', 'Accenture'],
     MAX_JIRA_LINKS: 10,
     MAX_CUSTOM_MILESTONES: 5,
     META_ID: '__pm_tracker_meta__',
@@ -82,6 +91,7 @@ const app = {
         try {
             this.editorModal   = new bootstrap.Modal(document.getElementById('editorModal'));
             this.settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+            this.loginModal    = new bootstrap.Modal(document.getElementById('loginModal'));
 
             ['p_stimaGgu', 'p_rcFornitore'].forEach(id => {
                 const el = document.getElementById(id);
@@ -92,15 +102,89 @@ const app = {
 
             const savedCfg = localStorage.getItem('pm_tracker_config');
             if (savedCfg) {
-                this.config = JSON.parse(savedCfg);
-                this.loadData();
-            } else {
-                this.showSettings();
+                try { this.config = { ...this.config, ...JSON.parse(savedCfg) }; } catch (e) { console.warn('config non valida, ignorata'); }
             }
+
+            this.initSupabase();
         } catch (err) {
             console.error(err);
             this.showAlert(`Errore critico avvio: ${err.message}`, 'danger');
         }
+    },
+
+    // ─── SUPABASE: CLIENT, SESSIONE, LOGIN ───────────────────────────────────
+
+    initSupabase: async function() {
+        const cfg = window.SUPABASE_CONFIG;
+        if (!cfg || !window.supabase) {
+            this.showAlert('Libreria Supabase non caricata (connessione assente?). Ricarica la pagina.', 'danger', 8000);
+            return;
+        }
+        try {
+            this.sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
+                db: { schema: cfg.schema || 'pmtracker' },
+                auth: { persistSession: true, autoRefreshToken: true }
+            });
+            const { data } = await this.sb.auth.getSession();
+            if (data && data.session) {
+                this.userEmail = (data.session.user && data.session.user.email) || '';
+                await this.loadData();
+            } else {
+                this.showLogin();
+            }
+        } catch (e) {
+            console.error('initSupabase:', e);
+            this.showLogin();
+        }
+    },
+
+    showLogin: function() {
+        const errEl = document.getElementById('loginError');
+        if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+        this._setVal('loginPin', '');
+        if (this.loginModal) this.loginModal.show();
+        setTimeout(() => { const el = document.getElementById('loginPin'); if (el) el.focus(); }, 400);
+    },
+
+    doLogin: async function() {
+        const pin   = (this._getVal('loginPin') || '').trim();
+        const errEl = document.getElementById('loginError');
+        const btn   = document.getElementById('loginBtn');
+        const fail  = msg => { if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; } };
+
+        if (!/^\d{4,8}$/.test(pin)) { fail('Inserisci il PIN numerico (6 cifre).'); return; }
+        if (!this.sb) { fail('Client Supabase non inizializzato. Ricarica la pagina.'); return; }
+
+        try {
+            if (btn) { btn.disabled = true; btn.textContent = 'Accesso…'; }
+            const { data, error } = await this.sb.auth.signInWithPassword({
+                email: window.SUPABASE_CONFIG.pinEmail,
+                password: pin
+            });
+            if (error) { fail('PIN errato o account non disponibile.'); return; }
+            this.userEmail = (data && data.user && data.user.email) || '';
+            if (errEl) errEl.style.display = 'none';
+            if (this.loginModal) this.loginModal.hide();
+            await this.loadData();
+        } catch (e) {
+            fail(`Errore di accesso: ${e.message}`);
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Entra'; }
+        }
+    },
+
+    logout: async function() {
+        if (!confirm('Vuoi uscire? Dovrai reinserire il PIN per rientrare.')) return;
+        try { if (this.sb) await this.sb.auth.signOut(); } catch (e) { console.error(e); }
+        this.data = [];
+        this.serverUpdatedAt = null;
+        this.sha = null;
+        this.userEmail = '';
+        if (this.settingsModal) this.settingsModal.hide();
+        const tbody = document.getElementById('projectsTableBody'); if (tbody) tbody.innerHTML = '';
+        const gantt = document.getElementById('gantt-chart');        if (gantt) gantt.innerHTML = '';
+        const cal   = document.getElementById('calendarContainer');  if (cal)   cal.innerHTML = '';
+        this.showLogin();
     },
 
     initExternalLinks: function() {
@@ -390,51 +474,82 @@ const app = {
 
     showSettings: function() {
         ['owner', 'repo', 'token', 'path'].forEach(k => this._setVal(`cfg_${k}`, this.config[k]));
+        const cb = document.getElementById('cfg_githubBackup');
+        if (cb) cb.checked = !!this.config.enabled;
+        this.toggleGithubBackupSection();
+        const info = document.getElementById('settingsAccountInfo');
+        if (info) info.textContent = this.userEmail ? `Connesso come ${this.userEmail}` : '';
         this.settingsModal.show();
     },
 
-    saveSettings: function() {
-        ['owner', 'repo', 'token'].forEach(k => this.config[k] = this._getVal(`cfg_${k}`).trim());
-        this.config.path = this._getVal('cfg_path').trim() || 'data/projects.json';
-        localStorage.setItem('pm_tracker_config', JSON.stringify(this.config));
-        this.settingsModal.hide();
-        this.loadData();
+    toggleGithubBackupSection: function() {
+        const on  = this._getChecked('cfg_githubBackup');
+        const sec = document.getElementById('githubBackupSection');
+        if (sec) sec.style.display = on ? 'block' : 'none';
     },
 
-    // ─── LOAD / SYNC DATA ────────────────────────────────────────────────────
+    saveSettings: function() {
+        this.config = {
+            ...this.config,
+            owner:   (this._getVal('cfg_owner') || '').trim(),
+            repo:    (this._getVal('cfg_repo')  || '').trim(),
+            token:   (this._getVal('cfg_token') || '').trim(),
+            path:    (this._getVal('cfg_path')  || '').trim() || 'data/projects.json',
+            enabled: this._getChecked('cfg_githubBackup')
+        };
+        localStorage.setItem('pm_tracker_config', JSON.stringify(this.config));
+        this.settingsModal.hide();
+        this.showAlert('Impostazioni salvate.', 'success', 2000);
+    },
+
+    // ─── LOAD / SAVE DATA (Supabase) ────────────────────────────────────────
 
     loadData: async function(force = false) {
-        if (!this.config.token) {
-            this.showAlert('Nessun token impostato, vai su Config.', 'warning');
-            return;
-        }
-        this.showAlert('Caricamento dati...', 'info', 1000);
+        if (!this.sb) { this.showAlert('Client Supabase non disponibile. Ricarica la pagina.', 'danger'); return; }
+
         try {
-            const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}${force ? '?t=' + Date.now() : ''}`;
-            const headers = { 'Authorization': `token ${this.config.token}`, 'Accept': 'application/vnd.github.v3+json' };
-            if (!force && this.lastETag) headers['If-None-Match'] = this.lastETag;
-            const response = await fetch(url, { headers, cache: force ? 'no-cache' : 'default' });
-            if (response.status === 304) {
+            const { data: sess } = await this.sb.auth.getSession();
+            if (!sess || !sess.session) { this.showLogin(); return; }
+            if (sess.session.user) this.userEmail = sess.session.user.email || '';
+
+            this.showAlert('Caricamento dati...', 'info', 1000);
+
+            const { data: row, error } = await this.sb
+                .from('state')
+                .select('data, updated_at')
+                .eq('id', 'main')
+                .maybeSingle();
+
+            if (error) {
+                if (error.code === 'PGRST106') throw new Error('schema pmtracker non esposto su PostgREST (Settings → API → Exposed schemas)');
+                if (error.code === 'PGRST205') throw new Error('tabelle pmtracker non trovate: riesegui db/001_pmtracker_schema.sql');
+                if (error.code === '42501' || error.status === 401) { this.showLogin(); throw new Error('sessione scaduta, rifai il login'); }
+                throw error;
+            }
+
+            if (!row) {
+                // Nessun documento ancora: stato iniziale vuoto, il primo salvataggio crea la riga.
+                this.data = [];
+                this.serverUpdatedAt = null;
+                this.getMeta();
                 this.renderAll();
-                this.showAlert('Dati gi\u00E0 aggiornati (Cache)', 'success', 2000);
+                this.showAlert('Nessun dato presente: puoi iniziare a creare progetti.', 'info', 4000);
                 return;
             }
-            if (!response.ok) throw new Error(`Errore GitHub: ${response.status}`);
-            this.lastETag = response.headers.get('ETag');
-            const json = await response.json();
-            this.sha  = json.sha;
-            const raw = Uint8Array.from(atob(json.content.replace(/\s/g, '')), c => c.charCodeAt(0));
-            this.data = JSON.parse(new TextDecoder().decode(raw)).map(p => this.normalizeProject(p));
+
+            this.serverUpdatedAt = row.updated_at;
+            const arr = Array.isArray(row.data) ? row.data : [];
+            this.data = arr.map(p => this.normalizeProject(p));
             this.getMeta();
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
             this.populateDataTestFilters();
             this.populateDataProdFilters();
             this.renderAll();
-            this.showAlert('Dati scaricati con successo!', 'success', 2000);
+            this.showAlert('Dati caricati da Supabase!', 'success', 2000);
         } catch (error) {
             console.error(error);
-            this.showAlert(`Impossibile caricare i dati: ${error.message}`, 'danger', 5000);
+            this.showAlert(`Impossibile caricare i dati: ${error.message}`, 'danger', 6000);
         }
     },
 
@@ -481,6 +596,120 @@ const app = {
             values.forEach(v => { labels[v] = this.formatDate(v); });
             this._populateFilterSelects(['ganttDataProdFilter'], values, labels);
         } catch (e) { console.error('populateDataProdFilters error', e); }
+    },
+
+    // ─── PICKER FORNITORI (modal progetto) ───────────────────────────────────
+
+    _escapeHtml: function(s) {
+        return (s ?? '').toString()
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    },
+
+    _escapeAttr: function(s) { return this._escapeHtml(s); },
+
+    // Elenco fornitori: preset del codice + quelli già usati nei progetti
+    _allFornitori: function() {
+        const fromData = this.getProjectsOnly().flatMap(p => p.fornitori || []);
+        const seen = new Map();
+        [...(this.FORNITORI_PRESET || []), ...fromData].forEach(v => {
+            const name = (v || '').toString().trim();
+            if (!name) return;
+            const key = name.toLowerCase();
+            if (!seen.has(key)) seen.set(key, name);
+        });
+        return [...seen.values()].sort((a, b) => a.localeCompare(b, 'it'));
+    },
+
+    _isFornitoreSelected: function(name) {
+        const key = (name || '').toString().trim().toLowerCase();
+        return this._fornitoriSelected.some(v => v.toLowerCase() === key);
+    },
+
+    // selected: array o stringa "A, B"
+    renderFornitoriPicker: function(selected) {
+        this._fornitoriSelected = this.csvToArray(selected || []);
+
+        const menu = document.getElementById('fornitoriPickerMenu');
+        if (!menu) return;
+
+        const values = this._allFornitori();
+        this._fornitoriSelected.forEach(v => {
+            if (!values.some(x => x.toLowerCase() === v.toLowerCase())) values.push(v);
+        });
+        values.sort((a, b) => a.localeCompare(b, 'it'));
+
+        const items = values.map(v => `
+            <label class="dropdown-item d-flex align-items-center gap-2 py-1 mb-0" style="cursor:pointer;">
+                <input class="form-check-input mt-0" type="checkbox" value="${this._escapeAttr(v)}"
+                       ${this._isFornitoreSelected(v) ? 'checked' : ''}
+                       onchange="app.toggleFornitore(this.value, this.checked)">
+                <span>${this._escapeHtml(v)}</span>
+            </label>`).join('');
+
+        menu.innerHTML = (items || '<div class="text-muted small px-2 py-1">Nessun fornitore salvato</div>') + `
+            <div class="dropdown-divider"></div>
+            <div class="d-flex gap-2 p-1">
+                <input type="text" class="form-control form-control-sm" id="fornitoriNewInput"
+                       placeholder="Nuovo fornitore…"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault();app.addFornitoreCustom();}">
+                <button class="btn btn-sm btn-success" type="button" onclick="app.addFornitoreCustom()" title="Aggiungi">＋</button>
+            </div>`;
+
+        this._syncFornitoriField();
+    },
+
+    toggleFornitore: function(name, checked) {
+        const n = (name || '').toString().trim();
+        if (!n) return;
+        if (checked) {
+            if (!this._isFornitoreSelected(n)) this._fornitoriSelected.push(n);
+        } else {
+            this._fornitoriSelected = this._fornitoriSelected.filter(v => v.toLowerCase() !== n.toLowerCase());
+        }
+        this._syncFornitoriField();
+    },
+
+    addFornitoreCustom: function() {
+        const input = document.getElementById('fornitoriNewInput');
+        const name  = (input && input.value ? input.value : '').trim();
+        if (!name) return;
+        if (!this._isFornitoreSelected(name)) this._fornitoriSelected.push(name);
+        if (input) input.value = '';
+        this.renderFornitoriPicker(this._fornitoriSelected);
+        setTimeout(() => { const el = document.getElementById('fornitoriNewInput'); if (el) el.focus(); }, 60);
+    },
+
+    _syncFornitoriField: function() {
+        const vals = this._fornitoriSelected || [];
+
+        const hidden = document.getElementById('p_fornitori');
+        if (hidden) hidden.value = vals.join(', ');
+
+        const chips = document.getElementById('fornitoriChips');
+        if (chips) {
+            chips.innerHTML = vals.map(v => `
+                <span class="badge rounded-pill fornitori-chip" style="${this._badgeStyle('supplier', v)}">
+                    ${this._escapeHtml(v)}
+                    <button type="button" class="chip-x" title="Rimuovi"
+                            data-name="${this._escapeAttr(v)}"
+                            onclick="app.toggleFornitore(this.dataset.name, false)">×</button>
+                </span>`).join('');
+        }
+
+        const label = document.getElementById('fornitoriPickerLabel');
+        if (label) {
+            label.textContent = vals.length
+                ? `${vals.length} selezionat${vals.length === 1 ? 'o' : 'i'}`
+                : 'Seleziona fornitori…';
+        }
+
+        const menu = document.getElementById('fornitoriPickerMenu');
+        if (menu) {
+            menu.querySelectorAll('input[type=checkbox]').forEach(cb => {
+                cb.checked = this._isFornitoreSelected(cb.value);
+            });
+        }
     },
 
     // ─── PROMEMORIA ──────────────────────────────────────────────────────────
@@ -534,7 +763,7 @@ const app = {
         }
         meta.manualReminders.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
         this.clearReminderInputs();
-        await this.syncToGithub();
+        await this.saveData();
     },
 
     toggleReminderDone: async function(id) {
@@ -543,7 +772,7 @@ const app = {
         if (!r) return;
         r.done   = !r.done;
         r.doneAt = r.done ? new Date().toISOString() : null;
-        await this.syncToGithub();
+        await this.saveData();
     },
 
     deleteReminder: async function(id) {
@@ -551,7 +780,7 @@ const app = {
         if (this._editingReminderId === id) this.clearReminderInputs();
         const meta = this.getMeta();
         meta.manualReminders = (meta.manualReminders || []).filter(x => x.id !== id);
-        await this.syncToGithub();
+        await this.saveData();
     },
 
     _syncReminderFormState: function() { this._updateReminderFormUI(); },
@@ -634,39 +863,105 @@ const app = {
             newProj.ganttOrder = this.getProjectsOnly().length;
             this.data.push(newProj);
         }
-        await this.syncToGithub();
+        await this.saveData();
         this.editorModal.hide();
     },
 
-    syncToGithub: async function() {
+    // Salvataggio principale: Supabase (schema pmtracker, riga unica 'main').
+    // Il controllo su updated_at evita di sovrascrivere modifiche fatte altrove.
+    saveData: async function() {
         this.showAlert('Salvataggio in corso...', 'info', 2000);
         try {
-            const encoded = new TextEncoder().encode(JSON.stringify(this.data, null, 2));
-            const content = btoa(String.fromCharCode(...encoded));
-            const url      = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.path}`;
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: { 'Authorization': `token ${this.config.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: `Update data via PM Tracker webapp - ${new Date().toISOString()}`, content, sha: this.sha })
-            });
-            if (!response.ok) {
-                if (response.status === 409) throw new Error('\u26A0\uFE0F Conflitto di versione! Il file \u00E8 stato modificato da un\'altra pagina o persona. Ricarica la pagina per evitare di perdere dati.');
-                const err = await response.json();
-                throw new Error(err.message || 'Salvataggio fallito');
+            if (!this.sb) throw new Error('client Supabase non inizializzato');
+
+            const { data: sess } = await this.sb.auth.getSession();
+            if (!sess || !sess.session) { this.showLogin(); return; }
+
+            const payload = {
+                data: this.data,
+                updated_by: (sess.session.user && sess.session.user.id) || null
+            };
+
+            let saved = null;
+            let error = null;
+
+            if (!this.serverUpdatedAt) {
+                // Prima scrittura (riga non ancora esistente)
+                const res = await this.sb
+                    .from('state')
+                    .upsert({ id: 'main', ...payload }, { onConflict: 'id' })
+                    .select('updated_at')
+                    .maybeSingle();
+                saved = res.data; error = res.error;
+            } else {
+                const res = await this.sb
+                    .from('state')
+                    .update(payload)
+                    .eq('id', 'main')
+                    .eq('updated_at', this.serverUpdatedAt)
+                    .select('updated_at')
+                    .maybeSingle();
+                saved = res.data; error = res.error;
+                if (!error && !saved) {
+                    throw new Error('\u26A0\uFE0F Conflitto di versione! I dati sono stati modificati da un\'altra pagina o persona. Ricarica (🔁) prima di salvare.');
+                }
             }
-            const result = await response.json();
-            this.sha = result.content.sha;
-            this.lastETag = null;
-            this.showAlert('Salvataggio completato!', 'success', 3000);
+
+            if (error) throw error;
+            if (saved && saved.updated_at) this.serverUpdatedAt = saved.updated_at;
+
+            this.showAlert('Salvato su Supabase!', 'success', 2000);
             this.getMeta();
             this.populateFornitoreFilters();
             this.populateOwnerFilters();
             this.populateDataTestFilters();
             this.populateDataProdFilters();
             this.renderAll();
+
+            // Backup opzionale su GitHub: non blocca il salvataggio
+            await this.mirrorToGithub();
         } catch (e) {
-            console.error('Errore sync:', e);
+            console.error('Errore salvataggio:', e);
             this.showAlert(`Errore salvataggio: ${e.message}`, 'danger', 8000);
+        }
+    },
+
+    // Compatibilità: le chiamate storiche usavano syncToGithub()
+    syncToGithub: async function() { return this.saveData(); },
+
+    // Copia di sicurezza del JSON nel repo GitHub (solo se attivata nelle Impostazioni)
+    mirrorToGithub: async function() {
+        const c = this.config || {};
+        if (!c.enabled || !c.token || !c.owner || !c.repo) return;
+        try {
+            const encoded = new TextEncoder().encode(JSON.stringify(this.data, null, 2));
+            let bin = '';
+            encoded.forEach(b => { bin += String.fromCharCode(b); });
+            const content = btoa(bin);
+            const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${c.path || 'data/projects.json'}`;
+            const headers = { 'Authorization': `token ${c.token}`, 'Accept': 'application/vnd.github.v3+json' };
+
+            if (!this.sha) {
+                const g = await fetch(url, { headers });
+                if (g.ok) { const j = await g.json(); this.sha = j.sha; }
+            }
+
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: { ...headers, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: `Backup dati PM Tracker - ${new Date().toISOString()}`,
+                    content,
+                    sha: this.sha
+                })
+            });
+            if (!response.ok) throw new Error(`GitHub ${response.status}`);
+            const result = await response.json();
+            this.sha = result.content.sha;
+            this.showAlert('Backup su GitHub aggiornato.', 'success', 2500);
+        } catch (e) {
+            console.warn('Backup GitHub non riuscito:', e);
+            this.showAlert(`Dati salvati su Supabase, ma il backup GitHub è fallito: ${e.message}`, 'warning', 6000);
         }
     },
 
@@ -704,6 +999,8 @@ const app = {
             this.renderJiraFields([]);
             this.renderCustomMilestoneFields([]);
         }
+        // Menu a tendina fornitori: valori già usati + preset
+        this.renderFornitoriPicker(this._getVal('p_fornitori') || []);
         this.editorModal.show();
     },
 
@@ -712,7 +1009,7 @@ const app = {
         if (p && this.isMeta(p)) return;
         if (confirm('Sei sicuro di voler eliminare questo progetto?')) {
             this.data = this.data.filter(x => x.id !== id);
-            await this.syncToGithub();
+            await this.saveData();
         }
     },
 
@@ -722,7 +1019,7 @@ const app = {
         p.hidden = !p.hidden;
         if (!p.hidden && this.isAutoStale(p))
             this.showAlert('Progetto ripristinato, ma \u00E8 vecchio di 1 mese. Rimuovi o modifica la data di Prod per renderlo visibile senza la spunta.', 'warning', 6000);
-        await this.syncToGithub();
+        await this.saveData();
     },
 
     // ─── SORT ────────────────────────────────────────────────────────────────
@@ -780,7 +1077,7 @@ const app = {
         projs.splice(ti, 0, moved);
         projs.forEach((p, i) => { p.ganttOrder = i; });
         this.renderGantt();
-        await this.syncToGithub();
+        await this.saveData();
     },
 
     // ─── RENDER ALL ──────────────────────────────────────────────────────────
@@ -1068,7 +1365,7 @@ const app = {
         if (pref === 'show') delete meta.eventPrefs[key];
         else meta.eventPrefs[key] = pref;
         this.renderCalendar();
-        await this.syncToGithub();
+        await this.saveData();
     },
 
     _renderEventCard: function(ev, todayStr, compact) {
