@@ -1,7 +1,7 @@
 // PM Tracker - Service Worker offline-aware
 // Strategia: cache-first per asset statici, network-only per API (Supabase/GitHub)
 
-const SW_VERSION = 'v11';
+const SW_VERSION = 'v12';
 const CACHE_NAME = `pm-tracker-${SW_VERSION}`;
 
 // Asset statici da pre-cachare all'installazione.
@@ -89,19 +89,40 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Asset locali (JS, CSS, immagini): cache-first.
-  // ignoreSearch: la pagina chiede "app.js?v=33" ma in cache l'asset è salvato
-  // senza query string (precache) — senza questo, offline gli asset mancherebbero.
+  // Asset locali. JS/CSS: network-first (un deploy si vede subito e la cache
+  // resta solo come fallback offline). Immagini e altri file: cache-first con
+  // aggiornamento in background (stale-while-revalidate).
+  // NB: niente match con ignoreSearch sul primo tentativo — la query `?v=` è
+  // proprio ciò che rende riconoscibile una nuova versione.
+  const isCode = /\.(?:css|js|mjs|json)$/i.test(url.pathname);
+
+  if (isCode) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request, { ignoreSearch: true }))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      });
+      const network = fetch(event.request)
+        .then(response => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => null);
+      return cached || network.then(r => r || new Response('', { status: 504 }));
     })
   );
 });
