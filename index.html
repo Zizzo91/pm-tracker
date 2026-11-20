@@ -3,69 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PM Tracker</title>
-    <meta name="theme-color" content="#003DA5">
-    <meta name="description" content="Gestione progetti e timeline">
+    <title>PM Tracker — Progetti e rilasci</title>
+    <meta name="theme-color" content="#002752">
+    <meta name="description" content="Gestione progetti, fornitori e timeline di rilascio">
     <link rel="manifest" href="manifest.json">
     <!-- Favicon SVG inline -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23003DA5'/%3E%3Crect x='18' y='10' width='28' height='44' rx='4' fill='%23FFD200'/%3E%3Crect x='24' y='8' width='16' height='8' rx='3' fill='%23002d80'/%3E%3Crect x='22' y='26' width='20' height='3' rx='1.5' fill='%23003DA5'/%3E%3Crect x='22' y='33' width='20' height='3' rx='1.5' fill='%23003DA5'/%3E%3Crect x='22' y='40' width='13' height='3' rx='1.5' fill='%23003DA5'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23002752'/%3E%3Crect x='20' y='12' width='24' height='40' rx='5' fill='%23fee01a'/%3E%3Crect x='26' y='16' width='12' height='4' rx='2' fill='%23002752'/%3E%3Crect x='26' y='28' width='12' height='3' rx='1.5' fill='%230057b7'/%3E%3Crect x='26' y='35' width='12' height='3' rx='1.5' fill='%230057b7'/%3E%3Crect x='26' y='42' width='7' height='3' rx='1.5' fill='%230057b7'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/styles.css?v=33">
+    <link rel="stylesheet" href="assets/styles.css?v=39">
 </head>
-<body class="bg-light">
+<body>
 
 <!-- Banner Offline/Online -->
 <div id="offlineBanner" class="offline-banner offline-banner--offline" style="display:none;" role="alert" aria-live="assertive">
-    📵 Sei offline — le modifiche non verranno salvate finché la connessione non viene ripristinata.
+    Sei offline — le modifiche non verranno salvate finché la connessione non viene ripristinata.
 </div>
 <div id="onlineBanner" class="offline-banner offline-banner--online" style="display:none;" role="status" aria-live="polite">
-    ✅ Connessione ripristinata!
+    Connessione ripristinata
 </div>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-brand mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold text-accent" href="#">▶ PM Tracker</a>
-        <div class="d-flex align-items-center">
-            <div class="form-check form-switch text-light me-3 mb-0 d-flex align-items-center">
-                <input class="form-check-input me-2" type="checkbox" id="globalShowHidden" onchange="app.renderAll()" style="cursor:pointer">
-                <label class="form-check-label small mb-0 fw-semibold" for="globalShowHidden" style="cursor:pointer">Mostra Archiviati</label>
+<!-- ══════════════ TOP BAR ══════════════ -->
+<div class="tp-topbar">
+    <div class="tp-topbar__inner">
+        <a class="tp-topbar__brand" href="#">PM Tracker</a>
+        <span class="tp-topbar__sep d-none d-sm-block"></span>
+        <span class="tp-topbar__meta d-none d-md-inline">Gestione progetti &amp; rilasci</span>
+
+        <div class="tp-topbar__right">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="globalShowHidden" onchange="app.renderAll()">
+                <label class="form-check-label" for="globalShowHidden">Mostra archiviati</label>
             </div>
-            <button class="btn btn-sm me-2 fw-semibold btn-ghost-white" onclick="app.loadData(true)">🔄 Ricarica</button>
-            <button class="btn btn-sm fw-semibold btn-accent" onclick="app.showSettings()">⚙️ Impostazioni</button>
+            <span class="tp-topbar__sep"></span>
+            <button class="tp-topbar__btn" type="button" onclick="app.loadData(true)" title="Ricarica dati" aria-label="Ricarica dati">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 12a8.2 8.2 0 11-2.4-5.8"/><path d="M20.2 4.6v5.2h-5.2"/></svg>
+            </button>
+            <button class="tp-topbar__btn" type="button" onclick="app.showSettings()" title="Impostazioni" aria-label="Impostazioni">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1.03 1.56V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1.11-1.56 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.56-1.03H3a2 2 0 110-4h.09A1.7 1.7 0 004.65 8.8a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H9a1.7 1.7 0 001.03-1.56V3a2 2 0 114 0v.09a1.7 1.7 0 001.03 1.56 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V9a1.7 1.7 0 001.56 1.03H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.51 1.03z"/></svg>
+            </button>
         </div>
     </div>
-</nav>
+</div>
 
-<div class="container-fluid px-4">
-    <!-- Tabs Nav -->
-    <ul class="nav nav-tabs mb-3" id="mainTab" role="tablist">
-        <li class="nav-item"><button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#listView" type="button">📋 Elenco Progetti</button></li>
-        <li class="nav-item"><button class="nav-link" id="gantt-tab" data-bs-toggle="tab" data-bs-target="#ganttView" type="button">📊 Gantt Sviluppo</button></li>
-        <li class="nav-item"><button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendarView" type="button">📅 Calendario Rilasci</button></li>
+<!-- ══════════════ PAGE ══════════════ -->
+<div class="tp-page">
+
+    <!-- Hero -->
+    <header class="tp-hero">
+        <a class="tp-hero__logo" href="#" aria-label="Telepass">
+            <img src="assets/brand/logo-telepass.svg" alt="Telepass" width="145" height="35">
+        </a>
+        <div class="tp-hero__titles">
+            <h1 class="tp-hero__title">PM Tracker</h1>
+            <span class="tp-hero__sub">Progetti, fornitori e rilasci — tutto in un colpo d&#39;occhio</span>
+        </div>
+        <div class="tp-hero__actions">
+            <button class="btn btn-sm tp-btn-white" onclick="app.scrollToToday()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3.2"/><path d="M3.4 9.8h17.2"/><path d="M8 3.4v3.2"/><path d="M16 3.4v3.2"/></svg>
+                Oggi
+            </button>
+            <button class="btn tp-btn-dark" onclick="app.openModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.4v13.2"/><path d="M5.4 12h13.2"/></svg>
+                Nuovo progetto
+            </button>
+        </div>
+    </header>
+
+    <!-- Tabs -->
+    <ul class="nav tp-tabs" id="mainTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#listView" type="button" role="tab">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.6h16"/><path d="M4 12h16"/><path d="M4 17.4h11"/></svg>
+                Elenco progetti
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="gantt-tab" data-bs-toggle="tab" data-bs-target="#ganttView" type="button" role="tab">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 6.8h7.2"/><path d="M3.6 12h12.4"/><path d="M3.6 17.2h9.4"/></svg>
+                Gantt sviluppo
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendarView" type="button" role="tab">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3.2"/><path d="M3.4 9.8h17.2"/><path d="M8 3.4v3.2"/><path d="M16 3.4v3.2"/></svg>
+                Calendario rilasci
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content" id="mainTabContent">
 
-        <!-- Tab 1: Lista -->
-        <div class="tab-pane fade" id="listView">
-            <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
-                <button class="btn btn-success" onclick="app.openModal()">+ Nuovo Progetto</button>
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <div class="d-flex align-items-center gap-1">
-                        <label class="form-label mb-0 small fw-semibold">🔄 Ordina:</label>
+        <!-- ═══════ TAB 1 — ELENCO ═══════ -->
+        <div class="tab-pane fade" id="listView" role="tabpanel">
+
+            <div class="tp-toolbar">
+                <button class="btn btn-primary" onclick="app.openModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.4v13.2"/><path d="M5.4 12h13.2"/></svg>
+                    Nuovo progetto
+                </button>
+                <div class="tp-toolbar__end">
+                    <div class="tp-field">
+                        <label class="form-label" for="tableSortSelect">Ordina</label>
                         <select id="tableSortSelect" class="form-select form-select-sm sort-select" onchange="app.renderTable()"></select>
                     </div>
-                    <select id="tableFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderTable()"><option value="">Tutti i fornitori</option></select>
-                    <select id="tableOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderTable()"><option value="">Tutti gli owner</option></select>
-                    <input type="text" id="searchInput" class="form-control form-control-sm filter-select" placeholder="Cerca progetto..." oninput="app.debouncedRenderTable()">
+                    <div class="tp-field">
+                        <label class="form-label" for="tableFornitoreFilter">Fornitore</label>
+                        <select id="tableFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderTable()"><option value="">Tutti</option></select>
+                    </div>
+                    <div class="tp-field">
+                        <label class="form-label" for="tableOwnerFilter">Owner</label>
+                        <select id="tableOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderTable()"><option value="">Tutti</option></select>
+                    </div>
+                    <div class="tp-field">
+                        <label class="form-label" for="searchInput">Cerca</label>
+                        <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Nome progetto…" oninput="app.debouncedRenderTable()">
+                    </div>
                 </div>
             </div>
-            <div class="table-responsive bg-white shadow-sm rounded">
+
+            <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
-                            <th>Progetto</th><th>Fornitori / Owner</th><th>Prog.</th><th>Stima</th>
-                            <th>IA</th><th>Sviluppo (Start-End)</th><th>Test</th><th>Prod</th><th>Note</th><th>Azioni</th>
+                            <th>Progetto</th>
+                            <th>Fornitori / Owner</th>
+                            <th>Prog.</th>
+                            <th>Stima</th>
+                            <th>IA</th>
+                            <th>Sviluppo</th>
+                            <th>Test</th>
+                            <th>Prod</th>
+                            <th>Note</th>
+                            <th class="text-end">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="projectsTableBody"></tbody>
@@ -73,146 +145,158 @@
             </div>
         </div>
 
-        <!-- Tab 2: Gantt -->
-        <div class="tab-pane fade" id="ganttView">
-            <div class="card shadow-sm p-3">
-                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <button class="btn btn-success btn-sm" onclick="app.openModal()">+ Nuovo Progetto</button>
-                    <div class="d-flex align-items-center gap-1 bg-light p-1 rounded border">
-                        <label class="form-label mb-0 small fw-semibold px-2">🔎 Zoom:</label>
-                        <select id="ganttZoomSelect" class="form-select form-select-sm border-0" onchange="app.renderGantt()">
+        <!-- ═══════ TAB 2 — GANTT ═══════ -->
+        <div class="tab-pane fade" id="ganttView" role="tabpanel">
+
+            <div class="tp-toolbar">
+                <button class="btn btn-primary" onclick="app.openModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.4v13.2"/><path d="M5.4 12h13.2"/></svg>
+                    Nuovo progetto
+                </button>
+
+                <div class="tp-toolbar__end">
+                    <div class="tp-field tp-field--tight">
+                        <label class="form-label" for="ganttZoomSelect">Vista</label>
+                        <select id="ganttZoomSelect" class="form-select form-select-sm" onchange="app.renderGantt()">
                             <option value="month">Mensile</option>
                             <option value="week">Settimanale</option>
                         </select>
                     </div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <div class="d-flex align-items-center gap-1">
-                            <label class="form-label mb-0 small fw-semibold">🔄 Ordina:</label>
-                            <select id="ganttSortSelect" class="form-select form-select-sm sort-select" onchange="app.renderGantt()"></select>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
-                            <select id="ganttFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <label class="form-label mb-0 small fw-semibold">👤 Owner:</label>
-                            <select id="ganttOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <label class="form-label mb-0 small fw-semibold">🧪 Test:</label>
-                            <select id="ganttDataTestFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <label class="form-label mb-0 small fw-semibold">🚀 Prod:</label>
-                            <select id="ganttDataProdFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
-                        </div>
+                    <div class="tp-field">
+                        <label class="form-label" for="ganttSortSelect">Ordina</label>
+                        <select id="ganttSortSelect" class="form-select form-select-sm sort-select" onchange="app.renderGantt()"></select>
+                    </div>
+                    <div class="tp-field">
+                        <label class="form-label" for="ganttFornitoreFilter">Fornitore</label>
+                        <select id="ganttFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
+                    </div>
+                    <div class="tp-field">
+                        <label class="form-label" for="ganttOwnerFilter">Owner</label>
+                        <select id="ganttOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
+                    </div>
+                    <div class="tp-field">
+                        <label class="form-label" for="ganttDataTestFilter">Test</label>
+                        <select id="ganttDataTestFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
+                    </div>
+                    <div class="tp-field">
+                        <label class="form-label" for="ganttDataProdFilter">Prod</label>
+                        <select id="ganttDataProdFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
                     </div>
                 </div>
-                <div id="gantt-chart"></div>
             </div>
+
+            <div id="gantt-chart"></div>
         </div>
 
-        <!-- Tab 3: Calendario (DEFAULT) -->
-        <div class="tab-pane fade show active" id="calendarView">
+        <!-- ═══════ TAB 3 — CALENDARIO (default) ═══════ -->
+        <div class="tab-pane fade show active" id="calendarView" role="tabpanel">
 
-            <!-- Riga principale: navigazione + toggle + bottone filtri -->
-            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                <button class="btn btn-outline-primary btn-sm" onclick="app.scrollToToday()">📍 Vai a Oggi</button>
-                <div class="form-check form-switch ms-2 mb-0">
+            <div class="tp-toolbar tp-toolbar--subtle">
+                <button class="btn btn-outline-primary btn-sm" onclick="app.scrollToToday()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3.2"/><path d="M3.4 9.8h17.2"/><path d="M8 3.4v3.2"/><path d="M16 3.4v3.2"/></svg>
+                    Vai a oggi
+                </button>
+                <div class="form-check form-switch ms-1 mb-0">
                     <input class="form-check-input" type="checkbox" id="calShowHiddenPrefs" onchange="app.renderCalendar(); updateCalFilterBadge()">
-                    <label class="form-check-label small fw-semibold text-muted" for="calShowHiddenPrefs">Mostra milestone nascoste</label>
+                    <label class="form-check-label small" for="calShowHiddenPrefs">Mostra milestone nascoste</label>
                 </div>
-                <div class="ms-auto">
+                <div class="tp-toolbar__end">
                     <button class="btn btn-sm btn-outline-secondary" type="button"
                         data-bs-toggle="collapse" data-bs-target="#calFilterPanel"
                         aria-expanded="false" aria-controls="calFilterPanel"
                         id="calFilterToggleBtn">
-                        🔧 Filtri <span id="calFilterBadge" class="badge bg-danger ms-1" style="display:none">0</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.2h6"/><path d="M14 7.2h6"/><circle cx="12" cy="7.2" r="2"/><path d="M4 16.8h9"/><path d="M17 16.8h3"/><circle cx="15" cy="16.8" r="2"/></svg>
+                        Filtri
+                        <span id="calFilterBadge" class="badge bg-danger ms-1" style="display:none">0</span>
                     </button>
                 </div>
             </div>
 
             <!-- Pannello filtri collassabile -->
             <div class="collapse mb-3" id="calFilterPanel">
-                <div class="card card-body py-2 px-3 border-secondary">
-                    <div class="d-flex flex-wrap gap-3 align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <label class="form-label mb-0 small fw-semibold">🏷️ Milestone:</label>
-                            <select id="calendarMilestoneFilter" class="form-select form-select-sm" style="min-width:210px" onchange="app.renderCalendar(); updateCalFilterBadge()">
-                                <option value="">Tutte le milestone</option>
-                                <option value="dataIA">🤖 Consegna IA</option>
-                                <option value="devStart">▶️ Inizio Sviluppo</option>
-                                <option value="devEnd">⏹️ Fine Sviluppo</option>
-                                <option value="dataUAT">👥 UAT</option>
-                                <option value="dataBS">💼 Business Simulation</option>
-                                <option value="dataTest">🧪 Rilascio Test</option>
-                                <option value="dataProd">🚀 Rilascio Prod</option>
-                                <option value="dataScadenzaStima">📥 Scad. Stima Fornitore</option>
-                                <option value="dataConfigSistema">🔧 Config Sistema</option>
-                                <option value="custom">⭐ Milestone Personalizzate</option>
-                                <option value="reminders">📝 Promemoria manuali</option>
-                            </select>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <label class="form-label mb-0 small fw-semibold">🔍 Fornitore:</label>
-                            <select id="calendarFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar(); updateCalFilterBadge()"><option value="">Tutti</option></select>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <label class="form-label mb-0 small fw-semibold">👤 Owner:</label>
-                            <select id="calendarOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar(); updateCalFilterBadge()"><option value="">Tutti</option></select>
-                        </div>
-                        <button class="btn btn-outline-danger btn-sm ms-auto" onclick="resetCalFilters()">✖ Reset filtri</button>
+                <div class="tp-panel">
+                    <div class="tp-field">
+                        <label class="form-label" for="calendarMilestoneFilter">Milestone</label>
+                        <select id="calendarMilestoneFilter" class="form-select form-select-sm" style="min-width:210px" onchange="app.renderCalendar(); updateCalFilterBadge()">
+                            <option value="">Tutte le milestone</option>
+                            <option value="dataIA">Consegna IA</option>
+                            <option value="devStart">Inizio Sviluppo</option>
+                            <option value="devEnd">Fine Sviluppo</option>
+                            <option value="dataUAT">UAT</option>
+                            <option value="dataBS">Business Simulation</option>
+                            <option value="dataTest">Rilascio Test</option>
+                            <option value="dataProd">Rilascio Prod</option>
+                            <option value="dataScadenzaStima">Scad. Stima Fornitore</option>
+                            <option value="dataConfigSistema">Config Sistema</option>
+                            <option value="custom">Milestone personalizzate</option>
+                            <option value="reminders">Promemoria manuali</option>
+                        </select>
                     </div>
+                    <div class="tp-field">
+                        <label class="form-label" for="calendarFornitoreFilter">Fornitore</label>
+                        <select id="calendarFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar(); updateCalFilterBadge()"><option value="">Tutti</option></select>
+                    </div>
+                    <div class="tp-field">
+                        <label class="form-label" for="calendarOwnerFilter">Owner</label>
+                        <select id="calendarOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar(); updateCalFilterBadge()"><option value="">Tutti</option></select>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm tp-panel__reset" onclick="resetCalFilters()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 6.6l10.8 10.8"/><path d="M17.4 6.6L6.6 17.4"/></svg>
+                        Reset filtri
+                    </button>
                 </div>
             </div>
 
-            <!-- Card Promemoria manuali -->
-            <div class="card shadow-sm mb-3">
-                <!-- Header sempre visibile -->
-                <div class="card-body pb-2">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div class="fw-semibold">📝 Promemoria manuali</div>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" id="rem_show_done" onchange="app.renderCalendar()">
-                                <label class="form-check-label small" for="rem_show_done">Mostra completati</label>
-                            </div>
-                            <button class="btn btn-success btn-sm" type="button"
-                                data-bs-toggle="collapse" data-bs-target="#remFormCollapse"
-                                aria-expanded="false" aria-controls="remFormCollapse"
-                                id="remFormToggleBtn">
-                                + Nuovo promemoria
-                            </button>
+            <!-- Promemoria manuali -->
+            <div class="card tp-reminders mb-3">
+                <div class="card-body tp-reminders__head">
+                    <div class="tp-reminders__title">
+                        <span class="tp-reminders__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.6h14a1.6 1.6 0 011.6 1.6v8.2a1.6 1.6 0 01-1.6 1.6H9.4L5.4 20v-4H5a1.6 1.6 0 01-1.6-1.6V6.2A1.6 1.6 0 015 4.6z"/><path d="M8 8.8h8"/><path d="M8 12.2h5"/></svg>
+                        </span>
+                        <span>Promemoria manuali</span>
+                    </div>
+                    <div class="tp-reminders__actions">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="rem_show_done" onchange="app.renderCalendar()">
+                            <label class="form-check-label small" for="rem_show_done">Mostra completati</label>
                         </div>
+                        <button class="btn btn-accent btn-sm" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#remFormCollapse"
+                            aria-expanded="false" aria-controls="remFormCollapse"
+                            id="remFormToggleBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.4v13.2"/><path d="M5.4 12h13.2"/></svg>
+                            Nuovo promemoria
+                        </button>
                     </div>
                 </div>
 
                 <!-- Form collassabile -->
                 <div class="collapse" id="remFormCollapse">
-                    <div class="card-body pt-0 border-top">
-                        <div id="rem_edit_banner" class="alert alert-warning d-flex align-items-center gap-2 mt-2 mb-2 py-2 px-3" style="display:none!important">
-                            <span>✏️ <strong>Modalità modifica</strong> &mdash; stai modificando un promemoria esistente.</span>
+                    <div class="card-body pt-0">
+                        <div id="rem_edit_banner" class="alert alert-warning d-flex align-items-center gap-2 mt-3 mb-2 py-2 px-3" style="display:none!important">
+                            <span><strong>Modalità modifica</strong> — stai modificando un promemoria esistente.</span>
                         </div>
-                        <div class="row g-2 mt-1 align-items-end">
+                        <div class="row g-2 align-items-end">
                             <div class="col-12 col-md-3">
-                                <label class="form-label small mb-1">Data</label>
+                                <label class="form-label" for="rem_date">Data</label>
                                 <input type="date" class="form-control form-control-sm" id="rem_date">
                             </div>
                             <div class="col-12 col-md-5">
-                                <label class="form-label small mb-1">Titolo</label>
-                                <input type="text" class="form-control form-control-sm" id="rem_title" placeholder="Es: Mandare mail a fornitore, Preparare demo...">
+                                <label class="form-label" for="rem_title">Titolo</label>
+                                <input type="text" class="form-control form-control-sm" id="rem_title" placeholder="Es: mandare mail al fornitore">
                             </div>
                             <div class="col-12 col-md-4">
-                                <label class="form-label small mb-1">Nota (opzionale)</label>
-                                <input type="text" class="form-control form-control-sm" id="rem_note" placeholder="Dettagli rapidi...">
+                                <label class="form-label" for="rem_note">Nota (opzionale)</label>
+                                <input type="text" class="form-control form-control-sm" id="rem_note" placeholder="Dettagli rapidi…">
                             </div>
-                            <div class="col-12 d-flex gap-2 mt-1">
-                                <button class="btn btn-primary btn-sm" id="rem_add_btn" onclick="app.addReminder()">✔ Salva promemoria</button>
+                            <div class="col-12 d-flex flex-wrap gap-2 mt-2">
+                                <button class="btn btn-primary btn-sm" id="rem_add_btn" onclick="app.addReminder()">Salva promemoria</button>
                                 <button class="btn btn-outline-secondary btn-sm" onclick="app.clearReminderInputs()">Pulisci</button>
-                                <button class="btn btn-outline-warning btn-sm" id="rem_cancel_btn" style="display:none" onclick="app.clearReminderInputs()">✖ Annulla modifica</button>
+                                <button class="btn btn-outline-warning btn-sm" id="rem_cancel_btn" style="display:none" onclick="app.clearReminderInputs()">Annulla modifica</button>
                                 <button class="btn btn-outline-secondary btn-sm ms-auto" type="button"
                                     data-bs-toggle="collapse" data-bs-target="#remFormCollapse">
-                                    ▲ Chiudi
+                                    Chiudi
                                 </button>
                             </div>
                         </div>
@@ -225,23 +309,29 @@
     </div>
 </div>
 
-<!-- Modal Editor -->
+<!-- ═══════ MODAL EDITOR ═══════ -->
 <div class="modal fade" id="editorModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-brand text-white">
-                <h5 class="modal-title">Gestione Progetto</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">Gestione progetto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
             </div>
             <div class="modal-body">
                 <form id="projectForm">
                     <input type="hidden" id="p_id">
-                    <div class="mb-3">
-                        <label class="form-label">Nome Progetto *</label>
-                        <input type="text" class="form-control" id="p_nome" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
+
+                    <h6 class="tp-form-section">Anagrafica</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="p_nome">Nome progetto *</label>
+                            <input type="text" class="form-control" id="p_nome" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="p_owners">Owner (separati da virgola) *</label>
+                            <input type="text" class="form-control" id="p_owners" placeholder="Es: Marco, Sara" required>
+                        </div>
+                        <div class="col-12">
                             <label class="form-label">Fornitori *</label>
                             <input type="hidden" id="p_fornitori">
                             <div class="dropdown w-100" id="fornitoriPicker">
@@ -249,95 +339,97 @@
                                         type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
                                         aria-expanded="false" id="fornitoriPickerBtn">
                                     <span id="fornitoriPickerLabel" class="text-truncate">Seleziona fornitori…</span>
-                                    <span aria-hidden="true">▾</span>
+                                    <span class="tp-caret" aria-hidden="true">
+                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5 8 10.5 12 6.5"/></svg>
+                                    </span>
                                 </button>
-                                <div class="dropdown-menu w-100 p-2 shadow-sm" id="fornitoriPickerMenu"
+                                <div class="dropdown-menu w-100 p-2" id="fornitoriPickerMenu"
                                      style="max-height:260px;overflow-y:auto;" aria-labelledby="fornitoriPickerBtn"></div>
                             </div>
                             <div id="fornitoriChips" class="d-flex flex-wrap gap-1 mt-2"></div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Owner (separati da virgola) *</label>
-                            <input type="text" class="form-control" id="p_owners" placeholder="Es: Marco, Sara" required>
-                        </div>
                     </div>
 
-                    <h6 class="mt-4 border-bottom pb-2">Timeline e Avanzamento</h6>
+                    <h6 class="tp-form-section">Timeline e avanzamento</h6>
                     <div class="row g-3">
-                        <div class="col-md-4"><label class="form-label small">📈 Avanzamento (%)</label><input type="number" class="form-control bg-light" id="p_progress" min="0" max="100" placeholder="Es: 50"></div>
-                        <div class="col-md-4"><label class="form-label small">1. Stima Pianificazione</label><input type="date" class="form-control" id="p_stima"></div>
-                        <div class="col-md-4"><label class="form-label small">2. Condivisione IA <span class="text-muted">(opzionale)</span></label><input type="date" class="form-control" id="p_ia"></div>
-                        <div class="col-md-4"><label class="form-label small">3. Start Sviluppo</label><input type="date" class="form-control" id="p_devStart"></div>
-                        <div class="col-md-4"><label class="form-label small">4. End Sviluppo</label><input type="date" class="form-control" id="p_devEnd"></div>
-                        <div class="col-md-4"><label class="form-label small">5. Rilascio Test</label><input type="date" class="form-control" id="p_test"></div>
-                        <div class="col-md-4"><label class="form-label small">6. Rilascio Prod</label><input type="date" class="form-control" id="p_prod"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_progress">Avanzamento (%)</label><input type="number" class="form-control bg-light" id="p_progress" min="0" max="100" placeholder="Es: 50"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_stima">1. Stima pianificazione</label><input type="date" class="form-control" id="p_stima"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_ia">2. Condivisione IA <span class="text-muted">(opzionale)</span></label><input type="date" class="form-control" id="p_ia"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_devStart">3. Start sviluppo</label><input type="date" class="form-control" id="p_devStart"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_devEnd">4. End sviluppo</label><input type="date" class="form-control" id="p_devEnd"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_test">5. Rilascio test</label><input type="date" class="form-control" id="p_test"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_prod">6. Rilascio prod</label><input type="date" class="form-control" id="p_prod"></div>
                     </div>
 
-                    <h6 class="mt-4 border-bottom pb-2">Milestone Opzionali</h6>
+                    <h6 class="tp-form-section">Milestone opzionali</h6>
                     <div class="row g-3">
-                        <div class="col-md-4"><label class="form-label small">UAT <span class="text-muted">(opzionale)</span></label><input type="date" class="form-control" id="p_uat"></div>
-                        <div class="col-md-4"><label class="form-label small">BS - Business Simulation <span class="text-muted">(opzionale)</span></label><input type="date" class="form-control" id="p_bs"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_uat">UAT <span class="text-muted">(opzionale)</span></label><input type="date" class="form-control" id="p_uat"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_bs">BS — Business Simulation <span class="text-muted">(opzionale)</span></label><input type="date" class="form-control" id="p_bs"></div>
                     </div>
 
-                    <h6 class="mt-4 border-bottom pb-2">Milestone Personalizzate <span class="text-muted fw-normal small">(opzionali, ad-hoc per questo progetto)</span></h6>
+                    <h6 class="tp-form-section">Milestone personalizzate <span class="text-muted fw-normal small">(opzionali, ad-hoc)</span></h6>
                     <div id="customMilestonesContainer"></div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="app.addCustomMilestone()">+ Aggiungi Milestone Personalizzata</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="app.addCustomMilestone()">Aggiungi milestone</button>
 
-                    <h6 class="mt-4 border-bottom pb-2">Dati Economici &amp; Operativi <span class="text-muted fw-normal small">(opzionali)</span></h6>
+                    <h6 class="tp-form-section">Dati economici e operativi <span class="text-muted fw-normal small">(opzionali)</span></h6>
                     <div class="row g-3">
-                        <div class="col-md-6"><label class="form-label small">📅 Data entro cui avere la stima dal fornitore</label><input type="date" class="form-control" id="p_dataScadenzaStima"></div>
-                        <div class="col-md-6"><label class="form-label small">📅 Data entro cui serve configurazione da altro sistema</label><input type="date" class="form-control" id="p_dataConfigSistema"></div>
-                        <div class="col-md-4"><label class="form-label small">⏱️ Stima fornitore (gg/u)</label><input type="number" class="form-control" id="p_stimaGgu" min="0" step="0.5" placeholder="Es: 10"></div>
-                        <div class="col-md-4"><label class="form-label small">💶 RC Fornitore (€/gg)</label><input type="number" class="form-control" id="p_rcFornitore" min="0" step="0.01" placeholder="Es: 500"></div>
-                        <div class="col-md-4"><label class="form-label small">💰 Stima costo (calcolato automaticamente)</label><input type="text" class="form-control bg-light fw-bold" id="p_stimaCosto" readonly placeholder="gg/u × RC"></div>
+                        <div class="col-md-6"><label class="form-label" for="p_dataScadenzaStima">Data entro cui avere la stima dal fornitore</label><input type="date" class="form-control" id="p_dataScadenzaStima"></div>
+                        <div class="col-md-6"><label class="form-label" for="p_dataConfigSistema">Data entro cui serve configurazione da altro sistema</label><input type="date" class="form-control" id="p_dataConfigSistema"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_stimaGgu">Stima fornitore (gg/u)</label><input type="number" class="form-control" id="p_stimaGgu" min="0" step="0.5" placeholder="Es: 10"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_rcFornitore">RC fornitore (€/gg)</label><input type="number" class="form-control" id="p_rcFornitore" min="0" step="0.01" placeholder="Es: 500"></div>
+                        <div class="col-md-4"><label class="form-label" for="p_stimaCosto">Stima costo (calcolata)</label><input type="text" class="form-control bg-light fw-bold" id="p_stimaCosto" readonly placeholder="gg/u × RC"></div>
                     </div>
 
                     <div id="dateValidationMsg" class="text-danger mt-2 small"></div>
 
-                    <h6 class="mt-4 border-bottom pb-2">Note</h6>
-                    <div class="mb-3"><textarea class="form-control" id="p_note" rows="2" placeholder="Note aggiuntive sul progetto..."></textarea></div>
+                    <h6 class="tp-form-section">Note</h6>
+                    <div><textarea class="form-control" id="p_note" rows="2" placeholder="Note aggiuntive sul progetto…"></textarea></div>
 
-                    <h6 class="mt-4 border-bottom pb-2">Link Jira <span class="text-muted fw-normal small">(opzionali, fino a 10)</span></h6>
+                    <h6 class="tp-form-section">Link Jira <span class="text-muted fw-normal small">(opzionali, fino a 10)</span></h6>
                     <div id="jiraLinksContainer"></div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="app.addJiraField()" id="addJiraBtn">+ Aggiungi Link Jira</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="app.addJiraField()" id="addJiraBtn">Aggiungi link Jira</button>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="btn btn-primary" onclick="app.saveProject()">Salva &amp; Pubblica</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="app.saveProject()">Salva e pubblica</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Login PIN -->
+<!-- ═══════ MODAL LOGIN PIN ═══════ -->
 <div class="modal fade" id="loginModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-brand text-white">
-                <h5 class="modal-title">🔐 Accesso</h5>
+            <div class="modal-header tp-login__head">
+                <span class="tp-login__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.4" y="10.4" width="15.2" height="10.2" rx="3.2"/><path d="M8.2 10.4V7.8a3.8 3.8 0 017.6 0v2.6"/></svg>
+                </span>
+                <h5 class="modal-title">Accesso riservato</h5>
             </div>
             <div class="modal-body">
                 <p class="small text-muted mb-3">Inserisci il PIN a 6 cifre del tuo account per accedere ai progetti.</p>
                 <input type="password" class="form-control form-control-lg text-center pin-input"
                        id="loginPin" inputmode="numeric" autocomplete="current-password"
-                       maxlength="6" placeholder="••••••"
+                       maxlength="6" placeholder="••••••" aria-label="PIN"
                        onkeydown="if(event.key==='Enter'){event.preventDefault();app.doLogin();}">
                 <div id="loginError" class="text-danger small mt-2" style="display:none;"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn fw-semibold btn-brand w-100" id="loginBtn" onclick="app.doLogin()">Entra</button>
+                <button type="button" class="btn btn-primary w-100" id="loginBtn" onclick="app.doLogin()">Entra</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Impostazioni -->
+<!-- ═══════ MODAL IMPOSTAZIONI ═══════ -->
 <div class="modal fade" id="settingsModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-accent">
-                <h5 class="modal-title text-brand fw-bold">⚙️ Impostazioni</h5>
+                <h5 class="modal-title">Impostazioni</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
             </div>
             <div class="modal-body">
                 <p class="small mb-3">
@@ -358,25 +450,24 @@
                         Se attivo, ogni salvataggio viene copiato anche nel file JSON del repo.
                         Serve un Personal Access Token con permesso <code>repo</code>.
                     </p>
-                    <div class="mb-2"><label class="form-label small">GitHub Username</label><input type="text" id="cfg_owner" class="form-control form-control-sm"></div>
-                    <div class="mb-2"><label class="form-label small">Repository Name</label><input type="text" id="cfg_repo" class="form-control form-control-sm"></div>
-                    <div class="mb-2"><label class="form-label small">Personal Access Token (PAT)</label><input type="password" id="cfg_token" class="form-control form-control-sm"></div>
-                    <div class="mb-2"><label class="form-label small">Path File Dati</label><input type="text" id="cfg_path" class="form-control form-control-sm" value="data/projects.json"></div>
+                    <div class="mb-2"><label class="form-label" for="cfg_owner">GitHub username</label><input type="text" id="cfg_owner" class="form-control form-control-sm"></div>
+                    <div class="mb-2"><label class="form-label" for="cfg_repo">Repository name</label><input type="text" id="cfg_repo" class="form-control form-control-sm"></div>
+                    <div class="mb-2"><label class="form-label" for="cfg_token">Personal Access Token (PAT)</label><input type="password" id="cfg_token" class="form-control form-control-sm"></div>
+                    <div class="mb-2"><label class="form-label" for="cfg_path">Path file dati</label><input type="text" id="cfg_path" class="form-control form-control-sm" value="data/projects.json"></div>
                 </div>
 
                 <hr>
                 <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="app.logout()">
-                    🚪 Esci dall'account
+                    Esci dall&#39;account
                 </button>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn fw-semibold btn-brand" onclick="app.saveSettings()">Salva impostazioni</button>
+                <button type="button" class="btn btn-primary" onclick="app.saveSettings()">Salva impostazioni</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Toast Container -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1055" id="toastContainer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -384,21 +475,21 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/supabase-config.js"></script>
-<script src="assets/app.js?v=33"></script>
+<script src="assets/app.js?v=39"></script>
 <script>
   dayjs.locale('it');
 
   const SORT_OPTIONS = [
-    { value: 'prod_inprogress_first', label: '🚀 Prod: in corso prima, poi passate' },
-    { value: 'prod_asc',              label: '📅 Rilascio Prod (prima → ultima)' },
-    { value: 'prod_desc',             label: '📅 Rilascio Prod (ultima → prima)' },
-    { value: 'devStart_inprogress_first', label: '▶️ Dev Start: in corso prima, poi passate' },
-    { value: 'devStart_asc',          label: '📅 Inizio Sviluppo (prima → ultima)' },
-    { value: 'devStart_desc',         label: '📅 Inizio Sviluppo (ultima → prima)' },
-    { value: 'devEnd_inprogress_first', label: '⏹️ Dev End: in corso prima, poi passate' },
-    { value: 'test_inprogress_first', label: '🧪 Rilascio Test: in corso prima' },
-    { value: 'alpha_asc',             label: '🔤 Ordine Alfabetico (A → Z)' },
-    { value: 'alpha_desc',            label: '🔤 Ordine Alfabetico (Z → A)' }
+    { value: 'prod_inprogress_first', label: 'Prod: in corso prima, poi passate' },
+    { value: 'prod_asc',              label: 'Rilascio Prod (prima → ultima)' },
+    { value: 'prod_desc',             label: 'Rilascio Prod (ultima → prima)' },
+    { value: 'devStart_inprogress_first', label: 'Dev Start: in corso prima, poi passate' },
+    { value: 'devStart_asc',          label: 'Inizio Sviluppo (prima → ultima)' },
+    { value: 'devStart_desc',         label: 'Inizio Sviluppo (ultima → prima)' },
+    { value: 'devEnd_inprogress_first', label: 'Dev End: in corso prima, poi passate' },
+    { value: 'test_inprogress_first', label: 'Rilascio Test: in corso prima' },
+    { value: 'alpha_asc',             label: 'Ordine alfabetico (A → Z)' },
+    { value: 'alpha_desc',            label: 'Ordine alfabetico (Z → A)' }
   ];
 
   function populateSortSelect(id, prependOptions = []) {
@@ -410,7 +501,7 @@
   }
 
   populateSortSelect('tableSortSelect');
-  populateSortSelect('ganttSortSelect', [{ value: 'custom', label: '✋ Manuale (Drag & Drop)' }]);
+  populateSortSelect('ganttSortSelect', [{ value: 'custom', label: 'Manuale (drag & drop)' }]);
 
   // === BADGE FILTRI CALENDARIO ===
   function updateCalFilterBadge() {

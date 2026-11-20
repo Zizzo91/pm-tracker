@@ -1,3 +1,46 @@
+// ─── ICONE ───────────────────────────────────────────────────────────────
+// Set minimale in stile SF Symbols (stroke 1.8, terminazioni tonde), inline
+// così non servono font-icona né richieste di rete aggiuntive.
+const PM_ICONS = {
+    sparkles: '<path d="M12 3.2l1.55 4.05 4.05 1.55-4.05 1.55L12 14.4l-1.55-4.05L6.4 8.8l4.05-1.55L12 3.2z"/><path d="M18.6 14.1l.75 1.95 1.95.75-1.95.75-.75 1.95-.75-1.95-1.95-.75 1.95-.75.75-1.95z"/>',
+    play: '<path d="M8.5 5.8v12.4a.6.6 0 00.92.5l9.3-6.2a.6.6 0 000-1L9.42 5.3a.6.6 0 00-.92.5z" fill="currentColor" stroke="none"/>',
+    stop: '<rect x="7" y="7" width="10" height="10" rx="2.4" fill="currentColor" stroke="none"/>',
+    users: '<circle cx="9.2" cy="8.6" r="3.1"/><path d="M3.4 19.2c0-2.9 2.6-4.8 5.8-4.8s5.8 1.9 5.8 4.8"/><path d="M16.2 6.2a2.7 2.7 0 010 5.2"/><path d="M17.4 14.9c2 .5 3.2 2 3.2 4.3"/>',
+    briefcase: '<rect x="3.2" y="7.4" width="17.6" height="12.2" rx="2.6"/><path d="M9 7.4V5.8A1.8 1.8 0 0110.8 4h2.4A1.8 1.8 0 0115 5.8v1.6"/><path d="M3.2 12.4h17.6"/>',
+    flask: '<path d="M9.6 3.2h4.8"/><path d="M10.4 3.2v5.1L5.7 17.4A2.3 2.3 0 007.8 20.8h8.4a2.3 2.3 0 002.1-3.4L13.6 8.3V3.2"/><path d="M7.6 14.4h8.8"/>',
+    arrowUpRight: '<path d="M7.2 16.8L16.8 7.2"/><path d="M9.2 7.2h7.6v7.6"/>',
+    trayDown: '<path d="M12 3.4v9.8"/><path d="M8.4 9.6L12 13.2l3.6-3.6"/><path d="M4.2 15.2v2.6a2.6 2.6 0 002.6 2.6h10.4a2.6 2.6 0 002.6-2.6v-2.6"/>',
+    gear: '<circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1.03 1.56V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1.11-1.56 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.56-1.03H3a2 2 0 110-4h.09A1.7 1.7 0 004.65 8.8a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H9a1.7 1.7 0 001.03-1.56V3a2 2 0 114 0v.09a1.7 1.7 0 001.03 1.56 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V9a1.7 1.7 0 001.56 1.03H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.51 1.03z"/>',
+    star: '<path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8z" fill="currentColor" stroke="none"/>',
+    rocket: '<path d="M12.4 3.6c3.3.5 6 3.2 6.5 6.5.4 2.6-.6 5-1.9 6.3-1.3 1.3-3.7 2.3-6.3 1.9-3.3-.5-6-3.2-6.5-6.5C3.8 9.2 4.8 6.8 6.1 5.5c1.3-1.3 3.7-2.3 6.3-1.9z"/><circle cx="12" cy="12" r="2.4"/><path d="M8 16l-3.4 3.4"/><path d="M6.6 6.6L3.2 3.2"/>',
+    refresh: '<path d="M20.2 12a8.2 8.2 0 11-2.4-5.8"/><path d="M20.2 4.6v5.2h-5.2"/>',
+
+    list: '<path d="M4 6.6h16"/><path d="M4 12h16"/><path d="M4 17.4h11"/>',
+    gantt: '<path d="M3.6 6.8h7.2"/><path d="M3.6 12h12.4"/><path d="M3.6 17.2h9.4"/>',
+    calendar: '<rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3.2"/><path d="M3.4 9.8h17.2"/><path d="M8 3.4v3.2"/><path d="M16 3.4v3.2"/>',
+    lock: '<rect x="4.4" y="10.4" width="15.2" height="10.2" rx="3.2"/><path d="M8.2 10.4V7.8a3.8 3.8 0 017.6 0v2.6"/>',
+    person: '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.8 20.2c0-3.4 3.2-5.6 7.2-5.6s7.2 2.2 7.2 5.6"/>',
+    pencil: '<path d="M4.4 19.6h4.2L19.8 8.4a2.1 2.1 0 000-3l-1.2-1.2a2.1 2.1 0 00-3 0L4.4 15.4v4.2z"/><path d="M14.4 5.4l4.2 4.2"/>',
+    trash: '<path d="M4.6 7.2h14.8"/><path d="M9.2 7.2V5.4a1.6 1.6 0 011.6-1.6h2.4a1.6 1.6 0 011.6 1.6v1.8"/><path d="M6.6 7.2l.8 11.6a2 2 0 002 1.8h5.2a2 2 0 002-1.8l.8-11.6"/>',
+    eyeOff: '<path d="M4 4l16 16"/><path d="M10.6 6.6A9 9 0 0112 6.5c5 0 8.5 4 9.4 5.5a12 12 0 01-2.3 3"/><path d="M6.4 8.3A12.6 12.6 0 002.6 12c.9 1.5 4.4 5.5 9.4 5.5 1.3 0 2.5-.3 3.6-.7"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/>',
+    eye: '<path d="M2.6 12C3.5 10.5 7 6.5 12 6.5s8.5 4 9.4 5.5c-.9 1.5-4.4 5.5-9.4 5.5S3.5 13.5 2.6 12z"/><circle cx="12" cy="12" r="3"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 6.5"/>',
+    checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.8 2.8L16.2 9.6"/>',
+    clock: '<circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.2 2"/>',
+    link: '<path d="M10.2 13.8a3.6 3.6 0 005.1 0l2.6-2.6a3.6 3.6 0 00-5.1-5.1L11.6 7.2"/><path d="M13.8 10.2a3.6 3.6 0 00-5.1 0l-2.6 2.6a3.6 3.6 0 005.1 5.1l1.2-1.1"/>',
+    timer: '<circle cx="12" cy="13.4" r="7.4"/><path d="M12 9.8v3.9l2.4 1.5"/><path d="M9.4 3.4h5.2"/>',
+    euro: '<path d="M16.6 6.2a6.4 6.4 0 100 11.6"/><path d="M4.6 10.4h8"/><path d="M4.6 13.6h8"/>',
+    more: '<circle cx="12" cy="5.6" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="18.4" r="1.5" fill="currentColor" stroke="none"/>',
+    sliders: '<path d="M4 7.2h6"/><path d="M14 7.2h6"/><circle cx="12" cy="7.2" r="2"/><path d="M4 16.8h9"/><path d="M17 16.8h3"/><circle cx="15" cy="16.8" r="2"/>',
+    plus: '<path d="M12 5.4v13.2"/><path d="M5.4 12h13.2"/>',
+    logout: '<path d="M15 8.2V6.4a2 2 0 00-2-2H6.4a2 2 0 00-2 2v11.2a2 2 0 002 2H13a2 2 0 002-2v-1.8"/><path d="M10 12h10"/><path d="M17 8.8L20.2 12 17 15.2"/>',
+    halfCircle: '<circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 000 17.2z" fill="currentColor" stroke="none"/>',
+    archive: '<rect x="3.4" y="4.4" width="17.2" height="4.6" rx="1.8"/><path d="M4.8 9v8.4a2.2 2.2 0 002.2 2.2h10a2.2 2.2 0 002.2-2.2V9"/><path d="M10 13.2h4"/>',
+    alert: '<path d="M12 4.2l8.4 15H3.6l8.4-15z"/><path d="M12 9.6v4"/><circle cx="12" cy="16.4" r=".9" fill="currentColor" stroke="none"/>',
+    info: '<circle cx="12" cy="12" r="8.8"/><path d="M12 11v5.2"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>',
+    close: '<path d="M6.6 6.6l10.8 10.8"/><path d="M17.4 6.6L6.6 17.4"/>'
+};
+
 const app = {
     data: [],
     // Backup GitHub opzionale (disattivo di default): i dati vivono su Supabase.
@@ -24,15 +67,15 @@ const app = {
     ALWAYS_HIGHLIGHT_KEYS: ['devStart', 'devEnd', 'dataTest'],
 
     MILESTONES: [
-        { key: 'dataIA',            label: '\uD83E\uDD16 Consegna IA',           badge: 'bg-info text-dark' },
-        { key: 'devStart',          label: '\u25B6\uFE0F Inizio Sviluppo',        badge: 'bg-primary' },
-        { key: 'devEnd',            label: '\u23F9\uFE0F Fine Sviluppo',          badge: 'bg-secondary' },
-        { key: 'dataUAT',           label: '\uD83D\uDC65 UAT',                    badge: 'bg-info' },
-        { key: 'dataBS',            label: '\uD83D\uDCBC Business Simulation',    badge: 'bg-dark' },
-        { key: 'dataTest',          label: '\uD83E\uDDEA Rilascio Test',          badge: 'bg-warning text-dark' },
-        { key: 'dataProd',          label: '\uD83D\uDE80 Rilascio Prod',          badge: 'bg-success' },
-        { key: 'dataScadenzaStima', label: '\uD83D\uDCE5 Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
-        { key: 'dataConfigSistema', label: '\uD83D\uDD27 Config Sistema',         badge: 'bg-light text-dark border' }
+        { key: 'dataIA',            label: 'Consegna IA',           badge: 'bg-info text-dark' },
+        { key: 'devStart',          label: 'Inizio Sviluppo',        badge: 'bg-primary' },
+        { key: 'devEnd',            label: 'Fine Sviluppo',          badge: 'bg-secondary' },
+        { key: 'dataUAT',           label: 'UAT',                    badge: 'bg-info' },
+        { key: 'dataBS',            label: 'Business Simulation',    badge: 'bg-dark' },
+        { key: 'dataTest',          label: 'Rilascio Test',          badge: 'bg-warning text-dark' },
+        { key: 'dataProd',          label: 'Rilascio Prod',          badge: 'bg-success' },
+        { key: 'dataScadenzaStima', label: 'Scad. Stima Fornitore', badge: 'bg-light text-dark border' },
+        { key: 'dataConfigSistema', label: 'Config Sistema',         badge: 'bg-light text-dark border' }
     ],
 
     OWNER_COLORS: {
@@ -62,6 +105,13 @@ const app = {
     _getChecked: function(id) {
         const el = document.getElementById(id);
         return el ? el.checked : false;
+    },
+
+    // Icona SVG inline (set PM_ICONS). Sempre decorativa: aria-hidden.
+    _icon: function(name, cls) {
+        const body = PM_ICONS[name];
+        if (!body) return '';
+        return `<svg class="pm-icon${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${body}</svg>`;
     },
 
     _populateFilterSelects: function(ids, values, currentValues = {}) {
@@ -320,23 +370,23 @@ const app = {
     },
 
     _projectColors: function(name) {
-        if (!name) return { bg: '#ffffff', border: '#dee2e6', barBg: '#0d6efd', barBorder: '#0a58ca' };
+        if (!name) return { bg: '#ffffff', border: '#dee2e6', barBg: '#0071eb', barBorder: '#0071eb' };
         const palette = [
-            { bg: '#eef2ff', border: '#0d6efd', barBg: '#cfe2ff', barBorder: '#0a58ca' },
-            { bg: '#f4f0ff', border: '#6f42c1', barBg: '#e0cffc', barBorder: '#59359a' },
-            { bg: '#fdf8f5', border: '#c27b5e', barBg: '#f2d8cd', barBorder: '#9c543a' },
-            { bg: '#f0fdf4', border: '#198754', barBg: '#d1f2e0', barBorder: '#146c43' },
-            { bg: '#fff6f0', border: '#fd7e14', barBg: '#ffe5d0', barBorder: '#e0660b' },
-            { bg: '#fff0f6', border: '#d63384', barBg: '#fccce1', barBorder: '#a32060' },
-            { bg: '#f0fbff', border: '#0dcaf0', barBg: '#cff4fc', barBorder: '#0aa2c0' },
-            { bg: '#fff5f5', border: '#dc3545', barBg: '#f8d7da', barBorder: '#b02a37' },
-            { bg: '#fffbea', border: '#cfa00c', barBg: '#fae39d', barBorder: '#a88106' },
-            { bg: '#f4f5fd', border: '#6610f2', barBg: '#e2d6fa', barBorder: '#520dc2' },
-            { bg: '#f2fbf7', border: '#20c997', barBg: '#d1f7ea', barBorder: '#1aa179' },
-            { bg: '#fcf3f4', border: '#9e2a2b', barBg: '#eed2d4', barBorder: '#7a2021' },
-            { bg: '#fbf7f4', border: '#8b4513', barBg: '#e8d2c3', barBorder: '#66320e' },
-            { bg: '#fcf0f8', border: '#8f2d56', barBg: '#ebd1e0', barBorder: '#6e2141' },
-            { bg: '#f2f9f9', border: '#127369', barBg: '#cbe7e7', barBorder: '#0d544c' }
+            { bg: '#eef2ff', border: '#0d6efd', barBg: '#0071eb', barBorder: '#0071eb' },
+            { bg: '#f4f0ff', border: '#6f42c1', barBg: '#7c5cff', barBorder: '#7c5cff' },
+            { bg: '#fdf8f5', border: '#c27b5e', barBg: '#0fb5a5', barBorder: '#0fb5a5' },
+            { bg: '#f0fdf4', border: '#198754', barBg: '#17a34a', barBorder: '#17a34a' },
+            { bg: '#fff6f0', border: '#fd7e14', barBg: '#f59e0b', barBorder: '#f59e0b' },
+            { bg: '#fff0f6', border: '#d63384', barBg: '#e0447c', barBorder: '#e0447c' },
+            { bg: '#f0fbff', border: '#0dcaf0', barBg: '#06a9c7', barBorder: '#06a9c7' },
+            { bg: '#fff5f5', border: '#dc3545', barBg: '#e5484d', barBorder: '#e5484d' },
+            { bg: '#fffbea', border: '#cfa00c', barBg: '#e8b102', barBorder: '#e8b102' },
+            { bg: '#f4f5fd', border: '#6610f2', barBg: '#6d4aff', barBorder: '#6d4aff' },
+            { bg: '#f2fbf7', border: '#20c997', barBg: '#12b886', barBorder: '#12b886' },
+            { bg: '#fcf3f4', border: '#9e2a2b', barBg: '#b0392e', barBorder: '#b0392e' },
+            { bg: '#fbf7f4', border: '#8b4513', barBg: '#5b6b7c', barBorder: '#5b6b7c' },
+            { bg: '#fcf0f8', border: '#8f2d56', barBg: '#a4246f', barBorder: '#a4246f' },
+            { bg: '#f2f9f9', border: '#127369', barBg: '#0e7c86', barBorder: '#0e7c86' },
         ];
         return palette[this._hashString(`fixed_palette_${name}`) % palette.length];
     },
@@ -454,7 +504,7 @@ const app = {
         if (!jiraLinks || jiraLinks.length === 0) return '';
         return jiraLinks
             .filter(u => u && u.trim())
-            .map(u => `<a href="${u}" target="_blank" class="badge bg-primary text-decoration-none me-1 mb-1" title="${u}">${this.jiraLabel(u)} \uD83D\uDD17</a>`)
+            .map(u => `<a href="${u}" target="_blank" rel="noopener" class="jira-chip" title="${u}">${this._icon('link')}<span>${this.jiraLabel(u)}</span></a>`)
             .join('');
     },
 
@@ -903,7 +953,7 @@ const app = {
                     .maybeSingle();
                 saved = res.data; error = res.error;
                 if (!error && !saved) {
-                    throw new Error('\u26A0\uFE0F Conflitto di versione! I dati sono stati modificati da un\'altra pagina o persona. Ricarica (🔁) prima di salvare.');
+                    throw new Error('Conflitto di versione: i dati sono stati modificati da un\'altra pagina o persona. Ricarica prima di salvare.');
                 }
             }
 
@@ -1132,16 +1182,16 @@ const app = {
             : '';
 
         const extraRows = [
-            p.stimaGgu   != null ? `<span class="badge bg-info text-dark me-1">\u23F1\uFE0F ${p.stimaGgu} gg/u</span>` : '',
-            p.stimaCosto != null ? `<span class="badge bg-warning text-dark me-1">\uD83D\uDCB0 \u20AC ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2,maximumFractionDigits:2})}</span>` : ''
+            p.stimaGgu   != null ? `<span class="badge bg-info text-dark me-1">${this._icon('timer')} ${p.stimaGgu} gg/u</span>` : '',
+            p.stimaCosto != null ? `<span class="badge bg-warning text-dark me-1">${this._icon('euro')} ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2,maximumFractionDigits:2})} &euro;</span>` : ''
         ].filter(Boolean);
 
         const links    = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
         const jiraHtml = this.jiraLinksHtml(links);
 
-        const statusBadge = p.hidden   ? '<span class="badge bg-dark ms-1">\uD83D\uDEAB Archiviato</span>'
-                          : autoStale  ? '<span class="badge bg-secondary ms-1">\uD83D\uDD50 Auto-archiviato</span>'
-                          : isPast     ? '<span class="badge bg-success ms-1">\u2705 Rilasciato</span>'
+        const statusBadge = p.hidden   ? '<span class="badge bg-dark ms-1">' + this._icon('archive') + ' Archiviato</span>'
+                          : autoStale  ? '<span class="badge bg-secondary ms-1">' + this._icon('clock') + ' Auto-archiviato</span>'
+                          : isPast     ? '<span class="badge bg-success ms-1">' + this._icon('check') + ' Rilasciato</span>'
                           : '';
 
         return `
@@ -1160,9 +1210,11 @@ const app = {
             <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
             <td class="small text-muted" style="max-width:250px;white-space:pre-wrap;">${p.note || ''}</td>
             <td>
-                <button class="btn btn-sm ${p.hidden ? 'btn-secondary' : 'btn-outline-secondary'} mb-1" onclick="app.toggleHidden('${p.id}')" title="${p.hidden ? 'Ripristina Progetto' : 'Archivia (Nascondi)'}">${p.hidden ? '\uD83D\uDC41\uFE0F' : '\uD83D\uDEAB'}</button>
-                <button class="btn btn-sm btn-outline-primary mb-1"  onclick="app.openModal('${p.id}')"    title="Modifica">\u270F\uFE0F</button>
-                <button class="btn btn-sm btn-outline-danger mb-1"   onclick="app.deleteProject('${p.id}')" title="Elimina">\uD83D\uDDD1\uFE0F</button>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm ${p.hidden ? 'btn-secondary' : 'btn-outline-secondary'}" onclick="app.toggleHidden('${p.id}')" title="${p.hidden ? 'Ripristina Progetto' : 'Archivia (Nascondi)'}" aria-label="${p.hidden ? 'Ripristina Progetto' : 'Archivia'}">${p.hidden ? this._icon('eye') : this._icon('eyeOff')}</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="app.openModal('${p.id}')" title="Modifica" aria-label="Modifica">${this._icon('pencil')}</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="app.deleteProject('${p.id}')" title="Elimina" aria-label="Elimina">${this._icon('trash')}</button>
+                </div>
             </td>
         </tr>`;
     },
@@ -1261,8 +1313,8 @@ const app = {
         let rowCls = isPast ? ' gantt-row--released' : '';
         if (isHidden) rowCls += ' opacity-50';
 
-        const statusIcon = p.hidden   ? '<span class="badge bg-dark ms-1">\uD83D\uDEAB</span>'
-                         : autoStale  ? '<span class="badge bg-secondary ms-1" title="Auto-archiviato">\uD83D\uDD50</span>'
+        const statusIcon = p.hidden   ? `<span class="badge bg-dark ms-1" title="Archiviato">${this._icon('archive')}</span>`
+                         : autoStale  ? `<span class="badge bg-secondary ms-1" title="Auto-archiviato">${this._icon('clock')}</span>`
                          : '';
 
         const ganttProgressHtml = (p.progress != null)
@@ -1277,11 +1329,11 @@ const app = {
         if (isCustomSort) {
             rowCls += ' draggable';
             rowAttr = `draggable="true" ondragstart="app.handleDragStart(event,'${p.id}')" ondragover="app.handleDragOver(event)" ondrop="app.handleDrop(event,'${p.id}')" ondragenter="app.handleDragEnter(event)" ondragleave="app.handleDragLeave(event)" ondragend="app.handleDragEnd(event)"`;
-            dragHandleHtml = '<div class="drag-handle" title="Trascina per riordinare">\u2630</div>';
+            dragHandleHtml = `<div class="drag-handle" title="Trascina per riordinare">${this._icon('gantt')}</div>`;
         }
 
         return `
-        <div class="gantt-row${rowCls}" ${rowAttr} style="background-color:${pColors.bg};border-left:4px solid ${pColors.border};margin-bottom:4px;border-radius:4px;">
+        <div class="gantt-row${rowCls}" ${rowAttr} style="border-left:4px solid ${pColors.border};">
             <div class="gantt-project-col">
                 ${dragHandleHtml}
                 <div>
@@ -1293,7 +1345,7 @@ const app = {
             </div>
             <div class="gantt-timeline-col" style="position:relative;">
                 <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity};background-color:${pColors.barBg};border:1px solid ${pColors.barBorder};box-shadow:none;" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
-                    <span style="color:#212529;">\u2699\uFE0F Sviluppo</span>
+                    ${widthPct > 8 ? `<span>${this._icon('sliders')} Sviluppo</span>` : ''}
                 </div>
                 ${milestonesHtml}
                 <div class="gantt-today-line" style="position:absolute;top:0;bottom:0;left:${todayPct}%;width:2px;background:rgba(220,53,69,0.65);pointer-events:none;z-index:5;" title="Oggi: ${dayjs(today).format('DD/MM/YYYY')}">
@@ -1304,23 +1356,24 @@ const app = {
     },
 
     _htmlGanttMilestones: function(p, pct) {
+        const ic = k => this._icon(k);
         let allMilestones = [
-            { date: p.dataIA,            cls: 'ms-ia',         icon: '\uD83E\uDD16', label: 'Consegna IA',           always: true  },
-            { date: p.devStart,          cls: 'ms-dev-start',  icon: '\u25B6\uFE0F', label: 'Inizio Sviluppo',       always: true  },
-            { date: p.devEnd,            cls: 'ms-dev-end',    icon: '\u23F9\uFE0F', label: 'Fine Sviluppo',         always: true  },
-            { date: p.dataUAT,           cls: 'ms-uat',        icon: '\uD83D\uDC65', label: 'UAT',                   always: false },
-            { date: p.dataBS,            cls: 'ms-bs',         icon: '\uD83D\uDCBC', label: 'Business Simulation',   always: false },
-            { date: p.dataTest,          cls: 'ms-test',       icon: '\uD83E\uDDEA', label: 'Rilascio Test',         always: true  },
-            { date: p.dataProd,          cls: 'ms-prod',       icon: '\uD83D\uDE80', label: 'Rilascio Prod',         always: true  },
-            { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: '\uD83D\uDCE5', label: 'Scad. Stima Fornitore', always: false },
-            { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: '\uD83D\uDD27', label: 'Config Sistema',        always: false }
+            { date: p.dataIA,            cls: 'ms-ia',         icon: ic('sparkles'), label: 'Consegna IA',           always: true  },
+            { date: p.devStart,          cls: 'ms-dev-start',  icon: ic('play'),     label: 'Inizio Sviluppo',       always: true  },
+            { date: p.devEnd,            cls: 'ms-dev-end',    icon: ic('stop'),     label: 'Fine Sviluppo',         always: true  },
+            { date: p.dataUAT,           cls: 'ms-uat',        icon: ic('users'),    label: 'UAT',                   always: false },
+            { date: p.dataBS,            cls: 'ms-bs',         icon: ic('briefcase'),label: 'Business Simulation',   always: false },
+            { date: p.dataTest,          cls: 'ms-test',       icon: ic('flask'),    label: 'Rilascio Test',         always: true  },
+            { date: p.dataProd,          cls: 'ms-prod',       icon: ic('rocket'),   label: 'Rilascio Prod',         always: true  },
+            { date: p.dataScadenzaStima, cls: 'ms-scad-stima', icon: ic('trayDown'), label: 'Scad. Stima Fornitore', always: false },
+            { date: p.dataConfigSistema, cls: 'ms-config-sis', icon: ic('gear'),     label: 'Config Sistema',        always: false }
         ];
-        (p.customMilestones || []).forEach(cm => allMilestones.push({ date: cm.date, cls: 'ms-custom', icon: '\u2B50', label: cm.label, always: false }));
+        (p.customMilestones || []).forEach(cm => allMilestones.push({ date: cm.date, cls: 'ms-custom', icon: ic('star'), label: cm.label, always: false }));
         allMilestones = allMilestones.filter(m => m.date && m.date.trim() !== '');
 
         const dateGroups = {};
         allMilestones.forEach(m => { (dateGroups[m.date] = dateGroups[m.date] || []).push(m); });
-        allMilestones.forEach(m => { m.offsetPx = (dateGroups[m.date].indexOf(m) - (dateGroups[m.date].length - 1) / 2) * 20; });
+        allMilestones.forEach(m => { m.offsetPx = (dateGroups[m.date].indexOf(m) - (dateGroups[m.date].length - 1) / 2) * 26; });
 
         return allMilestones.map(m => {
             const isCustom   = m.cls === 'ms-custom';
@@ -1336,19 +1389,20 @@ const app = {
     _ganttBuildLegend: function(data) {
         const has = key => data.some(p => p[key] && p[key].trim && p[key].trim() !== '');
         const hasCustom = data.some(p => p.customMilestones && p.customMilestones.length > 0);
+        const item = (icon, label) => `<div class="gantt-legend-item"><span class="legend-ms">${this._icon(icon)}</span> ${label}</div>`;
         return `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">\uD83E\uDD16</span> Consegna IA</div>
-            <div class="gantt-legend-item"><span class="legend-ms">\u25B6\uFE0F</span> Inizio Sviluppo</div>
-            <div class="gantt-legend-item"><span class="legend-ms">\u23F9\uFE0F</span> Fine Sviluppo</div>
-            ${has('dataUAT')           ? '<div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDC65</span> UAT</div>' : ''}
-            ${has('dataBS')            ? '<div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDCBC</span> Business Simulation</div>' : ''}
-            <div class="gantt-legend-item"><span class="legend-ms">\uD83E\uDDEA</span> Rilascio Test</div>
-            <div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDE80</span> Rilascio Prod</div>
-            ${has('dataScadenzaStima') ? '<div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDCE5</span> Scad. Stima Fornitore</div>' : ''}
-            ${has('dataConfigSistema') ? '<div class="gantt-legend-item"><span class="legend-ms">\uD83D\uDD27</span> Config Sistema</div>' : ''}
-            ${hasCustom               ? '<div class="gantt-legend-item"><span class="legend-ms" style="color:#198754">\u2B50</span> Milestone Personalizzate</div>' : ''}
+            ${item('sparkles', 'Consegna IA')}
+            ${item('play', 'Inizio Sviluppo')}
+            ${item('stop', 'Fine Sviluppo')}
+            ${has('dataUAT')           ? item('users', 'UAT') : ''}
+            ${has('dataBS')            ? item('briefcase', 'Business Simulation') : ''}
+            ${item('flask', 'Rilascio Test')}
+            ${item('rocket', 'Rilascio Prod')}
+            ${has('dataScadenzaStima') ? item('trayDown', 'Scad. Stima Fornitore') : ''}
+            ${has('dataConfigSistema') ? item('gear', 'Config Sistema') : ''}
+            ${hasCustom               ? `<div class="gantt-legend-item"><span class="legend-ms legend-ms--custom">${this._icon('star')}</span> Milestone Personalizzate</div>` : ''}
         </div></div>`;
     },
 
@@ -1396,22 +1450,22 @@ const app = {
             if (isReminder) bgCls = 'bg-warning bg-opacity-25';
         }
 
-        const statusIcon = ev.autoStale ? '<span title="Auto-archiviato">\uD83D\uDD50</span>'
-                         : (isReminder && ev.done) ? '<span title="Completato">\u2705</span>' : '';
+        const statusIcon = ev.autoStale ? `<span title="Auto-archiviato">${this._icon('clock')}</span>`
+                         : (isReminder && ev.done) ? `<span class="text-success" title="Completato">${this._icon('checkCircle')}</span>` : '';
 
         const doneAtHtml = (isReminder && ev.done && ev.doneAt)
-            ? `<div class="text-muted mt-1" style="font-size:0.72rem;">\u2705 Completato il ${this._formatDoneAt(ev.doneAt)}</div>` : '';
+            ? `<div class="text-muted mt-1" style="font-size:0.72rem;">${this._icon('check')} Completato il ${this._formatDoneAt(ev.doneAt)}</div>` : '';
 
         const reminderMenuItems = isReminder ? `
-            <li><a class="dropdown-item py-2 ${ev.done ? 'text-secondary' : 'text-success fw-semibold'}" href="#" onclick="app.toggleReminderDone('${ev.reminderId}');return false;">${ev.done ? '\u21A9\uFE0F Riapri' : '\u2705 Segna come fatto'}</a></li>
-            <li><a class="dropdown-item py-2" href="#" onclick="app.editReminder('${ev.reminderId}');return false;">\u270F\uFE0F Modifica</a></li>
-            <li><a class="dropdown-item py-2 text-danger" href="#" onclick="app.deleteReminder('${ev.reminderId}');return false;">\uD83D\uDDD1\uFE0F Elimina</a></li>
+            <li><a class="dropdown-item py-2 ${ev.done ? 'text-secondary' : 'text-success fw-semibold'}" href="#" onclick="app.toggleReminderDone('${ev.reminderId}');return false;">${ev.done ? this._icon('refresh') + ' Riapri' : this._icon('check') + ' Segna come fatto'}</a></li>
+            <li><a class="dropdown-item py-2" href="#" onclick="app.editReminder('${ev.reminderId}');return false;">${this._icon('pencil')} Modifica</a></li>
+            <li><a class="dropdown-item py-2 text-danger" href="#" onclick="app.deleteReminder('${ev.reminderId}');return false;">${this._icon('trash')} Elimina</a></li>
             <li><hr class="dropdown-divider"></li>` : '';
 
         const visMenuItems = `
-            ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','hide');return false;">\uD83D\uDEAB Nascondi</a></li>` : ''}
-            ${ev.pref !== 'gray' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','gray');return false;">\uD83C\uDF2B\uFE0F Ingrigisci</a></li>` : ''}
-            ${ev.pref ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 text-success" href="#" onclick="app.setEventPref('${ev.prefKey}','show');return false;">\uD83D\uDC41\uFE0F Mostra Normale</a></li>` : ''}`;
+            ${ev.pref !== 'hide' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','hide');return false;">${this._icon('eyeOff')} Nascondi</a></li>` : ''}
+            ${ev.pref !== 'gray' ? `<li><a class="dropdown-item py-2" href="#" onclick="app.setEventPref('${ev.prefKey}','gray');return false;">${this._icon('halfCircle')} Ingrigisci</a></li>` : ''}
+            ${ev.pref ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 text-success" href="#" onclick="app.setEventPref('${ev.prefKey}','show');return false;">${this._icon('eye')} Mostra Normale</a></li>` : ''}`;
 
         if (compact) {
             return `
@@ -1431,7 +1485,7 @@ const app = {
                     ${fb || ob ? `<div class="mt-1 d-flex flex-wrap">${fb}${ob}</div>` : ''}
                 </div>
                 <div class="dropdown flex-shrink-0">
-                    <button class="btn btn-sm btn-light text-secondary border-0 p-0 px-1" type="button" data-bs-toggle="dropdown" style="line-height:1;"><strong>\u22EE</strong></button>
+                    <button class="btn btn-sm cal-more-btn" type="button" data-bs-toggle="dropdown" aria-label="Opzioni">${this._icon('more')}</button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm small">${reminderMenuItems}${visMenuItems}</ul>
                 </div>
             </div>`;
@@ -1457,7 +1511,7 @@ const app = {
                 ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
             </div>
             <div class="dropdown flex-shrink-0 ms-2">
-                <button class="btn btn-sm btn-light text-secondary border-0 p-1 px-2" type="button" data-bs-toggle="dropdown" title="Opzioni" style="line-height:1;"><strong>\u22EE</strong></button>
+                <button class="btn btn-sm cal-more-btn" type="button" data-bs-toggle="dropdown" title="Opzioni" aria-label="Opzioni">${this._icon('more')}</button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm small">${reminderMenuItems}${visMenuItems}</ul>
             </div>
         </div>`;
@@ -1567,35 +1621,36 @@ const app = {
         const hasHighlights = hlReminders.length > 0 || hlMilestones.length > 0;
 
         let html = `
-        <div class="col-12 mb-4">
-            <div class="card shadow-sm border-0 bg-light">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0 rounded-top">
-                    <h5 class="mb-0 fw-bold text-primary">\uD83D\uDCC5 Eventi in Calendario</h5>
-                    <div class="form-check form-switch m-0">
-                        <input class="form-check-input" type="checkbox" id="calShowHiddenPrefs" onchange="app.renderCalendar()" ${calShowHiddenPrefs ? 'checked' : ''}>
-                        <label class="form-check-label small text-muted mt-1 ms-1" for="calShowHiddenPrefs">Mostra elementi nascosti</label>
-                    </div>
+        <div class="col-12 mb-3">
+            <div class="cal-page-head">
+                <h2 class="cal-page-title">${this._icon('calendar')} Calendario rilasci</h2>
+                <div class="form-check form-switch m-0 cal-page-switch">
+                    <input class="form-check-input" type="checkbox" id="calShowHiddenPrefs" onchange="app.renderCalendar()" ${calShowHiddenPrefs ? 'checked' : ''}>
+                    <label class="form-check-label small" for="calShowHiddenPrefs">Mostra elementi nascosti</label>
                 </div>
-                <div class="card-body p-4"><div class="row g-4" style="position:relative;">`;
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="row g-4" style="position:relative;">`;
 
         if (hasHighlights) {
             html += `
             <div class="col-12 cal-highlights-wrapper">
                 <div class="cal-highlights-card">
                     <div class="cal-highlights-header">
-                        <span class="cal-highlights-icon">&#x26A1;</span>
-                        <span class="cal-highlights-title">Highlights</span>
-                        <span class="cal-highlights-date">Oggi &mdash; ${dayjs().format('DD/MM/YYYY')}</span>
+                        <span class="cal-highlights-icon">${this._icon('sparkles')}</span>
+                        <span class="cal-highlights-title">Highlights di oggi</span>
+                        <span class="cal-highlights-date">${dayjs().format('DD/MM/YYYY')}</span>
                     </div>
                     <div class="p-3"><div class="row g-3">
                         <div class="col-md-5">
                             ${hlReminders.length > 0
-                                ? `<div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">\uD83D\uDCDD Promemoria attivi</div>${hlReminders.map(ev => this._renderEventCard(ev, todayStr, true)).join('')}`
+                                ? `<div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">${this._icon('clock')} Promemoria attivi</div>${hlReminders.map(ev => this._renderEventCard(ev, todayStr, true)).join('')}`
                                 : `<div class="text-muted small fst-italic p-2">Nessun promemoria attivo o scaduto.</div>`}
                         </div>
                         <div class="col-md-7">
                             ${hlMilestones.length > 0
-                                ? `<div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">\uD83D\uDE80 Milestone di oggi</div>${hlMilestones.map(ev => this._renderEventCard(ev, todayStr, true)).join('')}`
+                                ? `<div class="small fw-semibold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">${this._icon('rocket')} Milestone di oggi</div>${hlMilestones.map(ev => this._renderEventCard(ev, todayStr, true)).join('')}`
                                 : `<div class="text-muted small fst-italic p-2">Nessuna milestone automatica per oggi.</div>`}
                         </div>
                     </div></div>
@@ -1618,21 +1673,19 @@ const app = {
             });
             html += `
             <div class="col-md-6 col-xl-4" data-month="${k}">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-header bg-white py-3 border-bottom">
-                        <h6 class="mb-0 fw-bold text-uppercase text-primary d-flex align-items-center justify-content-between">
-                            ${groups[k].label}
-                            <span class="badge bg-secondary rounded-pill">${sorted.length}</span>
-                        </h6>
+                <div class="card h-100 cal-month-card">
+                    <div class="card-header cal-month-head">
+                        <h6>${groups[k].label}</h6>
+                        <span class="cal-month-count">${sorted.length}</span>
                     </div>
-                    <div class="card-body p-3 bg-white"><div class="d-flex flex-column gap-2">
+                    <div class="card-body p-3"><div class="d-flex flex-column gap-2">
                         ${sorted.map(ev => this._renderEventCard(ev, todayStr, false)).join('')}
                     </div></div>
                 </div>
             </div>`;
         });
 
-        html += `</div></div></div></div>`;
+        html += `</div></div>`;
         container.innerHTML = html;
 
         // Attiva IntersectionObserver per lo sticky shadow sull'highlights wrapper
@@ -1649,13 +1702,13 @@ const app = {
         const container = document.getElementById('toastContainer');
         if (!container) return;
         const toastId = 'toast-' + Date.now();
-        const icons   = { success: '\u2705', danger: '\u274C', warning: '\u26A0\uFE0F', info: '\u2139\uFE0F' };
+        const icons   = { success: this._icon('checkCircle'), danger: this._icon('alert'), warning: this._icon('alert'), info: this._icon('info') };
         const bgClass = type === 'warning' ? 'text-bg-warning' : type === 'info' ? 'text-bg-info text-dark' : `text-bg-${type}`;
         container.insertAdjacentHTML('beforeend', `
         <div id="${toastId}" class="toast align-items-center ${bgClass} border-0 mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${timeout}">
             <div class="d-flex">
                 <div class="toast-body fw-semibold d-flex align-items-center gap-2">
-                    <span>${icons[type] || '\u2139\uFE0F'}</span><span>${msg}</span>
+                    <span>${icons[type] || this._icon('info')}</span><span>${msg}</span>
                 </div>
                 <button type="button" class="btn-close ${type === 'warning' ? '' : 'btn-close-white'} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
