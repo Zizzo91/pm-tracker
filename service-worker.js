@@ -1,7 +1,7 @@
 // PM Tracker - Service Worker offline-aware
 // Strategia: cache-first per asset statici, network-only per API (Supabase/GitHub)
 
-const SW_VERSION = 'v12';
+const SW_VERSION = 'v14';
 const CACHE_NAME = `pm-tracker-${SW_VERSION}`;
 
 // Asset statici da pre-cachare all'installazione.
@@ -14,6 +14,10 @@ const STATIC_ASSETS = [
   './assets/supabase-config.js',
   './assets/styles.css',
   './assets/brand/logo-telepass.svg',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
+  './assets/icon-180.png',
+  './assets/favicon.png',
   './manifest.json'
 ];
 

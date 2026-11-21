@@ -1,14 +1,14 @@
 # pm-tracker-main 4
 
 ## Descrizione
-Progressive Web App per la gestione progetti e timeline di sviluppo. Include vista lista, diagramma di Gantt e calendario rilasci con promemoria manuali.
+Progressive Web App per la gestione progetti e timeline di sviluppo. Include vista lista, diagramma di Gantt e la sezione **Promemoria** (promemoria personali + calendario rilasci), con tema chiaro/scuro.
 
 **Storage dati**: Supabase — schema dedicato `pmtracker` sul progetto `gfglazxhxxplhoteaahr` (gestione-conti, eu-central-1), stessa istanza usata da `spesa`, `soundtube`, `storybook`. Accesso protetto da login PIN (account Supabase esistente).
 
 ## Struttura
 ```
 pm-tracker-main 4/
-├── index.html                        — UI Bootstrap 5, tabs (lista, Gantt, calendario), login PIN
+├── index.html                        — UI Bootstrap 5, tabs (lista, Gantt, Promemoria), login PIN
 ├── manifest.json                     — PWA manifest
 ├── service-worker.js                 — Service Worker (precache relativo, network-first per HTML, network-only per Supabase/GitHub)
 ├── redirect.html                     — Pagina redirect
@@ -16,11 +16,13 @@ pm-tracker-main 4/
 ├── data/projects.json                — Snapshot pre-migrazione (backup storico, non più letto dall'app)
 ├── db/001_pmtracker_schema.sql       — Schema Supabase (tabella state, vista v_progetti, RLS, esposizione)
 └── assets/
-    ├── app.js                        — ⚠️ UNICO file JS caricato: tutta la logica (dati, render, editor, calendario)
+    ├── app.js                        — ⚠️ UNICO file JS caricato: tutta la logica (dati, render, editor, calendario, promemoria, tema)
     ├── supabase-config.js            — url + anon key + schema pmtracker (anon key è pubblica by design)
-    ├── styles.css                    — Stili custom: design token Telepass + Gantt stile Apple
+    ├── styles.css                    — Stili custom: design token Telepass + Gantt stile Apple + tema scuro
     ├── brand/logo-telepass.svg       — Logo ufficiale Telepass usato nell'hero
-    └── favicon.png, icon-192.png, icon-512.png  — Icone PWA
+    ├── brand/app-icon.svg            — Sorgente vettoriale dell'icona PWA (barre timeline + milestone)
+    ├── brand/icon-1024.png           — Master 1024px dell'icona
+    └── favicon.png, icon-180.png, icon-192.png, icon-512.png  — Icone PWA
 ```
 
 ⚠️ `assets/app.data.js`, `app.render.js`, `app.editor.js`, `app.calendar.js`, `app.reminders.js` sono **copie storiche non caricate** da `index.html`. Non modificarle: le modifiche vanno fatte in `assets/app.js`.
@@ -37,15 +39,18 @@ pm-tracker-main 4/
 - `service_role` e password DB **non** stanno nel repo.
 
 ## Funzionalità
-- 3 viste: Elenco Progetti, Gantt Sviluppo, Calendario Rilasci
+- 3 tab: Elenco Progetti, Gantt Sviluppo, **Promemoria**
+- Tab Promemoria con due viste interne (segmented control, scelta persistita in `localStorage['pm-cal-view']`):
+  - **Promemoria** (default) — elenco promemoria in pagina, raggruppato in Scaduti / Oggi / In arrivo / Completati, con form inline e azioni (fatto, modifica, elimina)
+  - **Calendario rilasci** — griglia delle milestone, filtri e "Vai a oggi"
 - Milestone: pianificazione, IA, dev start/end, UAT, BS, test, prod + milestone personalizzate
 - Dati economici: stima fornitore (gg/u), RC fornitore, costo calcolato
 - Link Jira (fino a 10)
-- Promemoria manuali con completamento
+- Promemoria manuali con completamento (badge conteggio nella tab e nello switch)
+- Tema chiaro/scuro: toggle in top bar, persistito in `localStorage['pm-theme']`, default da `prefers-color-scheme`
 - Filtri avanzati: fornitore, owner, data test, data prod, milestone
 - Ordinamento multiplo (prod, dev start, alfabetico, manuale drag&drop)
 - Zoom Gantt (mensile/settimanale); il Gantt scorre con la pagina intera, header mesi sticky
-- Navigazione "Vai a Oggi" nel calendario
 - Banner offline/online
 - Menu fornitori multi-selezione (preset + valori già usati + nuovo fornitore)
 - Modalità archiviazione progetti
@@ -61,6 +66,8 @@ pm-tracker-main 4/
 - **Gantt stile Apple** (token `--ap-*`): fondo bianco, hairline `#e6e6e6`, header mesi sticky, etichette e barre pulite, icone SVG in stile SF Symbols.
 - **Font**: Galano Telepass non è distribuibile → sostituti liberi **Poppins** (display) e **Inter** (UI) da Google Fonts (`index.html`). Il font del Gantt usa la pila di sistema Apple (`-apple-system`).
 - **Icone**: set SVG inline `PM_ICONS` in `assets/app.js`, usato con `app._icon('nome', 'classe')`. Niente emoji nell'interfaccia.
+- **Tema scuro**: blocco `html[data-theme="dark"]` in `assets/styles.css` che ridefinisce i token `--tp-*`/`--ap-*`, `color-scheme: dark` e le superfici Bootstrap (card, form, tabelle, dropdown, modali, badge). L'attributo è impostato in un inline script in `<head>` prima del CSS per evitare il flash bianco; `app._applyTheme()` / `app.toggleTheme()` gestiscono toggle e persistenza. L'hero resta giallo in entrambi i temi.
+- **Icona PWA**: monogramma "timeline" (tre barre blu notte + milestone blu + marcatore rosso "oggi") su fondo giallo brand; sorgente `assets/brand/app-icon.svg`, master `assets/brand/icon-1024.png`, derivate 512/192/180/32. Manifest con `any` + `maskable` (contenuto entro la safe zone).
 - **Riferimenti**: token estrapolati da `../reverse-brand/out/www.telepass.com/capture/snapshot.json` (`rootVars`) e `../reverse-brand/out/www.apple.com/tokens.css`.
 - **Attenzione**: i `.dropdown-menu` interni alle card (calendario) hanno bisogno di `z-index` esplicito sul contenitore (`:has(.dropdown-menu.show)`) e non vanno animati con `transform`, altrimenti sovrascrivono il posizionamento di Popper.
 
