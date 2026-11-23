@@ -1977,25 +1977,8 @@ html[data-theme="dark"] .tp-theme-btn .tp-theme-btn__sun { display: inline-flex 
 .tp-tabs .nav-link.active .tp-tabs__badge.tp-count-badge--alert { background: #ffdbe1; color: #8a0015; }
 
 /* ════════════════════════════════════════════════════════════════════════
-   SHEET PROMEMORIA (offcanvas laterale)
+   COMPONENTI PROMEMORIA (pannello inline)
    ════════════════════════════════════════════════════════════════════════ */
-
-.tp-sheet {
-  width: min(430px, 100%);
-  background: var(--tp-surface);
-  border-left: 1px solid var(--tp-border);
-  box-shadow: -24px 0 60px rgba(0, 39, 82, .18);
-}
-
-.tp-sheet__head {
-  align-items: flex-start;
-  gap: 12px;
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--tp-border);
-  background: var(--tp-surface);
-}
-
-.tp-sheet__heading { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
 
 .tp-sheet__icon {
   width: 38px;
@@ -2021,15 +2004,6 @@ html[data-theme="dark"] .tp-theme-btn .tp-theme-btn__sun { display: inline-flex 
   margin: 2px 0 0;
   font-size: .74rem;
   color: var(--tp-testo-subtle);
-}
-
-.tp-sheet__body { padding: 16px 20px 28px; display: flex; flex-direction: column; gap: 16px; }
-
-.tp-sheet__form {
-  padding: 14px;
-  border: 1px solid var(--tp-border);
-  border-radius: var(--tp-r-lg);
-  background: var(--tp-surface-alt);
 }
 
 .tp-sheet__edit-banner {
@@ -2196,11 +2170,6 @@ html[data-theme="dark"] .tp-theme-btn .tp-theme-btn__sun { display: inline-flex 
 .tp-rem__btn--ok:hover { background: #d6ffe7; color: var(--tp-verde-scuro); }
 .tp-rem__btn--danger:hover { background: #fdd8de; color: #8a0015; }
 
-@media (max-width: 575.98px) {
-  .tp-sheet { width: 100%; }
-  .tp-sheet__body { padding: 14px 14px 24px; }
-}
-
 /* ════════════════════════════════════════════════════════════════════════
    TEMA SCURO
    Solo override: il tema chiaro resta identico. I token cambiano e i
@@ -2282,8 +2251,7 @@ html[data-theme="dark"] .tp-toolbar,
 html[data-theme="dark"] .table-responsive,
 html[data-theme="dark"] .tp-iconbtn,
 html[data-theme="dark"] .cal-highlights-card,
-html[data-theme="dark"] .cal-event-item,
-html[data-theme="dark"] .tp-sheet__form {
+html[data-theme="dark"] .cal-event-item {
   background: var(--tp-surface);
   color: var(--tp-testo);
 }
@@ -2291,8 +2259,7 @@ html[data-theme="dark"] .tp-sheet__form {
 html[data-theme="dark"] .card,
 html[data-theme="dark"] .table-responsive,
 html[data-theme="dark"] .tp-toolbar,
-html[data-theme="dark"] .modal-content,
-html[data-theme="dark"] .tp-sheet {
+html[data-theme="dark"] .modal-content {
   border-color: var(--tp-border);
 }
 
