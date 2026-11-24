@@ -234,23 +234,6 @@ a:hover { color: var(--tp-blu-autostrada); }
 }
 .tp-topbar__btn svg { width: 16px; height: 16px; }
 
-/* Switch "Mostra archiviati" nella top bar */
-.tp-topbar .form-check { display: flex; align-items: center; gap: 8px; margin: 0; }
-.tp-topbar .form-check-label { color: rgba(255, 255, 255, .82); font-size: 12px; font-weight: 500; cursor: pointer; }
-.tp-topbar .form-check-input {
-  width: 34px; height: 18px; margin: 0;
-  background-color: rgba(255, 255, 255, .22);
-  border: 1px solid rgba(255, 255, 255, .3);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='3' fill='%23ffffff'/%3E%3C/svg%3E");
-  cursor: pointer;
-  transition: background-color var(--tp-dur) var(--tp-ease), border-color var(--tp-dur) var(--tp-ease);
-}
-.tp-topbar .form-check-input:checked {
-  background-color: var(--tp-brand-secondario);
-  border-color: var(--tp-brand-secondario);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='3' fill='%23002752'/%3E%3C/svg%3E");
-}
-
 /* ── Hero card (giallo brand) ───────────────────────────────────────── */
 .tp-hero {
   position: relative;
@@ -479,6 +462,54 @@ a:hover { color: var(--tp-blu-autostrada); }
 }
 .tp-iconbtn:hover { transform: translateY(-1px); box-shadow: var(--tp-elev-8); color: var(--tp-blu-casello); }
 .tp-iconbtn svg { width: 18px; height: 18px; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   BARRA FILTRI GLOBALE (sopra le tab: vale per Elenco, Gantt e Calendario)
+   ════════════════════════════════════════════════════════════════════════ */
+
+.tp-filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: 0 0 18px;
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-border);
+  border-radius: var(--tp-r-lg);
+  box-shadow: var(--tp-elev-2);
+}
+
+.tp-filterbar__field { flex: 0 0 auto; }
+.tp-filterbar__field--grow { flex: 1 1 240px; min-width: 180px; }
+.tp-filterbar__field--grow .form-control { width: 100%; min-width: 0; }
+
+.tp-filterbar__switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px auto;
+}
+.tp-filterbar__switch .form-check-input { margin: 0; }
+.tp-filterbar__switch .form-check-label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--tp-testo-subtle);
+  cursor: pointer;
+}
+
+.tp-filterbar__reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 1px;
+}
+.tp-filterbar__reset svg { width: 14px; height: 14px; }
+
+@media (max-width: 767.98px) {
+  .tp-filterbar__switch { margin-left: 0; }
+  .tp-filterbar__reset { margin-left: auto; }
+}
 
 /* ════════════════════════════════════════════════════════════════════════
    TABS (segmented control Telepass)

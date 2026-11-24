@@ -31,7 +31,7 @@ pm-tracker-main 4/
 - `pmtracker.state` — **una riga** (`id = 'main'`) con colonna `data jsonb` contenente l'intero array dei progetti (stessa forma del vecchio `data/projects.json`):
   - progetti + un record meta (`id = '__pm_tracker_meta__'`) con promemoria manuali ed eventPrefs.
   - `updated_at` viene aggiornato da trigger; l'app lo usa per il controllo di conflitto (update condizionato).
-- `pmtracker.v_progetti` — **vista in sola lettura**, un progetto per riga con colonne tipizzate (nome, date, fornitori/owners come array, stima ggu, costo, hidden, raw).
+- `pmtracker.v_progetti` — **vista in sola lettura**, un progetto per riga con colonne tipizzate (nome, date, fornitori come array, stima ggu, costo, hidden, raw). La colonna `owners` resta esposta per compatibilità ma l'app la ignora.
 
 ## Sicurezza
 - RLS attiva su `pmtracker.state`: solo ruolo `authenticated` (nessun accesso con la sola anon key).
@@ -42,13 +42,16 @@ pm-tracker-main 4/
 - 3 tab: Elenco Progetti, Gantt Sviluppo, **Promemoria**
 - Tab Promemoria con due viste interne (segmented control, scelta persistita in `localStorage['pm-cal-view']`):
   - **Promemoria** (default) — elenco promemoria in pagina, raggruppato in Scaduti / Oggi / In arrivo / Completati, con form inline e azioni (fatto, modifica, elimina)
-  - **Calendario rilasci** — griglia delle milestone, filtri e "Vai a oggi"
+  - **Calendario rilasci** — griglia delle milestone, filtro milestone e toggle "Mostra milestone nascoste"
 - Milestone: pianificazione, IA, dev start/end, UAT, BS, test, prod + milestone personalizzate
 - Dati economici: stima fornitore (gg/u), RC fornitore, costo calcolato
 - Link Jira (fino a 10)
 - Promemoria manuali con completamento (badge conteggio nella tab e nello switch)
 - Tema chiaro/scuro: toggle in top bar, persistito in `localStorage['pm-theme']`, default da `prefers-color-scheme`
-- Filtri avanzati: fornitore, owner, data test, data prod, milestone
+- **Barra filtri globale** sopra le tab (`.tp-filterbar`): `Fornitore`, `Cerca progetto`, `Mostra archiviati`, `Reset filtri`. Filtra in contemporanea Elenco, Gantt e Calendario via `app._globalFilters()` / `app._matchesGlobalFilters()`.
+- Filtri specifici per vista: Test/Prod (Gantt), Milestone e milestone nascoste (Calendario), ordinamento per tab.
+- **Owner rimosso** da UI, editor, tabella, Gantt e calendario: un eventuale campo `owners` nei vecchi record viene conservato in scrittura ma non letto né mostrato.
+- CTA duplicate rimosse: `Nuovo progetto` e `Oggi` vivono solo nell'hero.
 - Ordinamento multiplo (prod, dev start, alfabetico, manuale drag&drop)
 - Zoom Gantt (mensile/settimanale); il Gantt scorre con la pagina intera, header mesi sticky
 - Banner offline/online

@@ -79,12 +79,6 @@ const app = {
         { key: 'dataConfigSistema', label: 'Config Sistema',         badge: 'bg-light text-dark border' }
     ],
 
-    OWNER_COLORS: {
-        'simone': { bg: '#0d6efd', fg: '#ffffff' },
-        'flavia': { bg: '#6f42c1', fg: '#ffffff' },
-        'andrea': { bg: '#ffc107', fg: '#212529' },
-    },
-
     // ─── HELPERS GENERICI ────────────────────────────────────────────────────
 
     get _today() {
@@ -258,6 +252,46 @@ const app = {
         this.searchTimeout = setTimeout(() => this.renderTable(), 300);
     },
 
+    // La ricerca globale filtra Elenco, Gantt e Calendario insieme.
+    debouncedRenderAll: function() {
+        if (this.searchTimeout) clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => this.renderAll(), 250);
+    },
+
+    // Filtri applicati in contemporanea alle tre viste.
+    _globalFilters: function() {
+        return {
+            search:    (this._getVal('globalSearchInput') || '').trim().toLowerCase(),
+            fornitore: this._getVal('globalFornitoreFilter'),
+            showHidden: this._getChecked('globalShowHidden')
+        };
+    },
+
+    _matchesGlobalFilters: function(p, f) {
+        if (!f.showHidden && this.isHiddenForUI(p)) return false;
+        if (f.fornitore && !(p.fornitori || []).includes(f.fornitore)) return false;
+        if (f.search && !(p.nome || '').toLowerCase().includes(f.search)) return false;
+        return true;
+    },
+
+    resetGlobalFilters: function() {
+        this._setVal('globalFornitoreFilter', '');
+        this._setVal('globalSearchInput', '');
+        const hidden = document.getElementById('globalShowHidden');
+        if (hidden) hidden.checked = false;
+
+        // Filtri specifici delle singole viste: azzerati anche loro, così
+        // "Reset filtri" riporta davvero tutto allo stato iniziale.
+        this._setVal('ganttDataTestFilter', '');
+        this._setVal('ganttDataProdFilter', '');
+        this._setVal('calendarMilestoneFilter', '');
+        const calHidden = document.getElementById('calShowHiddenPrefs');
+        if (calHidden) calHidden.checked = false;
+        if (typeof updateCalFilterBadge === 'function') updateCalFilterBadge();
+
+        this.renderAll();
+    },
+
     scrollToToday: function() {
         this.setCalendarSubView('calendar');
         const todayKey = dayjs().format('YYYY-MM');
@@ -358,6 +392,8 @@ const app = {
                 manualReminders: Array.isArray(p.manualReminders) ? p.manualReminders : [],
                 eventPrefs: p.eventPrefs || {} };
         }
+        // `owners` non è più usato dall'interfaccia: se un vecchio record lo
+        // contiene viene conservato com'è (nessun errore, nessuna perdita dati).
         return { ...p,
             owners:           this.csvToArray(p.owners || p.owner),
             fornitori:        this.csvToArray(p.fornitori),
@@ -399,8 +435,7 @@ const app = {
     },
 
     _badgeColor: function(kind, name) {
-        const key = (name || '').toString().trim().toLowerCase();
-        return (kind === 'owner' && this.OWNER_COLORS[key]) ? this.OWNER_COLORS[key] : this._autoColor(name, kind);
+        return this._autoColor(name, kind);
     },
 
     _badgeStyle: function(kind, name) {
@@ -631,7 +666,6 @@ const app = {
             this.data = arr.map(p => this.normalizeProject(p));
             this.getMeta();
             this.populateFornitoreFilters();
-            this.populateOwnerFilters();
             this.populateDataTestFilters();
             this.populateDataProdFilters();
             this.renderAll();
@@ -645,22 +679,8 @@ const app = {
     populateFornitoreFilters: function() {
         try {
             const values = [...new Set(this.getProjectsOnly().flatMap(p => p.fornitori || []))].sort();
-            this._populateFilterSelects(
-                ['ganttFornitoreFilter', 'tableFornitoreFilter', 'calendarFornitoreFilter'],
-                values
-            );
+            this._populateFilterSelects(['globalFornitoreFilter'], values);
         } catch (e) { console.error('populateFornitoreFilters error', e); }
-    },
-
-    populateOwnerFilters: function() {
-        try {
-            const values = [...new Set(this.getProjectsOnly().flatMap(p => p.owners || []))]
-                .sort((a, b) => (a || '').localeCompare(b || '', 'it'));
-            this._populateFilterSelects(
-                ['ganttOwnerFilter', 'tableOwnerFilter', 'calendarOwnerFilter'],
-                values
-            );
-        } catch (e) { console.error('populateOwnerFilters error', e); }
     },
 
     populateDataTestFilters: function() {
@@ -1077,12 +1097,11 @@ const app = {
 
         const id        = this._getVal('p_id');
         const fornitori = this._getVal('p_fornitori').split(',').map(s => s.trim()).filter(Boolean);
-        const owners    = this._getVal('p_owners').split(',').map(s => s.trim()).filter(Boolean);
 
         const newProj = {
             id:                id || Date.now().toString(),
             nome:              this._getVal('p_nome'),
-            fornitori, owners,
+            fornitori,
             progress,
             dataStima:         dates.stima,
             dataIA:            dates.ia,
@@ -1109,6 +1128,8 @@ const app = {
                 const old = this.data[idx];
                 if (old.hidden)                    newProj.hidden     = true;
                 if (old.ganttOrder !== undefined)  newProj.ganttOrder = old.ganttOrder;
+                // Campo legacy non più editabile: conservato per non perdere dati.
+                if (Array.isArray(old.owners))     newProj.owners     = old.owners;
                 this.data[idx] = newProj;
             }
         } else {
@@ -1165,7 +1186,6 @@ const app = {
             this.showAlert('Salvato su Supabase!', 'success', 2000);
             this.getMeta();
             this.populateFornitoreFilters();
-            this.populateOwnerFilters();
             this.populateDataTestFilters();
             this.populateDataProdFilters();
             this.renderAll();
@@ -1229,7 +1249,6 @@ const app = {
             const fields = {
                 p_id: p.id, p_nome: p.nome,
                 p_fornitori: (p.fornitori || []).join(', '),
-                p_owners: this.csvToArray(p.owners || p.owner).join(', '),
                 p_progress: p.progress != null ? p.progress : '',
                 p_stima: p.dataStima || '', p_ia: p.dataIA || '',
                 p_devStart: p.devStart || '', p_devEnd: p.devEnd || '',
@@ -1348,20 +1367,12 @@ const app = {
     // ─── RENDER TABLE ────────────────────────────────────────────────────────
 
     renderTable: function() {
-        const tbody      = document.getElementById('projectsTableBody');
-        const search     = this._getVal('searchInput').toLowerCase();
-        const filtForn   = this._getVal('tableFornitoreFilter');
-        const filtOwn    = this._getVal('tableOwnerFilter');
-        const sortMode   = this._getVal('tableSortSelect') || 'prod_inprogress_first';
-        const showHidden = this._getChecked('globalShowHidden');
-        const today      = this._today;
+        const tbody    = document.getElementById('projectsTableBody');
+        const sortMode = this._getVal('tableSortSelect') || 'prod_inprogress_first';
+        const today    = this._today;
+        const globals  = this._globalFilters();
 
-        let filtered = this.getProjectsOnly().filter(p =>
-            (showHidden || !this.isHiddenForUI(p)) &&
-            (p.nome || '').toLowerCase().includes(search) &&
-            (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
-            (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
-        );
+        let filtered = this.getProjectsOnly().filter(p => this._matchesGlobalFilters(p, globals));
         filtered = this._sortGantt(filtered, sortMode);
 
         tbody.innerHTML = filtered.map(p => this._htmlTableRow(p, today)).join('');
@@ -1374,7 +1385,6 @@ const app = {
         const rowCls    = isHidden ? 'class="table-warning opacity-75"' : isPast ? 'class="table-secondary opacity-75"' : '';
 
         const fornBadge = (p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'badge me-1 mb-1')).join('');
-        const ownBadge  = (p.owners    || []).map(o => this._badgeSpan('owner',    o, 'badge me-1 mb-1')).join('');
 
         const progressHtml = (p.progress != null)
             ? `<div class="progress mt-1" style="height:6px;min-width:80px;" title="Avanzamento: ${p.progress}%">
@@ -1403,7 +1413,7 @@ const app = {
                 ${jiraHtml  ? `<div class="mt-1">${jiraHtml}</div>` : ''}
                 ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
             </td>
-            <td><div class="d-flex flex-wrap">${fornBadge}</div>${ownBadge ? `<div class="mt-1 d-flex flex-wrap">${ownBadge}</div>` : ''}</td>
+            <td><div class="d-flex flex-wrap">${fornBadge}</div></td>
             <td>${progressHtml}</td>
             <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
             <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
@@ -1426,17 +1436,13 @@ const app = {
     renderGantt: function() {
         const container = document.getElementById('gantt-chart');
         if (!container) return;
-        const filtForn   = this._getVal('ganttFornitoreFilter');
-        const filtOwn    = this._getVal('ganttOwnerFilter');
         const filtDataTest = this._getVal('ganttDataTestFilter');
         const filtDataProd = this._getVal('ganttDataProdFilter');
         const sortMode   = this._getVal('ganttSortSelect') || 'prod_inprogress_first';
-        const showHidden = this._getChecked('globalShowHidden');
+        const globals    = this._globalFilters();
 
         let data = this.getProjectsOnly().filter(p =>
-            (showHidden || !this.isHiddenForUI(p)) &&
-            (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
-            (!filtOwn  || (p.owners    && p.owners.includes(filtOwn))) &&
+            this._matchesGlobalFilters(p, globals) &&
             (!filtDataTest || (p.dataTest && p.dataTest.startsWith(filtDataTest))) &&
             (!filtDataProd || (p.dataProd && p.dataProd.startsWith(filtDataProd))) &&
             (p.devStart || p.devEnd || p.dataTest || p.dataProd || p.dataIA || (p.customMilestones && p.customMilestones.length > 0))
@@ -1502,10 +1508,9 @@ const app = {
         const widthPct = (startD && endD) ? Math.max(pct(endD) - leftPct, 0.5) : 0;
         const barOpacity = (p.devStart && p.devEnd) ? 1 : 0.2;
 
-        const badgesHtml = [
-            ...(p.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1')),
-            ...(p.owners    || []).map(o => this._badgeSpan('owner',    o, 'gantt-supplier-badge mb-1'))
-        ].join('');
+        const badgesHtml = (p.fornitori || [])
+            .map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1'))
+            .join('');
         const ganttJiraLinks = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
         const ganttJiraHtml  = this.jiraLinksHtml(ganttJiraLinks);
         const isPast    = p.dataProd && new Date(p.dataProd) <= today;
@@ -1626,7 +1631,6 @@ const app = {
 
     _renderEventCard: function(ev, todayStr, compact) {
         const fb = (ev.fornitori || []).map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge me-1 mb-1')).join('');
-        const ob = (ev.owners    || []).map(o => this._badgeSpan('owner',    o, 'gantt-supplier-badge me-1 mb-1')).join('');
         const calJiraHtml  = (!ev.reminder && ev.jiraLinks && ev.jiraLinks.length > 0) ? this.jiraLinksHtml(ev.jiraLinks) : '';
         const isReminder   = !!ev.reminder;
         const isPastGray   = !!ev.pastGray && !isReminder;
@@ -1684,7 +1688,7 @@ const app = {
                     ${doneAtHtml}
                     ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2">${(ev.note||'').replace(/</g,'&lt;')}</div>` : ''}
                     ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
-                    ${fb || ob ? `<div class="mt-1 d-flex flex-wrap">${fb}${ob}</div>` : ''}
+                    ${fb ? `<div class="mt-1 d-flex flex-wrap">${fb}</div>` : ''}
                 </div>
                 <div class="dropdown flex-shrink-0">
                     <button class="btn btn-sm cal-more-btn" type="button" data-bs-toggle="dropdown" aria-label="Opzioni">${this._icon('more')}</button>
@@ -1710,7 +1714,7 @@ const app = {
                 ${doneAtHtml}
                 ${ev.note ? `<div class="small text-muted mt-1 border-start border-warning border-2 ps-2 ms-1">${(ev.note||'').replace(/</g,'&lt;')}</div>` : ''}
                 ${calJiraHtml ? `<div class="mt-1">${calJiraHtml}</div>` : ''}
-                ${fb || ob ? `<div class="mt-2 d-flex flex-wrap">${fb}${ob}</div>` : ''}
+                ${fb ? `<div class="mt-2 d-flex flex-wrap">${fb}</div>` : ''}
             </div>
             <div class="dropdown flex-shrink-0 ms-2">
                 <button class="btn btn-sm cal-more-btn" type="button" data-bs-toggle="dropdown" title="Opzioni" aria-label="Opzioni">${this._icon('more')}</button>
@@ -1722,11 +1726,9 @@ const app = {
     renderCalendar: function() {
         const container = document.getElementById('calendarContainer');
         if (!container) return;
-        const filtForn   = this._getVal('calendarFornitoreFilter');
-        const filtOwn    = this._getVal('calendarOwnerFilter');
         const filtMile   = this._getVal('calendarMilestoneFilter');
-        const showHidden = this._getChecked('globalShowHidden');
         const calShowHiddenPrefs = this._getChecked('calShowHiddenPrefs');
+        const globals    = this._globalFilters();
 
         const showProjectMilestones = true;
         const showCustomMilestones  = filtMile === '' || filtMile === 'custom';
@@ -1741,11 +1743,7 @@ const app = {
 
         if (showProjectMilestones) {
             this.getProjectsOnly()
-                .filter(p =>
-                    (showHidden || !this.isHiddenForUI(p)) &&
-                    (!filtForn || (p.fornitori && p.fornitori.includes(filtForn))) &&
-                    (!filtOwn  || (p.owners    && p.owners.includes(filtOwn)))
-                )
+                .filter(p => this._matchesGlobalFilters(p, globals))
                 .forEach(p => {
                     const isHidden  = this.isHiddenForUI(p);
                     const autoStale = this.isAutoStale(p);
@@ -1760,7 +1758,7 @@ const app = {
                         const pastGray = this._calIsPast(v, m.key);
                         events.push({
                             date: dayjs(v), sortKey: v, nome: p.nome,
-                            fornitori: p.fornitori || [], owners: p.owners || [], jiraLinks: pJiraLinks,
+                            fornitori: p.fornitori || [], jiraLinks: pJiraLinks,
                             label: m.label,
                             badge: (pastGray || pref === 'gray' || pref === 'hide') ? 'bg-secondary' : m.badge,
                             pastGray, userGray: pref === 'gray', isHiddenPref: pref === 'hide',
@@ -1777,7 +1775,7 @@ const app = {
                             const pastGray = this._calIsPast(cm.date, 'custom');
                             events.push({
                                 date: dayjs(cm.date), sortKey: cm.date, nome: p.nome,
-                                fornitori: p.fornitori || [], owners: p.owners || [], jiraLinks: pJiraLinks,
+                                fornitori: p.fornitori || [], jiraLinks: pJiraLinks,
                                 label: `\u2B50 ${cm.label}`,
                                 badge: (pastGray || pref === 'gray' || pref === 'hide') ? 'bg-secondary' : 'bg-success',
                                 pastGray, userGray: pref === 'gray', isHiddenPref: pref === 'hide',

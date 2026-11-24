@@ -27,7 +27,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/styles.css?v=43">
+    <link rel="stylesheet" href="assets/styles.css?v=44">
 </head>
 <body>
 
@@ -47,11 +47,6 @@
         <span class="tp-topbar__meta d-none d-md-inline">Gestione progetti &amp; rilasci</span>
 
         <div class="tp-topbar__right">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="globalShowHidden" onchange="app.renderAll()">
-                <label class="form-check-label" for="globalShowHidden">Mostra archiviati</label>
-            </div>
-            <span class="tp-topbar__sep"></span>
             <button class="tp-topbar__btn tp-theme-btn" type="button" onclick="app.toggleTheme()" title="Cambia tema" aria-label="Cambia tema" id="themeToggleBtn">
                 <span class="tp-theme-btn__moon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.4 14.2A8.4 8.4 0 019.8 3.6a8.6 8.6 0 1010.6 10.6z"/></svg>
@@ -94,6 +89,31 @@
         </div>
     </header>
 
+    <!-- Barra filtri globale: agisce su Elenco, Gantt e Calendario -->
+    <div class="tp-filterbar" role="search" aria-label="Filtri globali">
+        <div class="tp-field tp-filterbar__field">
+            <label class="form-label" for="globalFornitoreFilter">Fornitore</label>
+            <select id="globalFornitoreFilter" class="form-select form-select-sm filter-select"
+                    onchange="app.renderAll()">
+                <option value="">Tutti</option>
+            </select>
+        </div>
+        <div class="tp-field tp-filterbar__field tp-filterbar__field--grow">
+            <label class="form-label" for="globalSearchInput">Cerca progetto</label>
+            <input type="text" id="globalSearchInput" class="form-control form-control-sm"
+                   placeholder="Nome progetto…" oninput="app.debouncedRenderAll()">
+        </div>
+        <div class="tp-filterbar__switch form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="globalShowHidden" onchange="app.renderAll()">
+            <label class="form-check-label" for="globalShowHidden">Mostra archiviati</label>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm tp-filterbar__reset" type="button"
+                onclick="app.resetGlobalFilters()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 6.6l10.8 10.8"/><path d="M17.4 6.6L6.6 17.4"/></svg>
+            Reset filtri
+        </button>
+    </div>
+
     <!-- Tabs -->
     <ul class="nav tp-tabs" id="mainTab" role="tablist">
         <li class="nav-item" role="presentation">
@@ -123,27 +143,9 @@
         <div class="tab-pane fade" id="listView" role="tabpanel">
 
             <div class="tp-toolbar">
-                <button class="btn btn-primary" onclick="app.openModal()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.4v13.2"/><path d="M5.4 12h13.2"/></svg>
-                    Nuovo progetto
-                </button>
-                <div class="tp-toolbar__end">
-                    <div class="tp-field">
-                        <label class="form-label" for="tableSortSelect">Ordina</label>
-                        <select id="tableSortSelect" class="form-select form-select-sm sort-select" onchange="app.renderTable()"></select>
-                    </div>
-                    <div class="tp-field">
-                        <label class="form-label" for="tableFornitoreFilter">Fornitore</label>
-                        <select id="tableFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderTable()"><option value="">Tutti</option></select>
-                    </div>
-                    <div class="tp-field">
-                        <label class="form-label" for="tableOwnerFilter">Owner</label>
-                        <select id="tableOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderTable()"><option value="">Tutti</option></select>
-                    </div>
-                    <div class="tp-field">
-                        <label class="form-label" for="searchInput">Cerca</label>
-                        <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Nome progetto…" oninput="app.debouncedRenderTable()">
-                    </div>
+                <div class="tp-field">
+                    <label class="form-label" for="tableSortSelect">Ordina</label>
+                    <select id="tableSortSelect" class="form-select form-select-sm sort-select" onchange="app.renderTable()"></select>
                 </div>
             </div>
 
@@ -152,7 +154,7 @@
                     <thead>
                         <tr>
                             <th>Progetto</th>
-                            <th>Fornitori / Owner</th>
+                            <th>Fornitori</th>
                             <th>Prog.</th>
                             <th>Stima</th>
                             <th>IA</th>
@@ -172,11 +174,6 @@
         <div class="tab-pane fade" id="ganttView" role="tabpanel">
 
             <div class="tp-toolbar">
-                <button class="btn btn-primary" onclick="app.openModal()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.4v13.2"/><path d="M5.4 12h13.2"/></svg>
-                    Nuovo progetto
-                </button>
-
                 <div class="tp-toolbar__end">
                     <div class="tp-field tp-field--tight">
                         <label class="form-label" for="ganttZoomSelect">Vista</label>
@@ -188,14 +185,6 @@
                     <div class="tp-field">
                         <label class="form-label" for="ganttSortSelect">Ordina</label>
                         <select id="ganttSortSelect" class="form-select form-select-sm sort-select" onchange="app.renderGantt()"></select>
-                    </div>
-                    <div class="tp-field">
-                        <label class="form-label" for="ganttFornitoreFilter">Fornitore</label>
-                        <select id="ganttFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
-                    </div>
-                    <div class="tp-field">
-                        <label class="form-label" for="ganttOwnerFilter">Owner</label>
-                        <select id="ganttOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderGantt()"><option value="">Tutti</option></select>
                     </div>
                     <div class="tp-field">
                         <label class="form-label" for="ganttDataTestFilter">Test</label>
@@ -288,10 +277,6 @@
             <section class="cal-subview" id="calSubCalendar" aria-labelledby="calSwitchCalendar" hidden>
 
             <div class="tp-toolbar tp-toolbar--subtle">
-                <button class="btn btn-outline-primary btn-sm" onclick="app.scrollToToday()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3.2"/><path d="M3.4 9.8h17.2"/><path d="M8 3.4v3.2"/><path d="M16 3.4v3.2"/></svg>
-                    Vai a oggi
-                </button>
                 <div class="form-check form-switch ms-1 mb-0">
                     <input class="form-check-input" type="checkbox" id="calShowHiddenPrefs" onchange="app.renderCalendar(); updateCalFilterBadge()">
                     <label class="form-check-label small" for="calShowHiddenPrefs">Mostra milestone nascoste</label>
@@ -327,14 +312,6 @@
                             <option value="custom">Milestone personalizzate</option>
                         </select>
                     </div>
-                    <div class="tp-field">
-                        <label class="form-label" for="calendarFornitoreFilter">Fornitore</label>
-                        <select id="calendarFornitoreFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar(); updateCalFilterBadge()"><option value="">Tutti</option></select>
-                    </div>
-                    <div class="tp-field">
-                        <label class="form-label" for="calendarOwnerFilter">Owner</label>
-                        <select id="calendarOwnerFilter" class="form-select form-select-sm filter-select" onchange="app.renderCalendar(); updateCalFilterBadge()"><option value="">Tutti</option></select>
-                    </div>
                     <button class="btn btn-outline-danger btn-sm tp-panel__reset" onclick="resetCalFilters()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.6 6.6l10.8 10.8"/><path d="M17.4 6.6L6.6 17.4"/></svg>
                         Reset filtri
@@ -362,13 +339,9 @@
 
                     <h6 class="tp-form-section">Anagrafica</h6>
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="form-label" for="p_nome">Nome progetto *</label>
                             <input type="text" class="form-control" id="p_nome" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="p_owners">Owner (separati da virgola) *</label>
-                            <input type="text" class="form-control" id="p_owners" placeholder="Es: Marco, Sara" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Fornitori *</label>
@@ -514,7 +487,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/supabase-config.js"></script>
-<script src="assets/app.js?v=43"></script>
+<script src="assets/app.js?v=44"></script>
 <script>
   dayjs.locale('it');
 
@@ -546,13 +519,9 @@
   function updateCalFilterBadge() {
     let count = 0;
     const ms   = document.getElementById('calendarMilestoneFilter');
-    const forn = document.getElementById('calendarFornitoreFilter');
-    const own  = document.getElementById('calendarOwnerFilter');
     const tog  = document.getElementById('calShowHiddenPrefs');
-    if (ms   && ms.value)    count++;
-    if (forn && forn.value)  count++;
-    if (own  && own.value)   count++;
-    if (tog  && tog.checked) count++;
+    if (ms  && ms.value)     count++;
+    if (tog && tog.checked)  count++;
     const badge = document.getElementById('calFilterBadge');
     if (!badge) return;
     if (count > 0) {
@@ -565,12 +534,8 @@
 
   function resetCalFilters() {
     const ms   = document.getElementById('calendarMilestoneFilter');
-    const forn = document.getElementById('calendarFornitoreFilter');
-    const own  = document.getElementById('calendarOwnerFilter');
     const tog  = document.getElementById('calShowHiddenPrefs');
     if (ms)   ms.value    = '';
-    if (forn) forn.value  = '';
-    if (own)  own.value   = '';
     if (tog)  tog.checked = false;
     updateCalFilterBadge();
     if (typeof app !== 'undefined') app.renderCalendar();
