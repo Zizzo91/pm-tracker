@@ -27,7 +27,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/styles.css?v=44">
+    <link rel="stylesheet" href="assets/styles.css?v=45">
 </head>
 <body>
 
@@ -47,6 +47,10 @@
         <span class="tp-topbar__meta d-none d-md-inline">Gestione progetti &amp; rilasci</span>
 
         <div class="tp-topbar__right">
+            <button class="tp-topbar__btn tp-topbar__rem" type="button" onclick="app.openReminders()" title="Promemoria" aria-label="Apri promemoria" id="remindersOpenBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8.4a6 6 0 10-12 0c0 5-2.2 6.6-2.2 6.6h16.4S18 13.4 18 8.4z"/><path d="M10.2 19.2a2 2 0 003.6 0"/></svg>
+                <span id="remindersTopBadge" class="tp-topbar__badge" style="display:none">0</span>
+            </button>
             <button class="tp-topbar__btn tp-theme-btn" type="button" onclick="app.toggleTheme()" title="Cambia tema" aria-label="Cambia tema" id="themeToggleBtn">
                 <span class="tp-theme-btn__moon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.4 14.2A8.4 8.4 0 019.8 3.6a8.6 8.6 0 1010.6 10.6z"/></svg>
@@ -130,9 +134,8 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendarView" type="button" role="tab">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8.4a6 6 0 10-12 0c0 5-2.2 6.6-2.2 6.6h16.4S18 13.4 18 8.4z"/><path d="M10.2 19.2a2 2 0 003.6 0"/></svg>
-                Promemoria
-                <span id="remindersNavBadge" class="tp-tabs__badge" style="display:none">0</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3.2"/><path d="M3.4 9.8h17.2"/><path d="M8 3.4v3.2"/><path d="M16 3.4v3.2"/></svg>
+                Calendario rilasci
             </button>
         </li>
     </ul>
@@ -200,81 +203,10 @@
             <div id="gantt-chart"></div>
         </div>
 
-        <!-- ═══════ TAB 3 — PROMEMORIA + CALENDARIO (default) ═══════ -->
+        <!-- ═══════ TAB 3 — CALENDARIO RILASCI (default) ═══════ -->
         <div class="tab-pane fade show active" id="calendarView" role="tabpanel">
 
-            <!-- Switch interno: promemoria separati dalle milestone del calendario -->
-            <div class="cal-switch" role="tablist" aria-label="Promemoria e calendario rilasci">
-                <button class="cal-switch__btn is-active" type="button" role="tab" aria-selected="true"
-                        data-calview="reminders" id="calSwitchReminders" onclick="app.setCalendarSubView('reminders')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8.4a6 6 0 10-12 0c0 5-2.2 6.6-2.2 6.6h16.4S18 13.4 18 8.4z"/><path d="M10.2 19.2a2 2 0 003.6 0"/></svg>
-                    Promemoria
-                    <span id="remindersBadge" class="tp-count-badge" style="display:none">0</span>
-                </button>
-                <button class="cal-switch__btn" type="button" role="tab" aria-selected="false"
-                        data-calview="calendar" id="calSwitchCalendar" onclick="app.setCalendarSubView('calendar')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3.2"/><path d="M3.4 9.8h17.2"/><path d="M8 3.4v3.2"/><path d="M16 3.4v3.2"/></svg>
-                    Calendario rilasci
-                </button>
-            </div>
-
-            <!-- ── VISTA PROMEMORIA ── -->
-            <section class="cal-subview" id="calSubReminders" aria-labelledby="calSwitchReminders">
-                <div class="rem-panel">
-                    <header class="rem-panel__head">
-                        <span class="tp-sheet__icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8.4a6 6 0 10-12 0c0 5-2.2 6.6-2.2 6.6h16.4S18 13.4 18 8.4z"/><path d="M10.2 19.2a2 2 0 003.6 0"/></svg>
-                        </span>
-                        <div class="rem-panel__heading">
-                            <h2 class="tp-sheet__title">Promemoria</h2>
-                            <p class="tp-sheet__sub">Note e scadenze personali — separate dalle milestone del calendario rilasci.</p>
-                        </div>
-                        <div class="rem-panel__stats" id="remStats"></div>
-                    </header>
-
-                    <div class="rem-panel__body">
-                        <div id="rem_edit_banner" class="tp-sheet__edit-banner" style="display:none">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.4 19.6h4.2L19.8 8.4a2.1 2.1 0 000-3l-1.2-1.2a2.1 2.1 0 00-3 0L4.4 15.4v4.2z"/><path d="M14.4 5.4l4.2 4.2"/></svg>
-                            <span><strong>Modalità modifica</strong> — stai modificando un promemoria esistente.</span>
-                        </div>
-
-                        <div class="rem-form">
-                            <div class="row g-3 align-items-end">
-                                <div class="col-12 col-lg-3">
-                                    <label class="form-label" for="rem_date">Data</label>
-                                    <input type="date" class="form-control form-control-sm" id="rem_date">
-                                </div>
-                                <div class="col-12 col-lg-5">
-                                    <label class="form-label" for="rem_title">Titolo</label>
-                                    <input type="text" class="form-control form-control-sm" id="rem_title" placeholder="Es: mandare mail al fornitore">
-                                </div>
-                                <div class="col-12 col-lg-4">
-                                    <label class="form-label" for="rem_note">Nota (opzionale)</label>
-                                    <input type="text" class="form-control form-control-sm" id="rem_note" placeholder="Dettagli rapidi…">
-                                </div>
-                                <div class="col-12 d-flex flex-wrap gap-2">
-                                    <button class="btn btn-primary btn-sm" id="rem_add_btn" onclick="app.addReminder()">Aggiungi promemoria</button>
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="app.clearReminderInputs()">Pulisci</button>
-                                    <button class="btn btn-outline-warning btn-sm" id="rem_cancel_btn" style="display:none" onclick="app.clearReminderInputs()">Annulla modifica</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="tp-sheet__list-head">
-                            <span>Elenco</span>
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" id="rem_show_done" onchange="app.renderRemindersSheet()">
-                                <label class="form-check-label small" for="rem_show_done">Mostra completati</label>
-                            </div>
-                        </div>
-
-                        <div id="remindersList" class="tp-sheet__list"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ── VISTA CALENDARIO RILASCI ── -->
-            <section class="cal-subview" id="calSubCalendar" aria-labelledby="calSwitchCalendar" hidden>
+            <section id="calSubCalendar">
 
             <div class="tp-toolbar tp-toolbar--subtle">
                 <div class="form-check form-switch ms-1 mb-0">
@@ -322,6 +254,67 @@
             <div id="calendarContainer"></div>
             </section>
         </div>
+    </div>
+</div>
+
+<!-- ═══════ OFFCANVAS PROMEMORIA ═══════ -->
+<div class="offcanvas offcanvas-end rem-drawer" tabindex="-1" id="remindersOffcanvas" aria-labelledby="remindersOffcanvasTitle">
+    <div class="offcanvas-header rem-panel__head">
+        <span class="tp-sheet__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8.4a6 6 0 10-12 0c0 5-2.2 6.6-2.2 6.6h16.4S18 13.4 18 8.4z"/><path d="M10.2 19.2a2 2 0 003.6 0"/></svg>
+        </span>
+        <div class="rem-panel__heading">
+            <h2 class="tp-sheet__title" id="remindersOffcanvasTitle">Promemoria</h2>
+            <p class="tp-sheet__sub">Note e scadenze personali, collegabili ai progetti.</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Chiudi"></button>
+    </div>
+
+    <div class="offcanvas-body rem-panel__body">
+        <div class="rem-panel__stats rem-panel__stats--start" id="remStats"></div>
+
+        <div id="rem_edit_banner" class="tp-sheet__edit-banner" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.4 19.6h4.2L19.8 8.4a2.1 2.1 0 000-3l-1.2-1.2a2.1 2.1 0 00-3 0L4.4 15.4v4.2z"/><path d="M14.4 5.4l4.2 4.2"/></svg>
+            <span><strong>Modalità modifica</strong> — stai modificando un promemoria esistente.</span>
+        </div>
+
+        <div class="rem-form">
+            <div class="row g-3 align-items-end">
+                <div class="col-5">
+                    <label class="form-label" for="rem_date">Data</label>
+                    <input type="date" class="form-control form-control-sm" id="rem_date">
+                </div>
+                <div class="col-7">
+                    <label class="form-label" for="rem_title">Titolo</label>
+                    <input type="text" class="form-control form-control-sm" id="rem_title" placeholder="Es: mandare mail al fornitore">
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="rem_project">Progetto collegato <span class="text-muted">(opzionale)</span></label>
+                    <select id="rem_project" class="form-select form-select-sm">
+                        <option value="">Nessun progetto</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="rem_note">Nota <span class="text-muted">(opzionale)</span></label>
+                    <input type="text" class="form-control form-control-sm" id="rem_note" placeholder="Dettagli rapidi…">
+                </div>
+                <div class="col-12 d-flex flex-wrap gap-2">
+                    <button class="btn btn-primary btn-sm" id="rem_add_btn" onclick="app.addReminder()">Aggiungi promemoria</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="app.clearReminderInputs()">Pulisci</button>
+                    <button class="btn btn-outline-warning btn-sm" id="rem_cancel_btn" style="display:none" onclick="app.clearReminderInputs()">Annulla modifica</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tp-sheet__list-head">
+            <span>Elenco</span>
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="rem_show_done" onchange="app.renderRemindersSheet()">
+                <label class="form-check-label small" for="rem_show_done">Mostra completati</label>
+            </div>
+        </div>
+
+        <div id="remindersList" class="tp-sheet__list"></div>
     </div>
 </div>
 
@@ -487,7 +480,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/supabase-config.js"></script>
-<script src="assets/app.js?v=44"></script>
+<script src="assets/app.js?v=45"></script>
 <script>
   dayjs.locale('it');
 
@@ -539,14 +532,6 @@
     if (tog)  tog.checked = false;
     updateCalFilterBadge();
     if (typeof app !== 'undefined') app.renderCalendar();
-  }
-
-  // === HELPER: apre il form promemoria (usato da app.js in modalità modifica) ===
-  function openReminderForm() {
-    const el = document.getElementById('remFormCollapse');
-    if (el && !el.classList.contains('show')) {
-      bootstrap.Collapse.getOrCreateInstance(el).show();
-    }
   }
 
   if ('serviceWorker' in navigator) {

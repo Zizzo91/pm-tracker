@@ -8,7 +8,7 @@ Progressive Web App per la gestione progetti e timeline di sviluppo. Include vis
 ## Struttura
 ```
 pm-tracker-main 4/
-├── index.html                        — UI Bootstrap 5, tabs (lista, Gantt, Promemoria), login PIN
+├── index.html                        — UI Bootstrap 5, tabs (lista, Gantt, Calendario rilasci) + offcanvas Promemoria, login PIN
 ├── manifest.json                     — PWA manifest
 ├── service-worker.js                 — Service Worker (precache relativo, network-first per HTML, network-only per Supabase/GitHub)
 ├── redirect.html                     — Pagina redirect
@@ -29,7 +29,7 @@ pm-tracker-main 4/
 
 ## Modello dati
 - `pmtracker.state` — **una riga** (`id = 'main'`) con colonna `data jsonb` contenente l'intero array dei progetti (stessa forma del vecchio `data/projects.json`):
-  - progetti + un record meta (`id = '__pm_tracker_meta__'`) con promemoria manuali ed eventPrefs.
+  - progetti + un record meta (`id = '__pm_tracker_meta__'`) con promemoria manuali (`{ id, date, title, note, projectId?, done, doneAt }`) ed `eventPrefs`.
   - `updated_at` viene aggiornato da trigger; l'app lo usa per il controllo di conflitto (update condizionato).
 - `pmtracker.v_progetti` — **vista in sola lettura**, un progetto per riga con colonne tipizzate (nome, date, fornitori come array, stima ggu, costo, hidden, raw). La colonna `owners` resta esposta per compatibilità ma l'app la ignora.
 
@@ -39,14 +39,18 @@ pm-tracker-main 4/
 - `service_role` e password DB **non** stanno nel repo.
 
 ## Funzionalità
-- 3 tab: Elenco Progetti, Gantt Sviluppo, **Promemoria**
-- Tab Promemoria con due viste interne (segmented control, scelta persistita in `localStorage['pm-cal-view']`):
-  - **Promemoria** (default) — elenco promemoria in pagina, raggruppato in Scaduti / Oggi / In arrivo / Completati, con form inline e azioni (fatto, modifica, elimina)
-  - **Calendario rilasci** — griglia delle milestone, filtro milestone e toggle "Mostra milestone nascoste"
+- 3 tab: Elenco Progetti, Gantt Sviluppo, **Calendario rilasci**
+- **Promemoria in offcanvas**: pannello laterale aperto dalla campanella in top bar (`app.openReminders()`):
+  - form con data, titolo, **progetto collegato** (opzionale) e nota;
+  - elenco raggruppato in Scaduti / Oggi / In arrivo / Completati, con azioni (fatto, modifica, elimina) e toggle "Mostra completati";
+  - `editReminder(id)` apre il drawer in modalità modifica (banner + "Aggiorna promemoria");
+  - il chip del progetto sulla riga chiama `app.focusProject(id)`: chiude il drawer, filtra l'elenco sul progetto e ne evidenzia la riga;
+  - retrocompatibilità: promemoria senza `projectId` restano validi e non mostrano il chip.
+- Calendario rilasci: griglia delle milestone, filtro milestone e toggle "Mostra milestone nascoste"
 - Milestone: pianificazione, IA, dev start/end, UAT, BS, test, prod + milestone personalizzate
 - Dati economici: stima fornitore (gg/u), RC fornitore, costo calcolato
 - Link Jira (fino a 10)
-- Promemoria manuali con completamento (badge conteggio nella tab e nello switch)
+- Promemoria manuali con completamento e badge conteggio sul pulsante campanella in top bar
 - Tema chiaro/scuro: toggle in top bar, persistito in `localStorage['pm-theme']`, default da `prefers-color-scheme`
 - **Barra filtri globale** sopra le tab (`.tp-filterbar`): `Fornitore`, `Cerca progetto`, `Mostra archiviati`, `Reset filtri`. Filtra in contemporanea Elenco, Gantt e Calendario via `app._globalFilters()` / `app._matchesGlobalFilters()`.
 - Filtri specifici per vista: Test/Prod (Gantt), Milestone e milestone nascoste (Calendario), ordinamento per tab.

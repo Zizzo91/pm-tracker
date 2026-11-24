@@ -137,6 +137,8 @@ const app = {
             this.editorModal   = new bootstrap.Modal(document.getElementById('editorModal'));
             this.settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
             this.loginModal    = new bootstrap.Modal(document.getElementById('loginModal'));
+            const remEl = document.getElementById('remindersOffcanvas');
+            this.remindersOffcanvas = remEl ? new bootstrap.Offcanvas(remEl) : null;
 
             ['p_stimaGgu', 'p_rcFornitore'].forEach(id => {
                 const el = document.getElementById(id);
@@ -145,7 +147,6 @@ const app = {
 
             this.initExternalLinks();
             this._initTheme();
-            this._restoreCalendarSubView();
 
             const savedCfg = localStorage.getItem('pm_tracker_config');
             if (savedCfg) {
@@ -293,50 +294,27 @@ const app = {
     },
 
     scrollToToday: function() {
-        this.setCalendarSubView('calendar');
-        const todayKey = dayjs().format('YYYY-MM');
-        const monthCard = document.querySelector(`[data-month="${todayKey}"]`);
-        if (monthCard) {
-            monthCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const scroll = () => {
+            const todayKey = dayjs().format('YYYY-MM');
+            const monthCard = document.querySelector(`[data-month="${todayKey}"]`);
+            if (monthCard) {
+                monthCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                this.showAlert('Nessun evento nel mese corrente.', 'info', 2500);
+            }
+        };
+        const tabBtn = document.getElementById('calendar-tab');
+        if (tabBtn && !tabBtn.classList.contains('active')) {
+            bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+            setTimeout(scroll, 260);   // attende la transizione del tab
         } else {
-            this.showAlert('Nessun evento nel mese corrente.', 'info', 2500);
+            scroll();
         }
     },
 
-    // ─── SEZIONE PROMEMORIA / CALENDARIO ─────────────────────────────────────
-    // Due viste interne nello stesso tab: i promemoria personali non si
-    // mescolano più con le milestone del calendario rilasci.
-
-    setCalendarSubView: function(view, opts) {
-        const options = opts || {};
-        const target = view === 'calendar' ? 'calendar' : 'reminders';
-        const remPanel = document.getElementById('calSubReminders');
-        const calPanel = document.getElementById('calSubCalendar');
-        if (!remPanel || !calPanel) return;
-
-        remPanel.hidden = target !== 'reminders';
-        calPanel.hidden = target !== 'calendar';
-
-        document.querySelectorAll('.cal-switch__btn').forEach(btn => {
-            const active = btn.getAttribute('data-calview') === target;
-            btn.classList.toggle('is-active', active);
-            btn.setAttribute('aria-selected', active ? 'true' : 'false');
-        });
-
-        if (!options.silent) {
-            try { localStorage.setItem('pm-cal-view', target); } catch (e) {}
-        }
-        if (target === 'reminders' && !options.skipRender) this.renderRemindersSheet();
-    },
-
-    _restoreCalendarSubView: function() {
-        let saved = 'reminders';
-        try {
-            const v = localStorage.getItem('pm-cal-view');
-            if (v === 'calendar' || v === 'reminders') saved = v;
-        } catch (e) {}
-        this.setCalendarSubView(saved, { silent: true, skipRender: true });
-    },
+    // ─── SEZIONE PROMEMORIA (offcanvas) / CALENDARIO ─────────────────────────
+    // I promemoria personali vivono in un pannello laterale separato dal
+    // calendario rilasci: nessuna commistione con le milestone.
 
     // ─── STICKY HIGHLIGHTS OBSERVER ──────────────────────────────────────────
 
@@ -881,18 +859,28 @@ const app = {
         if (editBanner) editBanner.style.display = isEditing ? 'flex' : 'none';
     },
 
-    // Porta l'utente sulla vista Promemoria (sostituisce il vecchio sheet laterale).
+    // Apre l'offcanvas dei promemoria (pannello laterale, indipendente dal tab).
     openReminders: function() {
-        const tabBtn = document.getElementById('calendar-tab');
-        if (tabBtn && !tabBtn.classList.contains('active')) {
-            bootstrap.Tab.getOrCreateInstance(tabBtn).show();
-        }
-        this.setCalendarSubView('reminders');
+        this._populateReminderProjects();
         this.renderRemindersSheet();
-        if (!this._editingReminderId) {
-            const dateEl = document.getElementById('rem_date');
-            if (dateEl) dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (this.remindersOffcanvas) {
+            this.remindersOffcanvas.show();
         }
+    },
+
+    // Popola la tendina "Progetto collegato" con i progetti correnti.
+    _populateReminderProjects: function() {
+        const sel = document.getElementById('rem_project');
+        if (!sel) return;
+        const current = this._editingReminderId
+            ? sel.value
+            : '';
+        const projects = this.getProjectsOnly().slice().sort((a, b) =>
+            (a.nome || '').localeCompare(b.nome || '', 'it', { sensitivity: 'base' }));
+        sel.innerHTML = '<option value="">Nessun progetto</option>' + projects.map(p =>
+            `<option value="${this._escapeAttr(p.id)}">${this._escapeHtml(p.nome || 'Senza nome')}${p.hidden ? ' · archiviato' : ''}</option>`
+        ).join('');
+        if (current) sel.value = current;
     },
 
     _updateReminderBadge: function() {
@@ -902,7 +890,7 @@ const app = {
         const todayStr = dayjs().format('YYYY-MM-DD');
         const overdue = list.filter(r => r && !r.done && r.date && r.date < todayStr).length;
 
-        ['remindersBadge', 'remindersNavBadge'].forEach(id => {
+        ['remindersTopBadge'].forEach(id => {
             const badge = document.getElementById(id);
             if (!badge) return;
             badge.textContent = String(pending);
@@ -971,6 +959,12 @@ const app = {
         const cls = r.done ? 'is-done' : isOverdue ? 'is-overdue' : isToday ? 'is-today' : '';
         const dateLabel = dayjs(r.date).isValid() ? dayjs(r.date).format('DD MMM YYYY') : r.date;
         const doneAt = (r.done && r.doneAt) ? `<span class="tp-rem__done">Completato il ${this._formatDoneAt(r.doneAt)}</span>` : '';
+        const project = r.projectId
+            ? this.getProjectsOnly().find(p => p.id === r.projectId)
+            : null;
+        const projectHtml = project
+            ? `<button class="tp-rem__project" type="button" onclick="app.focusProject('${this._escapeAttr(project.id)}')" title="Vai al progetto nel Gantt e nell'elenco">${this._icon('briefcase')}<span class="tp-rem__project-txt">${this._escapeHtml(project.nome || 'Senza nome')}${project.hidden ? ' · archiviato' : ''}</span></button>`
+            : '';
         return `
         <div class="tp-rem ${cls}">
             <div class="tp-rem__main">
@@ -978,6 +972,7 @@ const app = {
                     <span class="tp-rem__date">${this._icon('calendar')}${dateLabel}</span>
                     ${isOverdue ? '<span class="tp-rem__tag">Scaduto</span>' : ''}
                     ${isToday ? '<span class="tp-rem__tag tp-rem__tag--today">Oggi</span>' : ''}
+                    ${projectHtml}
                 </div>
                 <div class="tp-rem__title">${(r.title || '').replace(/</g, '&lt;')}</div>
                 ${r.note ? `<div class="tp-rem__note">${(r.note || '').replace(/</g, '&lt;')}</div>` : ''}
@@ -997,6 +992,7 @@ const app = {
 
     clearReminderInputs: function() {
         ['rem_date', 'rem_title', 'rem_note'].forEach(id => this._setVal(id, ''));
+        this._setVal('rem_project', '');
         this._editingReminderId = null;
         this._updateReminderFormUI();
     },
@@ -1005,15 +1001,16 @@ const app = {
         const meta = this.getMeta();
         const r = (meta.manualReminders || []).find(x => x.id === id);
         if (!r) return;
-        this.openReminders();
+        this._editingReminderId = id;
+        this._populateReminderProjects();
         this._setVal('rem_date',  r.date  || '');
         this._setVal('rem_title', r.title || '');
         this._setVal('rem_note',  r.note  || '');
-        this._editingReminderId = id;
+        this._setVal('rem_project', r.projectId || '');
+        if (this.remindersOffcanvas) this.remindersOffcanvas.show();
+        this.renderRemindersSheet();
         this._updateReminderFormUI();
-        const dateEl  = document.getElementById('rem_date');
         const titleEl = document.getElementById('rem_title');
-        if (dateEl)  dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         if (titleEl) titleEl.focus();
     },
 
@@ -1021,6 +1018,7 @@ const app = {
         const date  = this._getVal('rem_date');
         const title = this._getVal('rem_title').trim();
         const note  = this._getVal('rem_note').trim();
+        const projectId = this._getVal('rem_project') || null;
         if (!date || !title) {
             this.showAlert('Inserisci almeno Data e Titolo per il promemoria.', 'warning', 3000);
             return;
@@ -1028,14 +1026,15 @@ const app = {
         const meta = this.getMeta();
         if (this._editingReminderId) {
             const r = meta.manualReminders.find(x => x.id === this._editingReminderId);
-            if (r) Object.assign(r, { date, title, note, updatedAt: new Date().toISOString() });
+            if (r) Object.assign(r, { date, title, note, projectId, updatedAt: new Date().toISOString() });
             this._editingReminderId = null;
         } else {
-            meta.manualReminders.push({ id: Date.now().toString(), date, title, note, done: false, createdAt: new Date().toISOString(), doneAt: null });
+            meta.manualReminders.push({ id: Date.now().toString(), date, title, note, projectId, done: false, createdAt: new Date().toISOString(), doneAt: null });
         }
         meta.manualReminders.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
         this.clearReminderInputs();
         await this.saveData();
+        this._populateReminderProjects();
     },
 
     toggleReminderDone: async function(id) {
@@ -1053,6 +1052,33 @@ const app = {
         const meta = this.getMeta();
         meta.manualReminders = (meta.manualReminders || []).filter(x => x.id !== id);
         await this.saveData();
+        this._populateReminderProjects();
+    },
+
+    // Dal promemoria al progetto: chiude il pannello, filtra l'elenco sul
+    // progetto collegato e lo evidenzia (usato dal chip "progetto").
+    focusProject: function(id) {
+        const p = this.getProjectsOnly().find(x => x.id === id);
+        if (!p) return;
+        if (this.remindersOffcanvas) this.remindersOffcanvas.hide();
+
+        this._setVal('globalFornitoreFilter', '');
+        this._setVal('globalSearchInput', p.nome || '');
+        const hiddenEl = document.getElementById('globalShowHidden');
+        if (hiddenEl && this.isHiddenForUI(p)) hiddenEl.checked = true;
+
+        const tabBtn = document.getElementById('list-tab');
+        if (tabBtn && !tabBtn.classList.contains('active')) {
+            bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+        }
+        this.renderAll();
+        setTimeout(() => {
+            const row = document.querySelector(`#projectsTableBody tr[data-id="${this._escapeAttr(id)}"]`);
+            if (!row) return;
+            row.classList.add('tp-row-flash');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => row.classList.remove('tp-row-flash'), 2000);
+        }, 220);
     },
 
     _syncReminderFormState: function() { this._updateReminderFormUI(); },
@@ -1358,6 +1384,7 @@ const app = {
             this.renderTable();
             this.renderGantt();
             this.renderCalendar();
+            this._updateReminderBadge();
         } catch (err) {
             console.error('Errore in renderAll:', err);
             this.showAlert(`Errore visualizzazione: ${err.message}`, 'danger');
@@ -1407,7 +1434,7 @@ const app = {
                           : '';
 
         return `
-        <tr ${rowCls}>
+        <tr ${rowCls} data-id="${this._escapeAttr(p.id)}">
             <td>
                 <strong>${p.nome || 'Senza nome'}</strong> ${statusBadge}
                 ${jiraHtml  ? `<div class="mt-1">${jiraHtml}</div>` : ''}

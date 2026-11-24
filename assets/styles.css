@@ -744,6 +744,15 @@ a:hover { color: var(--tp-blu-autostrada); }
 /* Righe archiviate / rilasciate */
 .table-secondary, .table-warning { --bs-table-bg: transparent; }
 
+/* Evidenziazione temporanea della riga raggiunta da un promemoria */
+@keyframes tp-row-flash {
+  0%   { background-color: color-mix(in srgb, var(--tp-giallo) 60%, transparent); }
+  100% { background-color: transparent; }
+}
+#projectsTableBody tr.tp-row-flash > td {
+  animation: tp-row-flash 2s var(--tp-ease);
+}
+
 /* ════════════════════════════════════════════════════════════════════════
    BADGE / CHIP
    ════════════════════════════════════════════════════════════════════════ */
@@ -1866,79 +1875,57 @@ html[data-theme="dark"] .tp-theme-btn .tp-theme-btn__moon { display: none !impor
 html[data-theme="dark"] .tp-theme-btn .tp-theme-btn__sun { display: inline-flex !important; }
 .tp-theme-btn span { align-items: center; }
 
-/* Contatore promemoria sul bottone */
-.tp-count-badge {
+/* Bottone promemoria + contatore nella top bar */
+.tp-topbar__rem { position: relative; }
+
+.tp-topbar__badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  margin-left: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
   border-radius: 999px;
-  background: var(--tp-blu-periferia);
-  color: #fff;
-  font-size: .68rem;
+  background: var(--tp-giallo);
+  color: var(--tp-blu-periferia);
+  font-size: .6rem;
   font-weight: 700;
   line-height: 1;
+  box-shadow: 0 0 0 2px rgba(0, 39, 82, .9);
 }
-.tp-count-badge--alert { background: #c8102e; }
+.tp-topbar__badge.tp-count-badge--alert { background: #c8102e; color: #fff; }
 
 /* ════════════════════════════════════════════════════════════════════════
-   SEZIONE PROMEMORIA (switch interno Promemoria / Calendario rilasci)
+   OFF-CANVAS PROMEMORIA
    ════════════════════════════════════════════════════════════════════════ */
 
-.cal-switch {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 18px;
-  border: 1px solid var(--tp-border);
-  border-radius: var(--tp-r-pill);
+.rem-drawer {
+  width: min(440px, 100vw);
+  border-left: 1px solid var(--tp-border);
   background: var(--tp-surface);
-  box-shadow: var(--tp-elev-2);
+  color: var(--tp-testo);
 }
 
-.cal-switch__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 16px;
-  border: 0;
-  border-radius: var(--tp-r-pill);
-  background: transparent;
-  color: var(--tp-testo-subtle);
-  font-family: var(--tp-font-ui);
-  font-size: .82rem;
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color 160ms var(--tp-ease), color 160ms var(--tp-ease), box-shadow 160ms var(--tp-ease);
+.rem-drawer .offcanvas-header.rem-panel__head {
+  padding: 16px 18px;
+  background: linear-gradient(180deg, var(--tp-surface) 0%, var(--tp-surface-alt) 100%);
 }
-.cal-switch__btn svg { width: 16px; height: 16px; flex: 0 0 auto; }
-.cal-switch__btn:hover { background: var(--tp-blu-ghiaccio); color: var(--tp-blu-autostrada); }
-.cal-switch__btn.is-active {
-  background: var(--tp-blu-casello);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 113, 235, .28);
-}
-.cal-switch__btn.is-active:hover { background: var(--tp-blu-casello); color: #fff; }
-.cal-switch__btn .tp-count-badge { background: var(--tp-brand-secondario); color: var(--tp-blu-periferia); margin-left: 2px; }
-.cal-switch__btn.is-active .tp-count-badge { background: #fff; color: var(--tp-blu-casello); }
 
-.cal-subview[hidden] { display: none !important; }
+.rem-drawer .rem-panel__stats { justify-content: flex-start; }
 
-/* Pannello promemoria */
-.rem-panel {
-  max-width: 1120px;
+.rem-drawer .rem-panel__body { padding: 16px 18px 28px; }
+
+.rem-drawer .rem-form {
+  padding: 12px 14px;
   border: 1px solid var(--tp-border);
-  border-radius: var(--tp-r-xl);
-  background: var(--tp-surface);
-  box-shadow: var(--tp-elev-4);
-  overflow: hidden;
+  border-radius: var(--tp-r-lg);
+  background: var(--tp-surface-alt);
 }
 
+/* Pannello promemoria (offcanvas) */
 .rem-panel__head {
   display: flex;
   align-items: center;
@@ -1987,28 +1974,8 @@ html[data-theme="dark"] .tp-theme-btn .tp-theme-btn__sun { display: inline-flex 
 
 .rem-panel__body .tp-sheet__list { gap: 16px; }
 
-/* Badge nella tab principale */
-.tp-tabs__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  margin-left: 6px;
-  border-radius: 999px;
-  background: var(--tp-brand-secondario);
-  color: var(--tp-blu-periferia);
-  font-size: .66rem;
-  font-weight: 700;
-  line-height: 1;
-}
-.tp-tabs__badge.tp-count-badge--alert { background: #c8102e; color: #fff; }
-.tp-tabs .nav-link.active .tp-tabs__badge { background: #fff; color: var(--tp-blu-casello); }
-.tp-tabs .nav-link.active .tp-tabs__badge.tp-count-badge--alert { background: #ffdbe1; color: #8a0015; }
-
 /* ════════════════════════════════════════════════════════════════════════
-   COMPONENTI PROMEMORIA (pannello inline)
+   COMPONENTI PROMEMORIA (offcanvas)
    ════════════════════════════════════════════════════════════════════════ */
 
 .tp-sheet__icon {
@@ -2162,6 +2129,38 @@ html[data-theme="dark"] .tp-theme-btn .tp-theme-btn__sun { display: inline-flex 
   letter-spacing: .04em;
 }
 .tp-rem__tag--today { background: var(--tp-brand-secondario); color: #5a4700; }
+
+.tp-rem__project {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 1px 8px;
+  border: 1px solid var(--tp-border);
+  border-radius: 999px;
+  background: var(--tp-surface-alt);
+  color: var(--tp-blu-autostrada);
+  font-family: var(--tp-font-ui);
+  font-size: .66rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background-color 140ms var(--tp-ease), border-color 140ms var(--tp-ease), color 140ms var(--tp-ease);
+}
+.tp-rem__project-txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.tp-rem__project svg { width: 11px; height: 11px; flex: 0 0 auto; }
+.tp-rem__project:hover {
+  background: var(--tp-blu-ghiaccio);
+  border-color: var(--tp-blu-casello);
+  color: var(--tp-blu-casello);
+}
 
 .tp-rem__title {
   font-size: .88rem;
@@ -2387,6 +2386,8 @@ html[data-theme="dark"] .tp-rem:hover { box-shadow: var(--tp-elev-8); }
 html[data-theme="dark"] .tp-rem__btn:hover { background: var(--tp-surface-alt); }
 html[data-theme="dark"] .tp-rem__tag { background: #3a1b23; color: #ff9aa5; }
 html[data-theme="dark"] .tp-rem__tag--today { background: #4a3d0c; color: #ffdf7a; }
+html[data-theme="dark"] .tp-rem__project { background: var(--tp-surface-alt); border-color: var(--tp-border); color: #9cc4ff; }
+html[data-theme="dark"] .tp-rem__project:hover { background: #10263f; border-color: var(--tp-blu-casello); color: #cfe4ff; }
 html[data-theme="dark"] .tp-rem__done { color: #6ee7a0; }
 html[data-theme="dark"] .tp-rem-group__title--alert { color: #ff8a97; }
 html[data-theme="dark"] .tp-rem-group__title--today { color: #ffd66b; }
@@ -2434,22 +2435,14 @@ html[data-theme="dark"] .modal-backdrop.show { opacity: .62; }
 /* ─── Sezione Promemoria: responsive e tema scuro ──────────────────────── */
 
 @media (max-width: 767.98px) {
-  .cal-switch { display: flex; width: 100%; }
-  .cal-switch__btn { flex: 1 1 auto; justify-content: center; padding: 8px 10px; }
+  .rem-drawer { width: 100vw; }
   .rem-panel__head { flex-wrap: wrap; padding: 16px; }
   .rem-panel__stats { width: 100%; justify-content: flex-start; }
   .rem-panel__body { padding: 14px 16px 20px; }
   .rem-form { padding: 12px; }
 }
 
-html[data-theme="dark"] .cal-switch {
-  background: var(--tp-surface);
-  border-color: var(--tp-border);
-}
-html[data-theme="dark"] .cal-switch__btn:hover { background: var(--tp-surface-alt); color: var(--tp-testo); }
-html[data-theme="dark"] .cal-switch__btn.is-active,
-html[data-theme="dark"] .cal-switch__btn.is-active:hover { background: var(--tp-blu-casello); color: #fff; }
-html[data-theme="dark"] .rem-panel { background: var(--tp-surface); border-color: var(--tp-border); }
+html[data-theme="dark"] .rem-drawer { background: var(--tp-surface); border-left-color: var(--tp-border); }
 html[data-theme="dark"] .rem-panel__head {
   background: linear-gradient(180deg, #16202c 0%, #131d2a 100%);
   border-bottom-color: var(--tp-border);
