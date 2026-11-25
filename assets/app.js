@@ -375,6 +375,11 @@ const app = {
         return { ...p,
             owners:           this.csvToArray(p.owners || p.owner),
             fornitori:        this.csvToArray(p.fornitori),
+            jiraLinks:        this._normalizeJiraLinks(
+                                  Array.isArray(p.jiraLinks) && p.jiraLinks.length
+                                      ? p.jiraLinks
+                                      : (p.jira ? [p.jira] : [])
+                              ),
             customMilestones: Array.isArray(p.customMilestones) ? p.customMilestones : [],
             progress:         p.progress != null ? p.progress : null,
             hidden:           !!p.hidden
@@ -475,33 +480,181 @@ const app = {
             .filter(m => m.label && m.date);
     },
 
-    // ─── JIRA LINKS MODAL ───────────────────────────────────────────────────
+    // ─── JIRA LINKS MODAL (gerarchia epica → storie) ─────────────────────────
+
+    // Forma canonica:
+    //   jiraLinks: [{ url, type: 'epic'|'story'|'link', parent: url|null }]
+    // I record storici avevano un array di sole URL (o il campo singolo `jira`):
+    // vengono convertiti al volo in { url, type:'link' } senza perdere nulla.
+    _normalizeJiraLinks: function(links) {
+        if (!Array.isArray(links)) return [];
+        return links.map(item => {
+            if (typeof item === 'string') {
+                const url = item.trim();
+                return url ? { url, type: 'link', parent: null } : null;
+            }
+            if (item && typeof item === 'object') {
+                const url = (item.url || '').toString().trim();
+                if (!url) return null;
+                const type = ['epic', 'story', 'link'].includes(item.type) ? item.type : 'link';
+                return { url, type, parent: type === 'story' && item.parent ? String(item.parent) : null };
+            }
+            return null;
+        }).filter(Boolean);
+    },
+
+    jiraLinksOf: function(p) {
+        if (!p) return [];
+        const list = this._normalizeJiraLinks(p.jiraLinks || []);
+        if (list.length) return list;
+        return p.jira ? this._normalizeJiraLinks([p.jira]) : [];
+    },
 
     renderJiraFields: function(links) {
         const container = document.getElementById('jiraLinksContainer');
+        if (!container) return;
         container.innerHTML = '';
-        (links && links.length > 0 ? links : ['']).forEach((url, i) => this._appendDynamicField('jira', url, null, i));
+        const items = this._normalizeJiraLinks(links);
+        (items.length ? items : [{ url: '', type: 'link', parent: null }])
+            .forEach((item, i) => this._appendJiraRow(item, i));
+        this._refreshJiraParents();
         this._refreshDynamicBtn('jira');
     },
 
+    _appendJiraRow: function(item, index) {
+        const container = document.getElementById('jiraLinksContainer');
+        if (!container) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'jira-row';
+        wrap.dataset.jiraIndex = index;
+        wrap.dataset.prevUrl = item.url || '';
+        wrap.innerHTML = `
+            <select class="form-select form-select-sm jira-type-select" onchange="app.onJiraTypeChange(this)" title="Tipo di riferimento Jira" aria-label="Tipo di riferimento Jira">
+                <option value="link">Link</option>
+                <option value="epic">Epica</option>
+                <option value="story">Storia</option>
+            </select>
+            <input type="url" class="form-control form-control-sm jira-link-input" placeholder="https://…" value="${this._escapeAttr(item.url || '')}" oninput="app.onJiraUrlInput(this)">
+            <select class="form-select form-select-sm jira-parent-select" onchange="app.onJiraParentChange(this)" title="Epica di riferimento" aria-label="Epica di riferimento"></select>
+            <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0" onclick="app.removeJiraField(this)" title="Rimuovi">&times;</button>`;
+        wrap.querySelector('.jira-type-select').value = item.type || 'link';
+        wrap.querySelector('.jira-parent-select').dataset.pending = item.parent || '';
+        container.appendChild(wrap);
+    },
+
     addJiraField: function() {
-        const count = document.getElementById('jiraLinksContainer').querySelectorAll('.jira-link-input').length;
+        const count = document.querySelectorAll('#jiraLinksContainer .jira-row').length;
         if (count >= this.MAX_JIRA_LINKS) return;
-        this._appendDynamicField('jira', '', null, count);
+        this._appendJiraRow({ url: '', type: 'link', parent: null }, count);
+        this._refreshJiraParents();
         this._refreshDynamicBtn('jira');
     },
 
     removeJiraField: function(btn) {
-        btn.closest('[data-jira-index]').remove();
+        const row = btn.closest('.jira-row');
+        if (row) row.remove();
+        this._refreshJiraParents();
         this._refreshDynamicBtn('jira');
     },
 
-    _getJiraLinksFromModal: function() {
-        return Array.from(document.querySelectorAll('.jira-link-input'))
-            .map(el => el.value.trim()).filter(Boolean);
+    onJiraTypeChange: function(sel) {
+        const row = sel.closest('.jira-row');
+        if (row) this._syncJiraRow(row);
+        this._refreshJiraParents();
     },
 
-    // ─── CAMPO DINAMICO UNIFICATO (Jira + Milestone) ─────────────────────────
+    // Se cambia l'URL di un'epica, le storie collegate la seguono.
+    onJiraUrlInput: function(input) {
+        const row = input.closest('.jira-row');
+        if (!row) return;
+        if (row.querySelector('.jira-type-select').value === 'epic') {
+            const prev = row.dataset.prevUrl || '';
+            const next = input.value.trim();
+            if (prev && prev !== next) {
+                document.querySelectorAll('#jiraLinksContainer .jira-row').forEach(r => {
+                    if (r.querySelector('.jira-type-select').value !== 'story') return;
+                    const ps = r.querySelector('.jira-parent-select');
+                    if (ps && ps.value === prev) ps.dataset.pending = next;
+                });
+            }
+            row.dataset.prevUrl = next;
+        }
+        this._refreshJiraParents();
+    },
+
+    onJiraParentChange: function() {},
+
+    _syncJiraRow: function(row) {
+        const type = row.querySelector('.jira-type-select').value;
+        const parentSel = row.querySelector('.jira-parent-select');
+        if (!parentSel) return;
+        const isStory = type === 'story';
+        if (!isStory) {
+            if (parentSel.value) parentSel.dataset.pending = parentSel.value;
+            parentSel.disabled = true;
+            parentSel.innerHTML = '<option value="">Solo per le storie</option>';
+            parentSel.value = '';
+        } else {
+            parentSel.disabled = false;
+        }
+    },
+
+    _refreshJiraParents: function() {
+        const rows = Array.from(document.querySelectorAll('#jiraLinksContainer .jira-row'));
+        const epics = rows
+            .filter(r => r.querySelector('.jira-type-select').value === 'epic')
+            .map(r => r.querySelector('.jira-link-input').value.trim())
+            .filter(Boolean);
+
+        rows.forEach(r => {
+            const type = r.querySelector('.jira-type-select').value;
+            const parentSel = r.querySelector('.jira-parent-select');
+            if (!parentSel) return;
+            this._syncJiraRow(r);
+            if (type !== 'story') return;
+
+            const pending  = parentSel.dataset.pending || '';
+            const current  = pending || parentSel.value || '';
+            const options  = ['<option value="">Scegli l\'epica…</option>']
+                .concat(epics.map(url =>
+                    `<option value="${this._escapeAttr(url)}">${this._escapeHtml(this.jiraLabel(url))}</option>`));
+            parentSel.innerHTML = options.join('');
+
+            if (current && epics.includes(current)) {
+                parentSel.value = current;
+            } else if (current) {
+                // L'epica non esiste più tra le righe: la manteniamo selezionata
+                // finché l'utente non la corregge (al salvataggio viene validata).
+                parentSel.insertAdjacentHTML('beforeend',
+                    `<option value="${this._escapeAttr(current)}">${this._escapeHtml(this.jiraLabel(current))}</option>`);
+                parentSel.value = current;
+            }
+            delete parentSel.dataset.pending;
+        });
+    },
+
+    _collectJiraItems: function() {
+        const rows = Array.from(document.querySelectorAll('#jiraLinksContainer .jira-row'));
+        const items = [];
+        rows.forEach(r => {
+            const url = r.querySelector('.jira-link-input').value.trim();
+            if (!url) return;
+            const type = r.querySelector('.jira-type-select').value;
+            const parent = type === 'story' ? (r.querySelector('.jira-parent-select').value || null) : null;
+            items.push({ url, type, parent });
+        });
+        const epicUrls = new Set(items.filter(i => i.type === 'epic').map(i => i.url));
+        items.forEach(i => {
+            if (i.type === 'story' && (!i.parent || !epicUrls.has(i.parent))) i.parent = null;
+        });
+        return items;
+    },
+
+    _getJiraLinksFromModal: function() {
+        return this._collectJiraItems();
+    },
+
+    // ─── MILESTONE PERSONALIZZATE ────────────────────────────────────────────
 
     _appendDynamicField: function(type, label, date, index) {
         const isMilestone = type === 'milestone';
@@ -509,20 +662,12 @@ const app = {
         const wrap = document.createElement('div');
         const safeLabel = (label || '').replace(/"/g, '&quot;');
 
-        if (isMilestone) {
-            wrap.className = 'd-flex align-items-center gap-2 mb-2 custom-milestone-row';
-            wrap.dataset.milestoneIndex = index;
-            wrap.innerHTML = `
-                <input type="text"  class="form-control form-control-sm custom-ms-label" placeholder="Nome (es: Creare Story)" value="${safeLabel}">
-                <input type="date"  class="form-control form-control-sm custom-ms-date" value="${date || ''}">
-                <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0" onclick="app.removeCustomMilestone(this)" title="Rimuovi">&times;</button>`;
-        } else {
-            wrap.className = 'd-flex align-items-center gap-2 mb-2';
-            wrap.dataset.jiraIndex = index;
-            wrap.innerHTML = `
-                <input type="url" class="form-control jira-link-input" placeholder="https://..." value="${safeLabel}">
-                <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0" onclick="app.removeJiraField(this)" title="Rimuovi">&times;</button>`;
-        }
+        wrap.className = 'd-flex align-items-center gap-2 mb-2 custom-milestone-row';
+        wrap.dataset.milestoneIndex = index;
+        wrap.innerHTML = `
+            <input type="text"  class="form-control form-control-sm custom-ms-label" placeholder="Nome (es: Creare Story)" value="${safeLabel}">
+            <input type="date"  class="form-control form-control-sm custom-ms-date" value="${date || ''}">
+            <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0" onclick="app.removeCustomMilestone(this)" title="Rimuovi">&times;</button>`;
         container.appendChild(wrap);
     },
 
@@ -532,7 +677,7 @@ const app = {
         const btn = isMilestone
             ? document.querySelector('button[onclick="app.addCustomMilestone()"]')
             : document.getElementById('addJiraBtn');
-        const selector = isMilestone ? '.custom-milestone-row' : '.jira-link-input';
+        const selector = isMilestone ? '.custom-milestone-row' : '.jira-row';
         const max      = isMilestone ? this.MAX_CUSTOM_MILESTONES : this.MAX_JIRA_LINKS;
         const count    = container ? container.querySelectorAll(selector).length : 0;
         const label    = isMilestone ? 'Aggiungi Milestone Personalizzata' : 'Aggiungi Link Jira';
@@ -553,11 +698,38 @@ const app = {
     },
 
     jiraLinksHtml: function(jiraLinks) {
-        if (!jiraLinks || jiraLinks.length === 0) return '';
-        return jiraLinks
-            .filter(u => u && u.trim())
-            .map(u => `<a href="${u}" target="_blank" rel="noopener" class="jira-chip" title="${u}">${this._icon('link')}<span>${this.jiraLabel(u)}</span></a>`)
-            .join('');
+        const items = this._normalizeJiraLinks(jiraLinks);
+        if (!items.length) return '';
+
+        const epicUrls = new Set(items.filter(i => i.type === 'epic').map(i => i.url));
+        const chip = (item, extraCls) => {
+            const cls = 'jira-chip' + (extraCls ? ' ' + extraCls : '');
+            const title = item.type === 'story' && item.parent
+                ? `Storia di ${this.jiraLabel(item.parent)}`
+                : item.url;
+            return `<a href="${this._escapeAttr(item.url)}" target="_blank" rel="noopener" class="${cls}" title="${this._escapeAttr(title)}">${this._icon('link')}<span>${this._escapeHtml(this.jiraLabel(item.url))}</span></a>`;
+        };
+
+        const parts = [];
+        items.filter(i => i.type === 'epic').forEach(epic => {
+            const stories = items.filter(i => i.type === 'story' && i.parent === epic.url);
+            parts.push(
+                `<div class="jira-tree__group">` +
+                    `<div class="jira-tree__epic">${chip(epic, 'jira-chip--epic')}` +
+                        (stories.length ? `<span class="jira-tree__count" title="${stories.length} storie collegate">${stories.length}</span>` : '') +
+                    `</div>` +
+                    (stories.length ? `<div class="jira-tree__children">${stories.map(s => chip(s, 'jira-chip--story')).join('')}</div>` : '') +
+                `</div>`
+            );
+        });
+
+        const loose = items.filter(i =>
+            i.type === 'link' || (i.type === 'story' && (!i.parent || !epicUrls.has(i.parent))));
+        if (loose.length) {
+            parts.push(`<div class="jira-tree__loose">${loose.map(i => chip(i, i.type === 'story' ? 'jira-chip--story' : '')).join('')}</div>`);
+        }
+
+        return `<div class="jira-tree">${parts.join('')}</div>`;
     },
 
     // ─── CALCOLO COSTO ───────────────────────────────────────────────────────
@@ -1116,6 +1288,14 @@ const app = {
         }
         document.getElementById('dateValidationMsg').innerText = '';
 
+        const jiraItems = this._getJiraLinksFromModal();
+        const orphanStory = jiraItems.find(i => i.type === 'story' && !i.parent);
+        if (orphanStory) {
+            document.getElementById('dateValidationMsg').innerText =
+                `ERRORE: la storia ${this.jiraLabel(orphanStory.url)} deve avere un'epica di riferimento.`;
+            return;
+        }
+
         const stimaGgu    = parseFloat(this._getVal('p_stimaGgu'));
         const rcFornitore = parseFloat(this._getVal('p_rcFornitore'));
         const progressRaw = parseInt(this._getVal('p_progress'), 10);
@@ -1137,7 +1317,7 @@ const app = {
             dataProd:          dates.prod,
             dataUAT:           dates.uat,
             dataBS:            dates.bs,
-            jiraLinks:         this._getJiraLinksFromModal(),
+            jiraLinks:         jiraItems,
             customMilestones:  this._getCustomMilestonesFromModal(),
             dataScadenzaStima: g('p_dataScadenzaStima'),
             dataConfigSistema: g('p_dataConfigSistema'),
@@ -1288,7 +1468,7 @@ const app = {
             };
             Object.entries(fields).forEach(([fid, val]) => this._setVal(fid, val));
             this.calcCosto();
-            const links = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+            const links = this.jiraLinksOf(p);
             this.renderJiraFields(links);
             this.renderCustomMilestoneFields(p.customMilestones || []);
         } else {
@@ -1425,7 +1605,7 @@ const app = {
             p.stimaCosto != null ? `<span class="badge bg-warning text-dark me-1">${this._icon('euro')} ${p.stimaCosto.toLocaleString('it-IT', {minimumFractionDigits:2,maximumFractionDigits:2})} &euro;</span>` : ''
         ].filter(Boolean);
 
-        const links    = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+        const links    = this.jiraLinksOf(p);
         const jiraHtml = this.jiraLinksHtml(links);
 
         const statusBadge = p.hidden   ? '<span class="badge bg-dark ms-1">' + this._icon('archive') + ' Archiviato</span>'
@@ -1538,7 +1718,7 @@ const app = {
         const badgesHtml = (p.fornitori || [])
             .map(f => this._badgeSpan('supplier', f, 'gantt-supplier-badge mb-1'))
             .join('');
-        const ganttJiraLinks = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+        const ganttJiraLinks = this.jiraLinksOf(p);
         const ganttJiraHtml  = this.jiraLinksHtml(ganttJiraLinks);
         const isPast    = p.dataProd && new Date(p.dataProd) <= today;
         const autoStale = this.isAutoStale(p);
@@ -1774,7 +1954,7 @@ const app = {
                 .forEach(p => {
                     const isHidden  = this.isHiddenForUI(p);
                     const autoStale = this.isAutoStale(p);
-                    const pJiraLinks = (p.jiraLinks && p.jiraLinks.length > 0) ? p.jiraLinks : (p.jira ? [p.jira] : []);
+                    const pJiraLinks = this.jiraLinksOf(p);
 
                     milestonesToUse.forEach(m => {
                         const v = p[m.key];

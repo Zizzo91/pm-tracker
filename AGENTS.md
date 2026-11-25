@@ -32,6 +32,7 @@ pm-tracker-main 4/
   - progetti + un record meta (`id = '__pm_tracker_meta__'`) con promemoria manuali (`{ id, date, title, note, projectId?, done, doneAt }`) ed `eventPrefs`.
   - `updated_at` viene aggiornato da trigger; l'app lo usa per il controllo di conflitto (update condizionato).
 - `pmtracker.v_progetti` — **vista in sola lettura**, un progetto per riga con colonne tipizzate (nome, date, fornitori come array, stima ggu, costo, hidden, raw). La colonna `owners` resta esposta per compatibilità ma l'app la ignora.
+- `jiraLinks` — array di riferimenti Jira nella forma `{ url, type: 'epic'|'story'|'link', parent }`, dove `parent` è l'URL dell'epica per le storie. I record storici con array di sole URL (o campo singolo `jira`) vengono normalizzati al volo in `{ type: 'link' }` da `app._normalizeJiraLinks()` / `app.jiraLinksOf()`: nessuna migrazione manuale.
 
 ## Sicurezza
 - RLS attiva su `pmtracker.state`: solo ruolo `authenticated` (nessun accesso con la sola anon key).
@@ -49,7 +50,7 @@ pm-tracker-main 4/
 - Calendario rilasci: griglia delle milestone, filtro milestone e toggle "Mostra milestone nascoste"
 - Milestone: pianificazione, IA, dev start/end, UAT, BS, test, prod + milestone personalizzate
 - Dati economici: stima fornitore (gg/u), RC fornitore, costo calcolato
-- Link Jira (fino a 10)
+- **Jira gerarchico** (max 10 riferimenti per progetto): ogni riga nell'editor ha tipo `Link` / `Epica` / `Storia`; le storie scelgono l'epica di riferimento e ne seguono l'URL se questo cambia. In tabella, Gantt e calendario i chip sono raggruppati (epica piena + conteggio storie, storie dashed con `↳`, link sciolti). Una storia senza epica valida blocca il salvataggio con messaggio esplicito.
 - Promemoria manuali con completamento e badge conteggio sul pulsante campanella in top bar
 - Tema chiaro/scuro: toggle in top bar, persistito in `localStorage['pm-theme']`, default da `prefers-color-scheme`
 - **Barra filtri globale** sopra le tab (`.tp-filterbar`): `Fornitore`, `Cerca progetto`, `Mostra archiviati`, `Reset filtri`. Filtra in contemporanea Elenco, Gantt e Calendario via `app._globalFilters()` / `app._matchesGlobalFilters()`.
