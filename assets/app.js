@@ -162,6 +162,7 @@ const app = {
                 try { this.config = { ...this.config, ...JSON.parse(savedCfg) }; } catch (e) { console.warn('config non valida, ignorata'); }
             }
 
+            this.initNotifications();
             this.initSupabase();
         } catch (err) {
             console.error(err);
@@ -237,6 +238,7 @@ const app = {
         this.serverUpdatedAt = null;
         this.sha = null;
         this.userEmail = '';
+        this._clearNotificationTimers();
         if (this.settingsModal) this.settingsModal.hide();
         const tbody = document.getElementById('projectsTableBody'); if (tbody) tbody.innerHTML = '';
         const gantt = document.getElementById('gantt-chart');        if (gantt) gantt.innerHTML = '';
@@ -760,6 +762,11 @@ const app = {
         const cb = document.getElementById('cfg_githubBackup');
         if (cb) cb.checked = !!this.config.enabled;
         this.toggleGithubBackupSection();
+        const ncb = document.getElementById('cfg_notifications');
+        if (ncb) ncb.checked = !!this.config.notifications;
+        const nsel = document.getElementById('cfg_notifyDays');
+        if (nsel) nsel.value = String(this._notifyLeadDays());
+        this.toggleNotificationSection(false); // non chiedere il permesso solo aprendo le impostazioni
         const info = document.getElementById('settingsAccountInfo');
         if (info) info.textContent = this.userEmail ? `Connesso come ${this.userEmail}` : '';
         this.settingsModal.show();
@@ -771,17 +778,27 @@ const app = {
         if (sec) sec.style.display = on ? 'block' : 'none';
     },
 
-    saveSettings: function() {
+    saveSettings: async function() {
         this.config = {
             ...this.config,
             owner:   (this._getVal('cfg_owner') || '').trim(),
             repo:    (this._getVal('cfg_repo')  || '').trim(),
             token:   (this._getVal('cfg_token') || '').trim(),
             path:    (this._getVal('cfg_path')  || '').trim() || 'data/projects.json',
-            enabled: this._getChecked('cfg_githubBackup')
+            enabled: this._getChecked('cfg_githubBackup'),
+            notifications: this._getChecked('cfg_notifications'),
+            notifyDays:    Math.max(0, Math.min(Number(this._getVal('cfg_notifyDays')) || 0, 7))
         };
+        if (this.config.notifications) {
+            const res = await this.requestNotificationPermission();
+            this.config.notifications = res === 'granted';
+            const ncb = document.getElementById('cfg_notifications');
+            if (ncb) ncb.checked = this.config.notifications;
+        }
         localStorage.setItem('pm_tracker_config', JSON.stringify(this.config));
         this.settingsModal.hide();
+        this._updateNotificationStatus();
+        this._scheduleNotifications();
         this.showAlert('Impostazioni salvate.', 'success', 2000);
     },
 
@@ -1574,6 +1591,7 @@ const app = {
             this.renderGantt();
             this.renderCalendar();
             this._updateReminderBadge();
+            this._scheduleNotifications();
         } catch (err) {
             console.error('Errore in renderAll:', err);
             this.showAlert(`Errore visualizzazione: ${err.message}`, 'danger');
@@ -1967,14 +1985,20 @@ const app = {
 
     // Milestone dei progetti (con gli stessi filtri del calendario) + promemoria
     // aperti, limitati a oggi + 13 giorni. Nessun evento con data passata.
-    _agendaEvents: function() {
+    // `days` e `respectFilters` permettono di riutilizzare la stessa sorgente
+    // anche per le notifiche, senza legarle ai filtri temporanei della UI.
+    _agendaEvents: function(opts = {}) {
+        const days = Math.max(1, Math.min(Number(opts.days) || 14, 60));
+        const respectFilters = opts.respectFilters !== false;
         const start = dayjs(this._today).startOf('day');
-        const end   = start.add(13, 'day');
+        const end   = start.add(days - 1, 'day');
         const inRange = d => {
             const x = dayjs(d).startOf('day');
             return x.isValid() && !x.isBefore(start) && !x.isAfter(end);
         };
-        const globals = this._globalFilters();
+        const globals = respectFilters
+            ? this._globalFilters()
+            : { search: '', fornitore: '', showHidden: false };
         const showHiddenPrefs = this._getChecked('calShowHiddenPrefs');
         const prefs = this.getMeta().eventPrefs || {};
         const events = [];
@@ -2095,6 +2119,150 @@ const app = {
         });
         lines.push('END:VCALENDAR');
         return lines.join('\r\n') + '\r\n';
+    },
+
+    // ─── NOTIFICHE BROWSER ──────────────────────────────────────────────────
+
+    initNotifications: function() {
+        this._notifyTimers = [];
+        this._notifyPermission = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+        this._updateNotificationStatus();
+        document.addEventListener('visibilitychange', () => {
+            // I timer in background possono essere ritardati dal browser:
+            // al ritorno nella tab li ricalcoliamo.
+            if (!document.hidden) this._scheduleNotifications();
+        });
+        this._scheduleNotifications();
+    },
+
+    _notificationEnabled: function() {
+        return !!(this.config && this.config.notifications) && this._notifyPermission === 'granted';
+    },
+
+    _notifyLeadDays: function() {
+        const n = Number(this.config && this.config.notifyDays);
+        return Number.isFinite(n) ? Math.max(0, Math.min(Math.round(n), 7)) : 0;
+    },
+
+    _updateNotificationStatus: function() {
+        const el = document.getElementById('notificationStatus');
+        if (!el) return;
+        const p = this._notifyPermission;
+        const lead = this._notifyLeadDays();
+        if (p === 'unsupported') el.textContent = 'Questo browser non supporta le notifiche.';
+        else if (p === 'denied') el.textContent = 'Permesso negato: abilita le notifiche dalle impostazioni del browser.';
+        else if (p === 'default') el.textContent = 'Attiva l\'opzione per richiedere il permesso alle notifiche.';
+        else el.textContent = `Permesso concesso · avviso ${lead === 0 ? 'lo stesso giorno alle 09:00' : `${lead} ${lead === 1 ? 'giorno' : 'giorni'} prima`}.`;
+    },
+
+    toggleNotificationSection: function(requestPerm = true) {
+        const on = this._getChecked('cfg_notifications');
+        const sec = document.getElementById('notificationSection');
+        if (sec) sec.style.display = on ? 'block' : 'none';
+        const sel = document.getElementById('cfg_notifyDays');
+        if (sel) sel.value = String(this._notifyLeadDays());
+        if (on && requestPerm && typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+            this.requestNotificationPermission();
+        }
+        this._updateNotificationStatus();
+    },
+
+    requestNotificationPermission: async function() {
+        if (typeof Notification === 'undefined') return 'unsupported';
+        this._notifyPermission = Notification.permission;
+        if (this._notifyPermission === 'granted') { this._updateNotificationStatus(); return 'granted'; }
+        if (this._notifyPermission === 'denied') {
+            this._updateNotificationStatus();
+            const cb = document.getElementById('cfg_notifications');
+            if (cb) cb.checked = false;
+            const sec = document.getElementById('notificationSection');
+            if (sec) sec.style.display = 'none';
+            this._clearNotificationTimers();
+            this.showAlert('Permesso negato dal browser: abilita le notifiche dalle impostazioni del sito.', 'warning', 5000);
+            return 'denied';
+        }
+        try {
+            const res = await Notification.requestPermission();
+            this._notifyPermission = res;
+            this._updateNotificationStatus();
+            if (res !== 'granted') {
+                const cb = document.getElementById('cfg_notifications');
+                if (cb) cb.checked = false;
+                const sec = document.getElementById('notificationSection');
+                if (sec) sec.style.display = 'none';
+                this.showAlert('Permesso notifiche non concesso: le notifiche restano disattivate.', 'warning', 5000);
+            }
+            this._scheduleNotifications();
+            return res;
+        } catch (e) {
+            console.warn('requestNotificationPermission:', e);
+            return 'error';
+        }
+    },
+
+    testNotification: async function() {
+        if (typeof Notification === 'undefined') { this.showAlert('Notifiche non supportate dal browser.', 'warning'); return; }
+        const res = await this.requestNotificationPermission();
+        if (res !== 'granted') { this.showAlert('Per la prova serve il permesso alle notifiche.', 'warning'); return; }
+        this._showBrowserNotification('PM Tracker', 'Notifica di prova: le scadenze funzionano.', `test-${Date.now()}`);
+    },
+
+    _showBrowserNotification: function(title, body, tag) {
+        if (this._notifyPermission !== 'granted') return;
+        const options = { body, tag, icon: './assets/icon-192.png', badge: './assets/icon-180.png', data: { url: location.href } };
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready
+                .then(reg => reg.showNotification(title, options))
+                .catch(e => {
+                    console.warn('Notifica via service worker non riuscita, fallback:', e);
+                    try { new Notification(title, options); } catch (err) { console.warn(err); }
+                });
+        } else {
+            try { new Notification(title, options); } catch (e) { console.warn(e); }
+        }
+    },
+
+    _clearNotificationTimers: function() {
+        (this._notifyTimers || []).forEach(id => clearTimeout(id));
+        this._notifyTimers = [];
+    },
+
+    // Programma un avviso per ogni evento la cui data di preavviso è oggi o
+    // nel futuro. Un evento viene notificato al massimo una volta al giorno.
+    _scheduleNotifications: function() {
+        this._clearNotificationTimers();
+        if (!this._notificationEnabled()) return;
+
+        let sent = {};
+        try { sent = JSON.parse(localStorage.getItem('pm-tracker-notified') || '{}') || {}; } catch (e) {}
+        const lead  = this._notifyLeadDays();
+        const today = dayjs(this._today).startOf('day');
+        const stamp = today.format('YYYY-MM-DD');
+        const now   = Date.now();
+
+        this._agendaEvents({ days: lead + 1, respectFilters: false }).forEach(ev => {
+            const dueDate = dayjs(ev.date).subtract(lead, 'day');
+            if (dueDate.isBefore(today)) return; // finestra di preavviso già passata
+            const key = `${ev.date}|${ev.kind}|${this._hashString(ev.title)}`;
+            if (sent[key] === stamp) return;
+            const due   = dueDate.hour(9).minute(0).second(0).millisecond(0).valueOf();
+            const delay = due > now ? due - now : 3000;
+            if (delay > 2147483647) return;
+            this._notifyTimers.push(setTimeout(() => this._fireNotification(ev, key), delay));
+        });
+    },
+
+    _fireNotification: function(ev, key) {
+        if (!this._notificationEnabled()) return;
+        const stamp = dayjs(this._today).format('YYYY-MM-DD');
+        let sent = {};
+        try { sent = JSON.parse(localStorage.getItem('pm-tracker-notified') || '{}') || {}; } catch (e) {}
+        if (sent[key] === stamp) return;
+        sent[key] = stamp;
+        try { localStorage.setItem('pm-tracker-notified', JSON.stringify(sent)); } catch (e) {}
+
+        const when = ev.date === stamp ? 'oggi' : dayjs(ev.date).format('DD/MM');
+        this._showBrowserNotification(`${ev.label} — ${when}`, ev.title, key.replace(/\|/g, '-'));
     },
 
     // ─── RENDER CALENDAR ─────────────────────────────────────────────────────

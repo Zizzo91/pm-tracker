@@ -1,7 +1,7 @@
 // PM Tracker - Service Worker offline-aware
 // Strategia: cache-first per asset statici, network-only per API (Supabase/GitHub)
 
-const SW_VERSION = 'v23';
+const SW_VERSION = 'v25';
 const CACHE_NAME = `pm-tracker-${SW_VERSION}`;
 
 // Asset statici da pre-cachare all'installazione.
@@ -43,6 +43,19 @@ self.addEventListener('activate', (event) => {
         keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       )
     ).then(() => self.clients.claim())
+  );
+});
+
+// ─── NOTIFICHE: clic = porta in primo piano l'app ────────────────────────────
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const appUrl = new URL('./', self.registration.scope).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      const existing = clients.find(c => c.url.startsWith(appUrl));
+      if (existing) return existing.focus();
+      return self.clients.openWindow(appUrl);
+    })
   );
 });
 
