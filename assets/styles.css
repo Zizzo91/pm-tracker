@@ -1216,6 +1216,17 @@ a:hover { color: var(--tp-blu-autostrada); }
 
 .gantt-timeline-col { flex: 1; min-width: 600px; position: relative; }
 
+/* Griglia settimanale/mensile: linee sottili allineate all'header */
+.gantt-grid-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, .055);
+  pointer-events: none;
+  z-index: 0;
+}
+
 .gantt-months {
   display: flex;
   height: 40px;
@@ -1238,6 +1249,7 @@ a:hover { color: var(--tp-blu-autostrada); }
   white-space: nowrap;
 }
 .gantt-month:last-child { border-right: 0; }
+.gantt-month--week { font-size: .62rem; letter-spacing: .04em; }
 
 .gantt-body { background: #fff; border-radius: 0 0 var(--ap-radius) var(--ap-radius); overflow: hidden; }
 
@@ -1321,6 +1333,8 @@ a:hover { color: var(--tp-blu-autostrada); }
   z-index: 12;
 }
 .gantt-bar span {
+  position: relative;
+  z-index: 2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1480,6 +1494,9 @@ a:hover { color: var(--tp-blu-autostrada); }
   background: linear-gradient(90deg, #a7c8f5, #7fb2ee);
   display: inline-block;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .05);
+}
+.legend-bar--progress {
+  background: linear-gradient(90deg, #7fb2ee 0 55%, #a7c8f5 55% 100%);
 }
 
 .legend-ms {
@@ -2520,6 +2537,7 @@ html[data-theme="dark"] .gantt-row:hover { box-shadow: inset 0 0 0 999px rgba(77
 html[data-theme="dark"] .gantt-row .gantt-project-col { background: #16202c; }
 html[data-theme="dark"] .gantt-row:hover .gantt-project-col { background: #1a2534; }
 html[data-theme="dark"] .gantt-month { border-right-color: rgba(255, 255, 255, .05); }
+html[data-theme="dark"] .gantt-grid-line { background: rgba(255, 255, 255, .055); }
 html[data-theme="dark"] .gantt-today-line span { color: #ff8a97; }
 html[data-theme="dark"] .gantt-supplier-badge { color: #0b1420; }
 html[data-theme="dark"] .gantt-legend,
@@ -2549,3 +2567,12 @@ html[data-theme="dark"] .rem-stat { background: var(--tp-surface-alt); border-co
 html[data-theme="dark"] .rem-stat--alert { background: #3a1b23; border-color: #5c2a34; color: #ff9aa5; }
 html[data-theme="dark"] .rem-stat--alert strong { color: #ff9aa5; }
 html[data-theme="dark"] .rem-form { background: var(--tp-surface-alt); border-color: var(--tp-border); }
+
+/* Gantt su mobile: lo scorrimento orizzontale resta dentro il grafico
+   e la colonna Progetto resta ferma; l'header sticky non ha senso qui. */
+@media (max-width: 767.98px) {
+  #gantt-chart { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #gantt-chart .gantt-header { position: static; }
+  #gantt-chart .gantt-project-col { min-width: 150px; width: 150px; padding: 8px 10px; }
+  #gantt-chart .gantt-timeline-col { min-width: 480px; }
+}

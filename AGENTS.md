@@ -60,7 +60,8 @@ pm-tracker-main 4/
 - **Owner rimosso** da UI, editor, tabella, Gantt e calendario: un eventuale campo `owners` nei vecchi record viene conservato in scrittura ma non letto né mostrato.
 - CTA duplicate rimosse: `Nuovo progetto` e `Oggi` vivono solo nell'hero.
 - Ordinamento multiplo (prod, dev start, alfabetico, manuale drag&drop)
-- Zoom Gantt (mensile/settimanale); il Gantt scorre con la pagina intera, header mesi sticky
+- Zoom Gantt (mensile/settimanale) ora funzionante: header con colonne e griglia coerentemente mensili o settimanali, preferenza persistita in `localStorage['pm-gantt-zoom']`; su desktop l'header resta sticky e la pagina scorre, su mobile lo scorrimento orizzontale è confinato al grafico con colonna Progetto ferma
+- Gantt: avanzamento visibile come riempimento dentro la barra di sviluppo (con legenda), barra cliccabile per aprire l'editor del progetto; testi utente (nomi, fornitori, milestone personalizzate) escapati prima del rendering
 - Banner offline/online
 - Menu fornitori multi-selezione (preset + valori già usati + nuovo fornitore)
 - Modalità archiviazione progetti

@@ -147,9 +147,13 @@ const app = {
 
             this.initExternalLinks();
             this._initTheme();
-            let compact = false;
-            try { compact = localStorage.getItem('pm-table-compact') === '1'; } catch (e) {}
+            let compact = false, zoom = 'month';
+            try {
+                compact = localStorage.getItem('pm-table-compact') === '1';
+                zoom = localStorage.getItem('pm-gantt-zoom') === 'week' ? 'week' : 'month';
+            } catch (e) {}
             this._setTableCompact(compact, false);
+            this._setVal('ganttZoomSelect', zoom);
 
             const savedCfg = localStorage.getItem('pm_tracker_config');
             if (savedCfg) {
@@ -453,7 +457,7 @@ const app = {
 
     _badgeSpan: function(kind, name, className) {
         const safeName = (name ?? '').toString();
-        return `<span class="${className}" style="${this._badgeStyle(kind, safeName)}">${safeName}</span>`;
+        return `<span class="${className}" style="${this._badgeStyle(kind, safeName)}">${this._escapeHtml(safeName)}</span>`;
     },
 
     // ─── CUSTOM MILESTONES MODAL ─────────────────────────────────────────────
@@ -1710,7 +1714,7 @@ const app = {
         return `
         <tr ${rowCls} data-id="${this._escapeAttr(p.id)}">
             <td>
-                <strong>${p.nome || 'Senza nome'}</strong> ${statusBadge}
+                <strong>${this._escapeHtml(p.nome || 'Senza nome')}</strong> ${statusBadge}
                 ${jiraHtml  ? `<div class="mt-1">${jiraHtml}</div>` : ''}
                 ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
                 ${compactDates ? `<div class="tp-compact-dates">${compactDates}</div>` : ''}
@@ -1722,7 +1726,7 @@ const app = {
             <td class="small" data-col="sviluppo">${this.formatDate(p.devStart)} \u27A0 ${this.formatDate(p.devEnd)}</td>
             <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
             <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
-            <td class="small text-muted" data-col="note" style="max-width:250px;white-space:pre-wrap;">${p.note || ''}</td>
+            <td class="small text-muted" data-col="note" style="max-width:250px;white-space:pre-wrap;">${this._escapeHtml(p.note || '')}</td>
             <td>
                 <div class="d-flex gap-1">
                     <button class="btn btn-sm ${p.hidden ? 'btn-secondary' : 'btn-outline-secondary'}" onclick="app.toggleHidden('${p.id}')" title="${p.hidden ? 'Ripristina Progetto' : 'Archivia (Nascondi)'}" aria-label="${p.hidden ? 'Ripristina Progetto' : 'Archivia'}">${p.hidden ? this._icon('eye') : this._icon('eyeOff')}</button>
@@ -1735,12 +1739,20 @@ const app = {
 
     // ─── RENDER GANTT ────────────────────────────────────────────────────────
 
+    setGanttZoom: function(zoom) {
+        const value = zoom === 'week' ? 'week' : 'month';
+        this._setVal('ganttZoomSelect', value);
+        try { localStorage.setItem('pm-gantt-zoom', value); } catch (e) {}
+        this.renderGantt();
+    },
+
     renderGantt: function() {
         const container = document.getElementById('gantt-chart');
         if (!container) return;
         const filtDataTest = this._getVal('ganttDataTestFilter');
         const filtDataProd = this._getVal('ganttDataProdFilter');
         const sortMode   = this._getVal('ganttSortSelect') || 'prod_inprogress_first';
+        const zoom       = this._getVal('ganttZoomSelect') === 'week' ? 'week' : 'month';
         const globals    = this._globalFilters();
 
         let data = this.getProjectsOnly().filter(p =>
@@ -1752,7 +1764,7 @@ const app = {
         data = this._sortGantt(data, sortMode);
 
         if (data.length === 0) {
-            container.innerHTML = "<p class='text-center p-3 text-muted'>Nessun progetto con date programmate trovato per i filtri selezionati.</p>";
+            container.innerHTML = "<p class='text-center p-3 text-muted'>Nessun progetto con date programmate trovato per i filtri selezionati. Prova a cambiare i filtri o la ricerca globale.</p>";
             return;
         }
 
@@ -1761,10 +1773,12 @@ const app = {
         const isCustomSort = sortMode === 'custom';
         const todayPct     = pct(today).toFixed(2);
         const todayLabel   = dayjs(today).format('DD/MM');
+        const scale        = this._ganttScale(minDate, totalDays, pct, zoom);
+        const gridHtml     = scale.boundaries.map(x => `<i class="gantt-grid-line" style="left:${x.toFixed(2)}%"></i>`).join('');
 
-        let html = this._ganttBuildHeader(minDate, maxDate, totalDays);
+        let html = this._ganttBuildHeader(scale, zoom);
         html += '<div class="gantt-body">';
-        data.forEach(p => { html += this._htmlGanttRow(p, today, pct, todayPct, todayLabel, isCustomSort); });
+        data.forEach(p => { html += this._htmlGanttRow(p, today, pct, todayPct, todayLabel, isCustomSort, gridHtml); });
         html += this._ganttBuildLegend(data);
         container.innerHTML = html;
     },
@@ -1791,19 +1805,41 @@ const app = {
         return { minDate, maxDate, totalDays, pct };
     },
 
-    _ganttBuildHeader: function(minDate, maxDate, totalDays) {
-        let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
-        let cur = new Date(minDate);
-        while (cur <= maxDate) {
-            const days = new Date(cur.getFullYear(), cur.getMonth() + 1, 0).getDate();
-            html += `<div class="gantt-month" style="width:${((days/totalDays)*100).toFixed(2)}%">${dayjs(cur).format('MMM YYYY')}</div>`;
-            cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+    // Colonne e linee di griglia per lo zoom selezionato (mensile o settimanale).
+    _ganttScale: function(minDate, totalDays, pct, zoom) {
+        const columns = [], boundaries = [];
+        let cur;
+        if (zoom === 'week') {
+            cur = new Date(minDate);
+            cur.setDate(cur.getDate() - ((cur.getDay() + 6) % 7)); // lunedì
+        } else {
+            cur = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
         }
+        let guard = 0;
+        while (pct(cur) < 100 && guard++ < 400) {
+            const next = new Date(cur);
+            if (zoom === 'week') next.setDate(next.getDate() + 7);
+            else next.setMonth(next.getMonth() + 1);
+            const left  = Math.max(pct(cur), 0);
+            const right = Math.min(pct(next), 100);
+            const label = zoom === 'week' ? dayjs(cur).format('DD/MM') : dayjs(cur).format('MMM YYYY');
+            columns.push({ label, width: Math.max(right - left, 0.01) });
+            if (left > 0 && left < 100) boundaries.push(left);
+            cur = next;
+        }
+        return { columns, boundaries };
+    },
+
+    _ganttBuildHeader: function(scale, zoom) {
+        let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
+        scale.columns.forEach(c => {
+            html += `<div class="gantt-month${zoom === 'week' ? ' gantt-month--week' : ''}" style="width:${c.width.toFixed(2)}%">${this._escapeHtml(c.label)}</div>`;
+        });
         html += '</div></div></div>';
         return html;
     },
 
-    _htmlGanttRow: function(p, today, pct, todayPct, todayLabel, isCustomSort) {
+    _htmlGanttRow: function(p, today, pct, todayPct, todayLabel, isCustomSort, gridHtml) {
         const startD = p.devStart || p.dataTest || p.dataProd || p.dataIA;
         const endD   = p.devEnd   || startD;
         const leftPct  = startD ? pct(startD) : 0;
@@ -1846,14 +1882,16 @@ const app = {
             <div class="gantt-project-col">
                 ${dragHandleHtml}
                 <div>
-                    <strong>${p.nome} ${statusIcon}</strong>
+                    <strong>${this._escapeHtml(p.nome || 'Senza nome')} ${statusIcon}</strong>
                     ${ganttProgressHtml}
                     <div class="gantt-supplier-list">${badgesHtml}</div>
                     ${ganttJiraHtml ? `<div class="mt-1">${ganttJiraHtml}</div>` : ''}
                 </div>
             </div>
-            <div class="gantt-timeline-col" style="position:relative;">
-                <div class="gantt-bar" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity};background-color:${pColors.barBg};border:1px solid ${pColors.barBorder};box-shadow:none;" title="Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}">
+            <div class="gantt-timeline-col">
+                ${gridHtml}
+                <div class="gantt-bar" role="button" tabindex="0" onclick="app.openModal('${p.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();app.openModal('${p.id}');}" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity};background-color:${pColors.barBg};border:1px solid ${pColors.barBorder};box-shadow:none;" title="${startD ? `Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}` : 'Sviluppo: date non impostate'} — clicca per modificare">
+                    ${p.progress != null && p.progress > 0 ? `<div class="gantt-bar-progress" style="width:${Math.max(0, Math.min(p.progress, 100))}%" title="Avanzamento: ${p.progress}%"></div>` : ''}
                     ${widthPct > 8 ? `<span>${this._icon('sliders')} Sviluppo</span>` : ''}
                 </div>
                 ${milestonesHtml}
@@ -1887,7 +1925,7 @@ const app = {
         return allMilestones.map(m => {
             const isCustom   = m.cls === 'ms-custom';
             const translateX = (-16 + m.offsetPx).toFixed(0);
-            return `<div class="gantt-milestone ${m.cls}" style="left:${pct(m.date).toFixed(2)}%;transform:translateX(${translateX}px);" title="${m.label}: ${dayjs(m.date).format('DD/MM/YYYY')}">
+            return `<div class="gantt-milestone ${m.cls}" style="left:${pct(m.date).toFixed(2)}%;transform:translateX(${translateX}px);" title="${this._escapeAttr(m.label)}: ${dayjs(m.date).format('DD/MM/YYYY')}">
                 <span class="ms-date"${isCustom ? ' style="color:#198754;"' : ''}>${dayjs(m.date).format('DD/MM')}</span>
                 <span class="ms-icon">${m.icon}</span>
                 <span class="ms-line"${isCustom ? ' style="background:#198754;"' : ''}></span>
@@ -1898,10 +1936,12 @@ const app = {
     _ganttBuildLegend: function(data) {
         const has = key => data.some(p => p[key] && p[key].trim && p[key].trim() !== '');
         const hasCustom = data.some(p => p.customMilestones && p.customMilestones.length > 0);
+        const hasProgress = data.some(p => p.progress != null && p.progress > 0);
         const item = (icon, label) => `<div class="gantt-legend-item"><span class="legend-ms">${this._icon(icon)}</span> ${label}</div>`;
         return `
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
+            ${hasProgress ? `<div class="gantt-legend-item"><span class="legend-bar legend-bar--progress"></span> Avanzamento</div>` : ''}
             ${item('sparkles', 'Consegna IA')}
             ${item('play', 'Inizio Sviluppo')}
             ${item('stop', 'Fine Sviluppo')}
