@@ -1250,6 +1250,30 @@ a:hover { color: var(--tp-blu-autostrada); }
 }
 .gantt-month:last-child { border-right: 0; }
 .gantt-month--week { font-size: .62rem; letter-spacing: .04em; }
+.gantt-month--quarter { font-size: .68rem; color: var(--ap-action); }
+
+/* Settimane con 2+ rilasci Test/Prod: header evidenziato + contatore */
+.gantt-month--busy {
+  background: #fff3cd;
+  color: #7a4b00;
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 #f0a92e;
+}
+.gantt-week-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #e58b16;
+  color: #fff;
+  font-size: .58rem;
+  line-height: 1;
+  vertical-align: 1px;
+}
+.gantt-week-badge--legend { margin: 0 2px 0 0; }
 
 .gantt-body { background: #fff; border-radius: 0 0 var(--ap-radius) var(--ap-radius); overflow: hidden; }
 
@@ -1290,6 +1314,8 @@ a:hover { color: var(--tp-blu-autostrada); }
   display: block;
   line-height: 1.25;
 }
+.gantt-project-name { cursor: pointer; }
+.gantt-project-name:hover { text-decoration: underline; text-underline-offset: 2px; }
 .gantt-row .gantt-project-col .progress { height: 4px !important; border-radius: 999px; margin-top: 6px; }
 .gantt-row .gantt-project-col .progress-bar { background: var(--ap-action); }
 
@@ -1380,7 +1406,7 @@ a:hover { color: var(--tp-blu-autostrada); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  cursor: default;
+  cursor: pointer;
   z-index: 10;
 }
 
@@ -2537,6 +2563,8 @@ html[data-theme="dark"] .gantt-row:hover { box-shadow: inset 0 0 0 999px rgba(77
 html[data-theme="dark"] .gantt-row .gantt-project-col { background: #16202c; }
 html[data-theme="dark"] .gantt-row:hover .gantt-project-col { background: #1a2534; }
 html[data-theme="dark"] .gantt-month { border-right-color: rgba(255, 255, 255, .05); }
+html[data-theme="dark"] .gantt-month--busy { background: #5a3a05; color: #ffd27a; box-shadow: inset 0 -2px 0 #e58b16; }
+html[data-theme="dark"] .gantt-project-name:hover { color: #9fc4f5; }
 html[data-theme="dark"] .gantt-grid-line { background: rgba(255, 255, 255, .055); }
 html[data-theme="dark"] .gantt-today-line span { color: #ff8a97; }
 html[data-theme="dark"] .gantt-supplier-badge { color: #0b1420; }
@@ -2649,3 +2677,40 @@ html[data-theme="dark"] .agenda-day,
 html[data-theme="dark"] .agenda-event { background: var(--tp-surface-alt); border-color: var(--tp-border); }
 html[data-theme="dark"] .agenda-event--reminder { border-left-color: #ffb454; }
 html[data-theme="dark"] .agenda-event--milestone { border-left-color: #4ade80; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   TAB PROMEMORIA — scheda fissa (solo promemoria aperti)
+   ════════════════════════════════════════════════════════════════════════ */
+
+.rem-fixed-panel {
+  padding: 4px 16px 20px;
+  border: 1px solid var(--tp-border);
+  border-radius: var(--tp-r-lg);
+  background: var(--tp-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 30px rgba(0, 0, 0, .04);
+}
+.rem-fixed-panel .tp-toolbar { margin-bottom: 6px; }
+.rem-fixed-panel__summary { font-size: .78rem; font-weight: 600; color: var(--tp-testo-subtle); }
+.rem-fixed-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.rem-fixed-list .tp-rem-group {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--tp-border);
+  border-radius: var(--tp-r-md);
+  background: var(--tp-surface-alt);
+}
+/* Il chip progetto può contenere titoli lunghi: deve potersi restringere
+   anche quando la card è stretta (evita overflow orizzontale su mobile). */
+.rem-fixed-list .tp-rem,
+.rem-fixed-list .tp-rem__project { min-width: 0; }
+html[data-theme="dark"] .rem-fixed-list .tp-rem-group { background: var(--tp-surface-alt); }
+
+@media (max-width: 575.98px) {
+  .rem-fixed-panel { padding: 4px 12px 16px; }
+  .rem-fixed-list { grid-template-columns: 1fr; }
+}

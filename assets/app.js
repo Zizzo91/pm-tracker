@@ -148,11 +148,22 @@ const app = {
             });
 
             this.initExternalLinks();
+            const chartEl = document.getElementById('gantt-chart');
+            if (chartEl) {
+                // Un solo listener per tutta la riga: nome, barra, milestone e
+                // spazio vuoto della timeline aprono tutti l'editor del progetto.
+                chartEl.addEventListener('click', e => {
+                    const row = e.target.closest('.gantt-row[data-project-id]');
+                    if (!row || e.target.closest('a, button, .drag-handle')) return;
+                    this.openModal(row.dataset.projectId);
+                });
+            }
             this._initTheme();
             let compact = false, zoom = 'month';
             try {
                 compact = localStorage.getItem('pm-table-compact') === '1';
-                zoom = localStorage.getItem('pm-gantt-zoom') === 'week' ? 'week' : 'month';
+                const savedZoom = localStorage.getItem('pm-gantt-zoom');
+                zoom = ['week', 'quarter'].includes(savedZoom) ? savedZoom : 'month';
             } catch (e) {}
             this._setTableCompact(compact, false);
             this._setVal('ganttZoomSelect', zoom);
@@ -1088,13 +1099,18 @@ const app = {
         const todayStr = dayjs().format('YYYY-MM-DD');
         const overdue = list.filter(r => r && !r.done && r.date && r.date < todayStr).length;
 
-        ['remindersTopBadge'].forEach(id => {
+        ['remindersTopBadge', 'remindersTabBadge'].forEach(id => {
             const badge = document.getElementById(id);
             if (!badge) return;
             badge.textContent = String(pending);
             badge.style.display = pending > 0 ? 'inline-flex' : 'none';
             badge.classList.toggle('tp-count-badge--alert', overdue > 0);
         });
+
+        const summary = document.getElementById('remFixedSummary');
+        if (summary) summary.textContent = !list.length
+            ? 'Nessun promemoria.'
+            : `${pending} aperti${overdue ? ` · ${overdue} scaduti` : ''}`;
 
         const stats = document.getElementById('remStats');
         if (stats) {
@@ -1108,10 +1124,12 @@ const app = {
         }
     },
 
-    // Elenco dei promemoria raggruppato per stato, dentro lo sheet.
+    // Elenco dei promemoria raggruppato per stato: sia nello sheet laterale
+    // sia nella scheda fissa "Promemoria" (che mostra solo quelli aperti).
     renderRemindersSheet: function() {
-        const box = document.getElementById('remindersList');
-        if (!box) return;
+        const box    = document.getElementById('remindersList');
+        const inline = document.getElementById('remindersInlineList');
+        if (!box && !inline) return;
         const meta = this.getMeta();
         const showDone = this._getChecked('rem_show_done');
         const todayStr = dayjs().format('YYYY-MM-DD');
@@ -1125,15 +1143,6 @@ const app = {
         const today = pending.filter(r => r.date === todayStr);
         const upcoming = pending.filter(r => r.date > todayStr);
 
-        if (all.length === 0) {
-            box.innerHTML = `<div class="tp-sheet__empty">${this._icon('bell')}<p>Nessun promemoria.<br>Aggiungine uno qui sopra.</p></div>`;
-            return;
-        }
-        if (pending.length === 0 && !showDone) {
-            box.innerHTML = `<div class="tp-sheet__empty">${this._icon('checkCircle')}<p>Tutto fatto.<br>Nessun promemoria aperto.</p></div>`;
-            return;
-        }
-
         const group = (title, items, variant) => {
             if (!items.length) return '';
             return `
@@ -1143,12 +1152,26 @@ const app = {
                 </div>`;
         };
 
-        box.innerHTML = [
-            group('Scaduti', overdue, 'alert'),
-            group('Oggi', today, 'today'),
-            group('In arrivo', upcoming, ''),
-            showDone ? group('Completati', done, 'done') : ''
-        ].join('');
+        if (box) {
+            if (all.length === 0) {
+                box.innerHTML = `<div class="tp-sheet__empty">${this._icon('bell')}<p>Nessun promemoria.<br>Aggiungine uno qui sopra.</p></div>`;
+            } else if (pending.length === 0 && !showDone) {
+                box.innerHTML = `<div class="tp-sheet__empty">${this._icon('checkCircle')}<p>Tutto fatto.<br>Nessun promemoria aperto.</p></div>`;
+            } else {
+                box.innerHTML = [
+                    group('Scaduti', overdue, 'alert'),
+                    group('Oggi', today, 'today'),
+                    group('In arrivo', upcoming, ''),
+                    showDone ? group('Completati', done, 'done') : ''
+                ].join('');
+            }
+        }
+
+        if (inline) {
+            inline.innerHTML = pending.length === 0
+                ? `<div class="tp-sheet__empty">${this._icon('checkCircle')}<p>Nessun promemoria aperto.<br>Usa "Gestisci promemoria" per aggiungerne uno.</p></div>`
+                : group('Scaduti', overdue, 'alert') + group('Oggi', today, 'today') + group('In arrivo', upcoming, '');
+        }
     },
 
     _renderReminderRow: function(r, todayStr) {
@@ -1591,6 +1614,7 @@ const app = {
             this.renderGantt();
             this.renderCalendar();
             this._updateReminderBadge();
+            this.renderRemindersSheet();
             this._scheduleNotifications();
         } catch (err) {
             console.error('Errore in renderAll:', err);
@@ -1760,7 +1784,7 @@ const app = {
     // ─── RENDER GANTT ────────────────────────────────────────────────────────
 
     setGanttZoom: function(zoom) {
-        const value = zoom === 'week' ? 'week' : 'month';
+        const value = ['week', 'quarter'].includes(zoom) ? zoom : 'month';
         this._setVal('ganttZoomSelect', value);
         try { localStorage.setItem('pm-gantt-zoom', value); } catch (e) {}
         this.renderGantt();
@@ -1772,7 +1796,8 @@ const app = {
         const filtDataTest = this._getVal('ganttDataTestFilter');
         const filtDataProd = this._getVal('ganttDataProdFilter');
         const sortMode   = this._getVal('ganttSortSelect') || 'prod_inprogress_first';
-        const zoom       = this._getVal('ganttZoomSelect') === 'week' ? 'week' : 'month';
+        const rawZoom    = this._getVal('ganttZoomSelect');
+        const zoom       = ['week', 'quarter'].includes(rawZoom) ? rawZoom : 'month';
         const globals    = this._globalFilters();
 
         let data = this.getProjectsOnly().filter(p =>
@@ -1793,13 +1818,26 @@ const app = {
         const isCustomSort = sortMode === 'custom';
         const todayPct     = pct(today).toFixed(2);
         const todayLabel   = dayjs(today).format('DD/MM');
-        const scale        = this._ganttScale(minDate, totalDays, pct, zoom);
+
+        // Rilasci Test/Prod per settimana (lunedì): usato per evidenziare
+        // nell'header le settimane con 2 o più rilasci.
+        const releaseCounts = {};
+        data.forEach(p => ['dataTest', 'dataProd'].forEach(key => {
+            if (!p[key]) return;
+            const d = dayjs(p[key]);
+            if (!d.isValid()) return;
+            const monday = d.subtract((d.day() + 6) % 7, 'day').format('YYYY-MM-DD');
+            releaseCounts[monday] = (releaseCounts[monday] || 0) + 1;
+        }));
+        const busyWeeks = Object.values(releaseCounts).filter(n => n >= 2).length;
+
+        const scale        = this._ganttScale(minDate, totalDays, pct, zoom, releaseCounts);
         const gridHtml     = scale.boundaries.map(x => `<i class="gantt-grid-line" style="left:${x.toFixed(2)}%"></i>`).join('');
 
         let html = this._ganttBuildHeader(scale, zoom);
         html += '<div class="gantt-body">';
         data.forEach(p => { html += this._htmlGanttRow(p, today, pct, todayPct, todayLabel, isCustomSort, gridHtml); });
-        html += this._ganttBuildLegend(data);
+        html += this._ganttBuildLegend(data, zoom, busyWeeks);
         container.innerHTML = html;
     },
 
@@ -1825,13 +1863,15 @@ const app = {
         return { minDate, maxDate, totalDays, pct };
     },
 
-    // Colonne e linee di griglia per lo zoom selezionato (mensile o settimanale).
-    _ganttScale: function(minDate, totalDays, pct, zoom) {
+    // Colonne e linee di griglia per lo zoom selezionato (mensile, settimanale, trimestrale).
+    _ganttScale: function(minDate, totalDays, pct, zoom, releaseCounts = {}) {
         const columns = [], boundaries = [];
         let cur;
         if (zoom === 'week') {
             cur = new Date(minDate);
             cur.setDate(cur.getDate() - ((cur.getDay() + 6) % 7)); // lunedì
+        } else if (zoom === 'quarter') {
+            cur = new Date(minDate.getFullYear(), Math.floor(minDate.getMonth() / 3) * 3, 1);
         } else {
             cur = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
         }
@@ -1839,11 +1879,16 @@ const app = {
         while (pct(cur) < 100 && guard++ < 400) {
             const next = new Date(cur);
             if (zoom === 'week') next.setDate(next.getDate() + 7);
+            else if (zoom === 'quarter') next.setMonth(next.getMonth() + 3);
             else next.setMonth(next.getMonth() + 1);
             const left  = Math.max(pct(cur), 0);
             const right = Math.min(pct(next), 100);
-            const label = zoom === 'week' ? dayjs(cur).format('DD/MM') : dayjs(cur).format('MMM YYYY');
-            columns.push({ label, width: Math.max(right - left, 0.01) });
+            let label;
+            if (zoom === 'week') label = dayjs(cur).format('DD/MM');
+            else if (zoom === 'quarter') label = `T${Math.floor(cur.getMonth() / 3) + 1} ${cur.getFullYear()}`;
+            else label = dayjs(cur).format('MMM YYYY');
+            const count = zoom === 'week' ? (releaseCounts[dayjs(cur).format('YYYY-MM-DD')] || 0) : 0;
+            columns.push({ label, width: Math.max(right - left, 0.01), count });
             if (left > 0 && left < 100) boundaries.push(left);
             cur = next;
         }
@@ -1852,8 +1897,10 @@ const app = {
 
     _ganttBuildHeader: function(scale, zoom) {
         let html = '<div class="gantt-custom"><div class="gantt-header"><div class="gantt-project-col">Progetto</div><div class="gantt-timeline-col"><div class="gantt-months">';
+        const cls = zoom === 'week' ? ' gantt-month--week' : zoom === 'quarter' ? ' gantt-month--quarter' : '';
         scale.columns.forEach(c => {
-            html += `<div class="gantt-month${zoom === 'week' ? ' gantt-month--week' : ''}" style="width:${c.width.toFixed(2)}%">${this._escapeHtml(c.label)}</div>`;
+            const busy = zoom === 'week' && c.count >= 2;
+            html += `<div class="gantt-month${cls}${busy ? ' gantt-month--busy' : ''}" style="width:${c.width.toFixed(2)}%"${busy ? ` title="${c.count} rilasci Test/Prod in questa settimana"` : ''}>${this._escapeHtml(c.label)}${busy ? `<span class="gantt-week-badge">${c.count}</span>` : ''}</div>`;
         });
         html += '</div></div></div>';
         return html;
@@ -1898,11 +1945,11 @@ const app = {
         }
 
         return `
-        <div class="gantt-row${rowCls}" ${rowAttr} style="border-left:4px solid ${pColors.border};">
+        <div class="gantt-row${rowCls}" data-project-id="${this._escapeAttr(p.id)}" ${rowAttr} style="border-left:4px solid ${pColors.border};">
             <div class="gantt-project-col">
                 ${dragHandleHtml}
                 <div>
-                    <strong>${this._escapeHtml(p.nome || 'Senza nome')} ${statusIcon}</strong>
+                    <strong class="gantt-project-name" role="button" tabindex="0" title="Clicca per modificare il progetto" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();app.openModal('${p.id}');}">${this._escapeHtml(p.nome || 'Senza nome')} ${statusIcon}</strong>
                     ${ganttProgressHtml}
                     <div class="gantt-supplier-list">${badgesHtml}</div>
                     ${ganttJiraHtml ? `<div class="mt-1">${ganttJiraHtml}</div>` : ''}
@@ -1910,7 +1957,7 @@ const app = {
             </div>
             <div class="gantt-timeline-col">
                 ${gridHtml}
-                <div class="gantt-bar" role="button" tabindex="0" onclick="app.openModal('${p.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();app.openModal('${p.id}');}" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity};background-color:${pColors.barBg};border:1px solid ${pColors.barBorder};box-shadow:none;" title="${startD ? `Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}` : 'Sviluppo: date non impostate'} — clicca per modificare">
+                <div class="gantt-bar" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();app.openModal('${p.id}');}" style="left:${leftPct.toFixed(2)}%;width:${widthPct.toFixed(2)}%;opacity:${barOpacity};background-color:${pColors.barBg};border:1px solid ${pColors.barBorder};box-shadow:none;" title="${startD ? `Sviluppo: ${dayjs(startD).format('DD/MM/YYYY')} - ${dayjs(endD).format('DD/MM/YYYY')}` : 'Sviluppo: date non impostate'} — clicca per modificare">
                     ${p.progress != null && p.progress > 0 ? `<div class="gantt-bar-progress" style="width:${Math.max(0, Math.min(p.progress, 100))}%" title="Avanzamento: ${p.progress}%"></div>` : ''}
                     ${widthPct > 8 ? `<span>${this._icon('sliders')} Sviluppo</span>` : ''}
                 </div>
@@ -1953,7 +2000,7 @@ const app = {
         }).join('');
     },
 
-    _ganttBuildLegend: function(data) {
+    _ganttBuildLegend: function(data, zoom, busyWeeks = 0) {
         const has = key => data.some(p => p[key] && p[key].trim && p[key].trim() !== '');
         const hasCustom = data.some(p => p.customMilestones && p.customMilestones.length > 0);
         const hasProgress = data.some(p => p.progress != null && p.progress > 0);
@@ -1962,6 +2009,7 @@ const app = {
         <div class="gantt-legend">
             <div class="gantt-legend-item"><span class="legend-bar"></span> Fase di Sviluppo</div>
             ${hasProgress ? `<div class="gantt-legend-item"><span class="legend-bar legend-bar--progress"></span> Avanzamento</div>` : ''}
+            ${zoom === 'week' && busyWeeks ? `<div class="gantt-legend-item"><span class="gantt-week-badge gantt-week-badge--legend">2+</span> Settimane con 2+ rilasci Test/Prod</div>` : ''}
             ${item('sparkles', 'Consegna IA')}
             ${item('play', 'Inizio Sviluppo')}
             ${item('stop', 'Fine Sviluppo')}

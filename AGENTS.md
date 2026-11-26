@@ -1,14 +1,14 @@
 # pm-tracker-main 4
 
 ## Descrizione
-Progressive Web App per la gestione progetti e timeline di sviluppo. Include vista lista, diagramma di Gantt e la sezione **Promemoria** (promemoria personali + calendario rilasci), con tema chiaro/scuro.
+Progressive Web App per la gestione progetti e timeline di sviluppo. Include vista lista, diagramma di Gantt, calendario rilasci e una scheda **Promemoria** fissa (oltre al drawer della campanella), con tema chiaro/scuro.
 
 **Storage dati**: Supabase — schema dedicato `pmtracker` sul progetto `gfglazxhxxplhoteaahr` (gestione-conti, eu-central-1), stessa istanza usata da `spesa`, `soundtube`, `storybook`. Accesso protetto da login PIN (account Supabase esistente).
 
 ## Struttura
 ```
 pm-tracker-main 4/
-├── index.html                        — UI Bootstrap 5, tabs (lista, Gantt, Calendario rilasci) + offcanvas Promemoria, login PIN
+├── index.html                        — UI Bootstrap 5, tabs (lista, Gantt, Calendario, Promemoria) + offcanvas Promemoria, login PIN
 ├── manifest.json                     — PWA manifest
 ├── service-worker.js                 — Service Worker (precache relativo, network-first per HTML, network-only per Supabase/GitHub)
 ├── redirect.html                     — Pagina redirect
@@ -40,7 +40,8 @@ pm-tracker-main 4/
 - `service_role` e password DB **non** stanno nel repo.
 
 ## Funzionalità
-- 3 tab: Elenco Progetti, Gantt Sviluppo, **Calendario rilasci**
+- 4 tab: Elenco Progetti, Gantt Sviluppo, **Calendario rilasci**, **Promemoria**
+- **Scheda Promemoria fissa** (`#remindersView`, quarta tab): elenco dei soli promemoria **aperti**, raggruppato in Scaduti / Oggi / In arrivo, con badge sul tab (`#remindersTabBadge`) sincronizzato con la campanella. Usa lo stesso markup e le stesse azioni del drawer (`app.renderRemindersSheet()` renderizza entrambi); pulsante "Gestisci promemoria" apre il drawer per aggiungere/modificare.
 - **Promemoria in offcanvas**: pannello laterale aperto dalla campanella in top bar (`app.openReminders()`):
   - form con data, titolo, **progetto collegato** (opzionale) e nota;
   - elenco raggruppato in Scaduti / Oggi / In arrivo / Completati, con azioni (fatto, modifica, elimina) e toggle "Mostra completati";
@@ -62,8 +63,9 @@ pm-tracker-main 4/
 - **Owner rimosso** da UI, editor, tabella, Gantt e calendario: un eventuale campo `owners` nei vecchi record viene conservato in scrittura ma non letto né mostrato.
 - CTA duplicate rimosse: `Nuovo progetto` e `Oggi` vivono solo nell'hero.
 - Ordinamento multiplo (prod, dev start, alfabetico, manuale drag&drop)
-- Zoom Gantt (mensile/settimanale) ora funzionante: header con colonne e griglia coerentemente mensili o settimanali, preferenza persistita in `localStorage['pm-gantt-zoom']`; su desktop l'header resta sticky e la pagina scorre, su mobile lo scorrimento orizzontale è confinato al grafico con colonna Progetto ferma
-- Gantt: avanzamento visibile come riempimento dentro la barra di sviluppo (con legenda), barra cliccabile per aprire l'editor del progetto; testi utente (nomi, fornitori, milestone personalizzate) escapati prima del rendering
+- Zoom Gantt (mensile / settimanale / **trimestrale**) funzionante: header con colonne e griglia coerenti (`T1 2026`, `T2 2026`, …), preferenza persistita in `localStorage['pm-gantt-zoom']`; su desktop l'header resta sticky e la pagina scorre, su mobile lo scorrimento orizzontale è confinato al grafico con colonna Progetto ferma
+- **Gantt — settimane piene**: in vista settimanale l'header evidenzia (giallo + badge contatore + tooltip) le settimane con **2 o più rilasci Test/Prod**, contate sui progetti filtrati; la legenda mostra la chiave. Il conteggio usa il lunedì come inizio settimana, coerentemente con le colonne.
+- Gantt: avanzamento visibile come riempimento dentro la barra di sviluppo (con legenda); **tutta la riga è cliccabile** (nome, barra, milestone, timeline) per aprire l'editor del progetto, tranne link e bottoni; testi utente (nomi, fornitori, milestone personalizzate) escapati prima del rendering
 - Banner offline/online
 - Menu fornitori multi-selezione (preset + valori già usati + nuovo fornitore)
 - Modalità archiviazione progetti
