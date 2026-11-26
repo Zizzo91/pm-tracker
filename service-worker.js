@@ -1,7 +1,7 @@
 // PM Tracker - Service Worker offline-aware
 // Strategia: cache-first per asset statici, network-only per API (Supabase/GitHub)
 
-const SW_VERSION = 'v19';
+const SW_VERSION = 'v20';
 const CACHE_NAME = `pm-tracker-${SW_VERSION}`;
 
 // Asset statici da pre-cachare all'installazione.

@@ -741,6 +741,27 @@ a:hover { color: var(--tp-blu-autostrada); }
 }
 .table .btn-sm svg { width: 15px; height: 15px; }
 
+/* Vista compatta dell'elenco: solo le colonne principali + date chiave inline */
+.tp-compact-dates { display: none; }
+.tp-projects-table.tp-table--compact { font-size: .8rem; }
+.tp-projects-table.tp-table--compact > thead th { padding: .45rem .55rem; }
+.tp-projects-table.tp-table--compact > tbody > tr > td { padding: .4rem .55rem; }
+.tp-projects-table.tp-table--compact [data-col="prog"],
+.tp-projects-table.tp-table--compact [data-col="stima"],
+.tp-projects-table.tp-table--compact [data-col="ia"],
+.tp-projects-table.tp-table--compact [data-col="sviluppo"],
+.tp-projects-table.tp-table--compact [data-col="note"] { display: none; }
+.tp-projects-table.tp-table--compact .tp-compact-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-top: 4px;
+  color: var(--tp-asfalto-600);
+  font-size: .68rem;
+}
+.tp-compact-dates span { white-space: nowrap; }
+.tp-compact-dates b { color: var(--tp-blu-autostrada); font-weight: 600; }
+
 /* Righe archiviate / rilasciate */
 .table-secondary, .table-warning { --bs-table-bg: transparent; }
 
@@ -1616,6 +1637,14 @@ a:hover { color: var(--tp-blu-autostrada); }
   margin-left: auto;
 }
 
+.tp-viewtoggle { display: inline-flex; align-items: center; gap: 6px; }
+.tp-viewtoggle svg { width: 14px; height: 14px; }
+.tp-viewtoggle.active {
+  background: var(--tp-brand-primario);
+  border-color: var(--tp-brand-primario);
+  color: #fff;
+}
+
 .tp-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .tp-field .form-label {
   margin: 0;
@@ -2418,6 +2447,9 @@ html[data-theme="dark"] .table tbody tr:hover { background: #172232; }
 html[data-theme="dark"] .table strong { color: #cfe3fb; }
 html[data-theme="dark"] .table .btn-outline-secondary { background: transparent; }
 html[data-theme="dark"] .table .btn-outline-danger { background: transparent; }
+html[data-theme="dark"] .tp-compact-dates { color: var(--tp-testo-subtle); }
+html[data-theme="dark"] .tp-compact-dates b { color: #cfe3fb; }
+html[data-theme="dark"] .tp-viewtoggle.active { border-color: var(--tp-blu-casello); color: #fff; }
 
 /* Dropdown */
 html[data-theme="dark"] .dropdown-item { color: var(--tp-testo); }

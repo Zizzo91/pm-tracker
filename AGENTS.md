@@ -55,6 +55,8 @@ pm-tracker-main 4/
 - Tema chiaro/scuro: toggle in top bar, persistito in `localStorage['pm-theme']`, default da `prefers-color-scheme`
 - **Barra filtri globale** sopra le tab (`.tp-filterbar`): `Fornitore`, `Cerca progetto`, `Mostra archiviati`, `Reset filtri`. Filtra in contemporanea Elenco, Gantt e Calendario via `app._globalFilters()` / `app._matchesGlobalFilters()`.
 - Filtri specifici per vista: Test/Prod (Gantt), Milestone e milestone nascoste (Calendario), ordinamento per tab.
+- **Elenco compatto** (`#tableCompactBtn`): mostra solo Progetto / Fornitori / Test / Prod / Azioni e compatta le celle; le date nascoste (Stima, IA, Sviluppo) restano visibili inline nella colonna Progetto. Preferenza persistita in `localStorage['pm-table-compact']`.
+- **Esporta CSV** (`#exportCsvBtn`): esporta i progetti **filtrati e ordinati** come l'Elenco, con 19 colonne (dati, milestone, Jira gerarchico, note), separatore `;`, BOM UTF-8 e doppio escaping delle virgolette (`app.exportCsv()` / `app._projectsCsv()`).
 - **Owner rimosso** da UI, editor, tabella, Gantt e calendario: un eventuale campo `owners` nei vecchi record viene conservato in scrittura ma non letto né mostrato.
 - CTA duplicate rimosse: `Nuovo progetto` e `Oggi` vivono solo nell'hero.
 - Ordinamento multiplo (prod, dev start, alfabetico, manuale drag&drop)

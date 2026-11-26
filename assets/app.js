@@ -147,6 +147,9 @@ const app = {
 
             this.initExternalLinks();
             this._initTheme();
+            let compact = false;
+            try { compact = localStorage.getItem('pm-table-compact') === '1'; } catch (e) {}
+            this._setTableCompact(compact, false);
 
             const savedCfg = localStorage.getItem('pm_tracker_config');
             if (savedCfg) {
@@ -1573,16 +1576,101 @@ const app = {
 
     // ─── RENDER TABLE ────────────────────────────────────────────────────────
 
-    renderTable: function() {
-        const tbody    = document.getElementById('projectsTableBody');
+    // Stessa selezione usata da Elenco ed export CSV: filtri globali + ordinamento.
+    _tableProjects: function() {
         const sortMode = this._getVal('tableSortSelect') || 'prod_inprogress_first';
-        const today    = this._today;
         const globals  = this._globalFilters();
+        const data     = this.getProjectsOnly().filter(p => this._matchesGlobalFilters(p, globals));
+        return this._sortGantt(data, sortMode);
+    },
 
-        let filtered = this.getProjectsOnly().filter(p => this._matchesGlobalFilters(p, globals));
-        filtered = this._sortGantt(filtered, sortMode);
+    renderTable: function() {
+        const tbody = document.getElementById('projectsTableBody');
+        if (!tbody) return;
+        const today = this._today;
+        tbody.innerHTML = this._tableProjects().map(p => this._htmlTableRow(p, today)).join('');
+    },
 
-        tbody.innerHTML = filtered.map(p => this._htmlTableRow(p, today)).join('');
+    // ─── VISTA COMPATTA ──────────────────────────────────────────────────────
+
+    toggleTableCompact: function() {
+        const table = document.getElementById('projectsTable');
+        if (!table) return;
+        this._setTableCompact(!table.classList.contains('tp-table--compact'), true);
+    },
+
+    _setTableCompact: function(on, persist) {
+        const table = document.getElementById('projectsTable');
+        if (!table) return;
+        table.classList.toggle('tp-table--compact', !!on);
+        const btn = document.getElementById('tableCompactBtn');
+        if (btn) {
+            btn.classList.toggle('active', !!on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            btn.title = on ? 'Mostra tutte le colonne' : 'Mostra solo le colonne principali';
+        }
+        const label = document.getElementById('tableCompactBtnLabel');
+        if (label) label.textContent = on ? 'Vista completa' : 'Vista compatta';
+        if (persist) {
+            try { localStorage.setItem('pm-table-compact', on ? '1' : '0'); } catch (e) {}
+        }
+    },
+
+    // ─── EXPORT CSV ──────────────────────────────────────────────────────────
+
+    exportCsv: function() {
+        const rows = this._tableProjects();
+        if (!rows.length) {
+            this.showAlert('Nessun progetto da esportare con i filtri attuali.', 'warning');
+            return;
+        }
+        try {
+            const csv = this._projectsCsv(rows);
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = `pm-tracker-${dayjs().format('YYYY-MM-DD')}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            this.showAlert(`Esportati ${rows.length} progetti in CSV.`, 'success');
+        } catch (e) {
+            console.error('exportCsv:', e);
+            this.showAlert(`Esportazione CSV non riuscita: ${e.message}`, 'danger');
+        }
+    },
+
+    _projectsCsv: function(projects) {
+        const cols = [
+            ['Progetto',        p => p.nome || ''],
+            ['Fornitori',       p => (p.fornitori || []).join(' | ')],
+            ['Stato',           p => p.hidden ? 'Archiviato'
+                                   : this.isAutoStale(p) ? 'Auto-archiviato'
+                                   : (p.dataProd && new Date(p.dataProd) <= this._today) ? 'Rilasciato' : 'In corso'],
+            ['Avanzamento %',   p => p.progress != null ? p.progress : ''],
+            ['Stima',           p => p.dataStima || ''],
+            ['IA',              p => p.dataIA || ''],
+            ['Dev start',       p => p.devStart || ''],
+            ['Dev end',         p => p.devEnd || ''],
+            ['Test',            p => p.dataTest || ''],
+            ['Prod',            p => p.dataProd || ''],
+            ['UAT',             p => p.dataUAT || ''],
+            ['BS',              p => p.dataBS || ''],
+            ['Scadenza stima',  p => p.dataScadenzaStima || ''],
+            ['Config sistema',  p => p.dataConfigSistema || ''],
+            ['Stima gg/u',      p => p.stimaGgu != null ? p.stimaGgu : ''],
+            ['Costo EUR',       p => p.stimaCosto != null ? Number(p.stimaCosto).toFixed(2).replace('.', ',') : ''],
+            ['Milestone',       p => (p.customMilestones || []).map(m => `${m.label || ''}:${m.date || ''}`).join(' | ')],
+            ['Jira',            p => this.jiraLinksOf(p).map(i => i.type === 'epic' ? `[EPICA] ${i.url}`
+                                      : i.type === 'story' ? `[STORIA di ${this.jiraLabel(i.parent)}] ${i.url}` : i.url).join(' | ')],
+            ['Note',            p => p.note || '']
+        ];
+        const cell = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+        const lines = [cols.map(c => cell(c[0])).join(';')];
+        projects.forEach(p => lines.push(cols.map(c => cell(c[1](p))).join(';')));
+        return lines.join('\r\n');
     },
 
     _htmlTableRow: function(p, today) {
@@ -1608,6 +1696,12 @@ const app = {
         const links    = this.jiraLinksOf(p);
         const jiraHtml = this.jiraLinksHtml(links);
 
+        const compactDates = [
+            p.dataStima ? `<span><b>Stima</b> ${this.formatDate(p.dataStima)}</span>` : '',
+            p.dataIA    ? `<span><b>IA</b> ${this.formatDate(p.dataIA)}</span>` : '',
+            (p.devStart || p.devEnd) ? `<span><b>Dev</b> ${this.formatDate(p.devStart)} \u27A0 ${this.formatDate(p.devEnd)}</span>` : ''
+        ].filter(Boolean).join('');
+
         const statusBadge = p.hidden   ? '<span class="badge bg-dark ms-1">' + this._icon('archive') + ' Archiviato</span>'
                           : autoStale  ? '<span class="badge bg-secondary ms-1">' + this._icon('clock') + ' Auto-archiviato</span>'
                           : isPast     ? '<span class="badge bg-success ms-1">' + this._icon('check') + ' Rilasciato</span>'
@@ -1619,15 +1713,16 @@ const app = {
                 <strong>${p.nome || 'Senza nome'}</strong> ${statusBadge}
                 ${jiraHtml  ? `<div class="mt-1">${jiraHtml}</div>` : ''}
                 ${extraRows.length ? `<div class="mt-1">${extraRows.join('')}</div>` : ''}
+                ${compactDates ? `<div class="tp-compact-dates">${compactDates}</div>` : ''}
             </td>
             <td><div class="d-flex flex-wrap">${fornBadge}</div></td>
-            <td>${progressHtml}</td>
-            <td class="text-muted small">${this.formatDate(p.dataStima)}</td>
-            <td class="text-muted small">${this.formatDate(p.dataIA)}</td>
-            <td class="small">${this.formatDate(p.devStart)} \u27A0 ${this.formatDate(p.devEnd)}</td>
+            <td data-col="prog">${progressHtml}</td>
+            <td class="text-muted small" data-col="stima">${this.formatDate(p.dataStima)}</td>
+            <td class="text-muted small" data-col="ia">${this.formatDate(p.dataIA)}</td>
+            <td class="small" data-col="sviluppo">${this.formatDate(p.devStart)} \u27A0 ${this.formatDate(p.devEnd)}</td>
             <td class="text-warning small fw-bold">${this.formatDate(p.dataTest)}</td>
             <td class="text-success small fw-bold">${this.formatDate(p.dataProd)}</td>
-            <td class="small text-muted" style="max-width:250px;white-space:pre-wrap;">${p.note || ''}</td>
+            <td class="small text-muted" data-col="note" style="max-width:250px;white-space:pre-wrap;">${p.note || ''}</td>
             <td>
                 <div class="d-flex gap-1">
                     <button class="btn btn-sm ${p.hidden ? 'btn-secondary' : 'btn-outline-secondary'}" onclick="app.toggleHidden('${p.id}')" title="${p.hidden ? 'Ripristina Progetto' : 'Archivia (Nascondi)'}" aria-label="${p.hidden ? 'Ripristina Progetto' : 'Archivia'}">${p.hidden ? this._icon('eye') : this._icon('eyeOff')}</button>
