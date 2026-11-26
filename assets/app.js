@@ -139,6 +139,8 @@ const app = {
             this.loginModal    = new bootstrap.Modal(document.getElementById('loginModal'));
             const remEl = document.getElementById('remindersOffcanvas');
             this.remindersOffcanvas = remEl ? new bootstrap.Offcanvas(remEl) : null;
+            const agendaEl = document.getElementById('agendaOffcanvas');
+            this.agendaOffcanvas = agendaEl ? new bootstrap.Offcanvas(agendaEl) : null;
 
             ['p_stimaGgu', 'p_rcFornitore'].forEach(id => {
                 const el = document.getElementById(id);
@@ -1953,6 +1955,146 @@ const app = {
             ${has('dataConfigSistema') ? item('gear', 'Config Sistema') : ''}
             ${hasCustom               ? `<div class="gantt-legend-item"><span class="legend-ms legend-ms--custom">${this._icon('star')}</span> Milestone Personalizzate</div>` : ''}
         </div></div>`;
+    },
+
+    // ─── AGENDA 14 GIORNI ───────────────────────────────────────────────────
+
+    openAgenda: function() {
+        if (!this.agendaOffcanvas) return;
+        this.renderAgenda();
+        this.agendaOffcanvas.show();
+    },
+
+    // Milestone dei progetti (con gli stessi filtri del calendario) + promemoria
+    // aperti, limitati a oggi + 13 giorni. Nessun evento con data passata.
+    _agendaEvents: function() {
+        const start = dayjs(this._today).startOf('day');
+        const end   = start.add(13, 'day');
+        const inRange = d => {
+            const x = dayjs(d).startOf('day');
+            return x.isValid() && !x.isBefore(start) && !x.isAfter(end);
+        };
+        const globals = this._globalFilters();
+        const showHiddenPrefs = this._getChecked('calShowHiddenPrefs');
+        const prefs = this.getMeta().eventPrefs || {};
+        const events = [];
+
+        this.getProjectsOnly()
+            .filter(p => this._matchesGlobalFilters(p, globals))
+            .forEach(p => {
+                const nome = p.nome || 'Senza nome';
+                this.MILESTONES.forEach(m => {
+                    const v = p[m.key];
+                    if (!v || !inRange(v)) return;
+                    if (prefs[`ms_${p.id}_${m.key}`] === 'hide' && !showHiddenPrefs) return;
+                    events.push({ date: dayjs(v).format('YYYY-MM-DD'), title: `${nome} — ${m.label}`, label: m.label, kind: 'milestone', note: '' });
+                });
+                (p.customMilestones || []).forEach(cm => {
+                    if (!cm.date || !inRange(cm.date)) return;
+                    if (prefs[`custom_${p.id}_${this._hashString(cm.label)}`] === 'hide' && !showHiddenPrefs) return;
+                    const label = `⭐ ${cm.label || 'Milestone'}`;
+                    events.push({ date: dayjs(cm.date).format('YYYY-MM-DD'), title: `${nome} — ${label}`, label, kind: 'milestone', note: '' });
+                });
+            });
+
+        (this.getMeta().manualReminders || []).forEach(r => {
+            if (!r || !r.date || r.done || !inRange(r.date)) return;
+            const proj = r.projectId ? this.data.find(p => p.id === r.projectId) : null;
+            events.push({
+                date: dayjs(r.date).format('YYYY-MM-DD'), title: r.title || 'Promemoria',
+                label: 'Promemoria', kind: 'reminder', note: r.note || '', project: proj ? proj.nome : ''
+            });
+        });
+
+        events.sort((a, b) => a.date.localeCompare(b.date) || a.kind.localeCompare(b.kind) || a.title.localeCompare(b.title));
+        return events;
+    },
+
+    renderAgenda: function() {
+        const list = document.getElementById('agendaList');
+        if (!list) return;
+        const events = this._agendaEvents();
+        const start = dayjs(this._today).startOf('day');
+        const end   = start.add(13, 'day');
+        const todayStr = start.format('YYYY-MM-DD');
+        const range = document.getElementById('agendaRange');
+        if (range) range.textContent = `${start.format('DD/MM/YYYY')} — ${end.format('DD/MM/YYYY')} · ${events.length} eventi`;
+
+        const byDate = {};
+        events.forEach(ev => { (byDate[ev.date] = byDate[ev.date] || []).push(ev); });
+        const weekdays = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+        let html = '';
+        for (let i = 0; i < 14; i++) {
+            const d = start.add(i, 'day');
+            const key = d.format('YYYY-MM-DD');
+            const items = byDate[key] || [];
+            html += `
+            <div class="agenda-day${items.length ? '' : ' agenda-day--empty'}${key === todayStr ? ' agenda-day--today' : ''}">
+                <div class="agenda-day__head">
+                    <strong>${d.format('DD')} ${weekdays[d.day()]} ${d.format('MMM')}</strong>
+                    ${key === todayStr ? '<span class="badge bg-danger">OGGI</span>' : ''}
+                    <span class="agenda-day__count">${items.length}</span>
+                </div>
+                ${items.length ? items.map(ev => `
+                    <div class="agenda-event agenda-event--${ev.kind}">
+                        <span class="agenda-event__label">${this._escapeHtml(ev.label)}</span>
+                        <div class="agenda-event__title">${this._escapeHtml(ev.title)}</div>
+                        ${ev.note ? `<div class="agenda-event__note">${this._escapeHtml(ev.note)}</div>` : ''}
+                    </div>`).join('') : '<div class="agenda-day__empty">Nessun evento</div>'}
+            </div>`;
+        }
+        list.innerHTML = html;
+    },
+
+    exportAgendaIcs: function() {
+        const events = this._agendaEvents();
+        if (!events.length) {
+            this.showAlert('Nessun evento nei prossimi 14 giorni da esportare.', 'warning');
+            return;
+        }
+        try {
+            const blob = new Blob([this._agendaIcs(events)], { type: 'text/calendar;charset=utf-8' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = `pm-tracker-agenda-${dayjs().format('YYYY-MM-DD')}.ics`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            this.showAlert(`Esportati ${events.length} eventi in .ics.`, 'success');
+        } catch (e) {
+            console.error('exportAgendaIcs:', e);
+            this.showAlert(`Esportazione .ics non riuscita: ${e.message}`, 'danger');
+        }
+    },
+
+    _agendaIcs: function(events) {
+        const esc = s => String(s == null ? '' : s)
+            .replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,')
+            .replace(/\r?\n/g, '\\n');
+        const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+        const lines = [
+            'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PM Tracker//Agenda 14 giorni//IT',
+            'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:PM Tracker Agenda 14 giorni'
+        ];
+        events.forEach((ev, i) => {
+            const d = dayjs(ev.date);
+            const next = d.add(1, 'day');
+            const desc = [ev.label, ev.project, ev.note].filter(Boolean).join(' — ');
+            lines.push(
+                'BEGIN:VEVENT',
+                `UID:${d.format('YYYYMMDD')}-${i}-${this._hashString(ev.title)}@pmtracker`,
+                `DTSTAMP:${stamp}`,
+                `DTSTART;VALUE=DATE:${d.format('YYYYMMDD')}`,
+                `DTEND;VALUE=DATE:${next.format('YYYYMMDD')}`,
+                `SUMMARY:${esc(ev.title)}`,
+                `DESCRIPTION:${esc(desc)}`,
+                'END:VEVENT'
+            );
+        });
+        lines.push('END:VCALENDAR');
+        return lines.join('\r\n') + '\r\n';
     },
 
     // ─── RENDER CALENDAR ─────────────────────────────────────────────────────

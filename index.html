@@ -27,7 +27,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/styles.css?v=50">
+    <link rel="stylesheet" href="assets/styles.css?v=51">
 </head>
 <body>
 
@@ -224,6 +224,10 @@
                     <label class="form-check-label small" for="calShowHiddenPrefs">Mostra milestone nascoste</label>
                 </div>
                 <div class="tp-toolbar__end">
+                    <button class="btn btn-sm btn-outline-primary" type="button" id="agendaOpenBtn" onclick="app.openAgenda()" title="Mostra le scadenze dei prossimi 14 giorni">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3.2"/><path d="M3.4 9.8h17.2"/><path d="M8 3.4v3.2"/><path d="M16 3.4v3.2"/><path d="M8 14h3"/><path d="M8 17.4h6"/></svg>
+                        Agenda 14 gg
+                    </button>
                     <button class="btn btn-sm btn-outline-secondary" type="button"
                         data-bs-toggle="collapse" data-bs-target="#calFilterPanel"
                         aria-expanded="false" aria-controls="calFilterPanel"
@@ -325,6 +329,31 @@
         </div>
 
         <div id="remindersList" class="tp-sheet__list"></div>
+    </div>
+</div>
+
+<!-- ═══════ OFFCANVAS AGENDA 14 GIORNI ═══════ -->
+<div class="offcanvas offcanvas-end rem-drawer agenda-drawer" tabindex="-1" id="agendaOffcanvas" aria-labelledby="agendaOffcanvasTitle">
+    <div class="offcanvas-header rem-panel__head">
+        <span class="tp-sheet__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3.2"/><path d="M3.4 9.8h17.2"/><path d="M8 3.4v3.2"/><path d="M16 3.4v3.2"/><path d="M8 14h3"/><path d="M8 17.4h6"/></svg>
+        </span>
+        <div class="rem-panel__heading">
+            <h2 class="tp-sheet__title" id="agendaOffcanvasTitle">Agenda 14 giorni</h2>
+            <p class="tp-sheet__sub" id="agendaRange"></p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Chiudi"></button>
+    </div>
+
+    <div class="offcanvas-body rem-panel__body">
+        <div id="agendaList" class="agenda-list"></div>
+    </div>
+
+    <div class="agenda-footer">
+        <button type="button" class="btn btn-primary w-100" onclick="app.exportAgendaIcs()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+            Scarica .ics
+        </button>
     </div>
 </div>
 
@@ -491,7 +520,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/it.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/supabase-config.js"></script>
-<script src="assets/app.js?v=50"></script>
+<script src="assets/app.js?v=51"></script>
 <script>
   dayjs.locale('it');
 

@@ -52,6 +52,7 @@ pm-tracker-main 4/
 - Dati economici: stima fornitore (gg/u), RC fornitore, costo calcolato
 - **Jira gerarchico** (max 10 riferimenti per progetto): ogni riga nell'editor ha tipo `Link` / `Epica` / `Storia`; le storie scelgono l'epica di riferimento e ne seguono l'URL se questo cambia. In tabella, Gantt e calendario i chip sono raggruppati (epica piena + conteggio storie, storie dashed con `↳`, link sciolti). Una storia senza epica valida blocca il salvataggio con messaggio esplicito.
 - Promemoria manuali con completamento e badge conteggio sul pulsante campanella in top bar
+- **Agenda 14 giorni** (`#agendaOpenBtn` nella toolbar del Calendario → offcanvas `#agendaOffcanvas`): elenco giorno per giorno (oggi + 13) di milestone progetto, milestone personalizzate e promemoria aperti, con rispetto dei filtri globali e delle milestone nascoste; export `.ics` (`app.exportAgendaIcs()` / `app._agendaIcs()`) con eventi all-day, CRLF, UID univoci ed escaping dei caratteri speciali
 - Tema chiaro/scuro: toggle in top bar, persistito in `localStorage['pm-theme']`, default da `prefers-color-scheme`
 - **Barra filtri globale** sopra le tab (`.tp-filterbar`): `Fornitore`, `Cerca progetto`, `Mostra archiviati`, `Reset filtri`. Filtra in contemporanea Elenco, Gantt e Calendario via `app._globalFilters()` / `app._matchesGlobalFilters()`.
 - Filtri specifici per vista: Test/Prod (Gantt), Milestone e milestone nascoste (Calendario), ordinamento per tab.

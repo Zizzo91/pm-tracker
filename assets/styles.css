@@ -2576,3 +2576,76 @@ html[data-theme="dark"] .rem-form { background: var(--tp-surface-alt); border-co
   #gantt-chart .gantt-project-col { min-width: 150px; width: 150px; padding: 8px 10px; }
   #gantt-chart .gantt-timeline-col { min-width: 480px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   AGENDA 14 GIORNI (offcanvas)
+   ════════════════════════════════════════════════════════════════════════ */
+
+.agenda-drawer .rem-panel__body { padding-bottom: 18px; }
+
+.agenda-footer {
+  flex: 0 0 auto;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--tp-border);
+  background: var(--tp-surface);
+}
+.agenda-footer svg { width: 16px; height: 16px; margin-right: 4px; vertical-align: -3px; }
+
+.agenda-list { display: flex; flex-direction: column; gap: 10px; }
+
+.agenda-day {
+  border: 1px solid var(--tp-border);
+  border-left: 3px solid var(--tp-brand-secondario);
+  border-radius: var(--tp-r-lg);
+  background: var(--tp-surface-alt);
+  padding: 10px 12px;
+}
+
+.agenda-day--today {
+  border-left-color: var(--tp-brand-primario, #c8102e);
+  box-shadow: 0 1px 3px rgba(200, 16, 46, .12);
+}
+.agenda-day--empty { opacity: .62; }
+
+.agenda-day__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .76rem;
+  color: var(--tp-testo);
+  text-transform: capitalize;
+}
+.agenda-day__head .badge { font-size: .58rem; }
+.agenda-day__count {
+  margin-left: auto;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--tp-testo-subtle);
+}
+
+.agenda-event {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--tp-r-md);
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-border);
+}
+.agenda-event--reminder { border-left: 3px solid #e07a00; }
+.agenda-event--milestone { border-left: 3px solid #198754; }
+
+.agenda-event__label {
+  display: inline-block;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--tp-testo-subtle);
+}
+.agenda-event__title { font-size: .78rem; font-weight: 600; color: var(--tp-testo); line-height: 1.35; }
+.agenda-event__note { font-size: .7rem; color: var(--tp-testo-subtle); white-space: pre-wrap; margin-top: 2px; }
+.agenda-day__empty { margin-top: 6px; font-size: .7rem; font-style: italic; color: var(--tp-testo-subtle); }
+
+html[data-theme="dark"] .agenda-day,
+html[data-theme="dark"] .agenda-event { background: var(--tp-surface-alt); border-color: var(--tp-border); }
+html[data-theme="dark"] .agenda-event--reminder { border-left-color: #ffb454; }
+html[data-theme="dark"] .agenda-event--milestone { border-left-color: #4ade80; }
