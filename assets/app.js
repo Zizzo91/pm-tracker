@@ -1615,6 +1615,7 @@ const app = {
             this.renderCalendar();
             this._updateReminderBadge();
             this.renderRemindersSheet();
+            this.renderBanner();
             this._scheduleNotifications();
         } catch (err) {
             console.error('Errore in renderAll:', err);
@@ -2192,6 +2193,127 @@ const app = {
         return Number.isFinite(n) ? Math.max(0, Math.min(Math.round(n), 7)) : 0;
     },
 
+    // ─── BANNER IN-APP ──────────────────────────────────────────────────────
+
+    // Giorni di preavviso per il banner: segue l'impostazione delle notifiche,
+    // ma se non è mai stata salvata usa 3 giorni (il banner non dipende dai permessi).
+    _bannerLeadDays: function() {
+        const n = Number(this.config && this.config.notifyDays);
+        return Number.isFinite(n) ? Math.max(0, Math.min(Math.round(n), 7)) : 3;
+    },
+
+    // Elementi da segnalare nel banner: promemoria aperti scaduti o di oggi,
+    // più le milestone (standard e personalizzate) nella finestra di preavviso.
+    // A differenza delle notifiche browser non richiede permessi di sistema.
+    _bannerItems: function() {
+        const today = dayjs(this._today).startOf('day');
+        const lead  = this._bannerLeadDays();
+        const prefs = this.getMeta().eventPrefs || {};
+        const items = [];
+
+        (this.getMeta().manualReminders || []).forEach(r => {
+            if (!r || !r.date || r.done) return;
+            const d = dayjs(r.date).startOf('day');
+            if (!d.isValid() || d.isAfter(today)) return;
+            items.push({
+                kind: 'reminder',
+                title: r.title || 'Promemoria',
+                date: d,
+                days: today.diff(d, 'day') // 0 = oggi, > 0 = scaduto
+            });
+        });
+
+        const horizon = today.add(lead, 'day');
+        this.getProjectsOnly().filter(p => !this.isHiddenForUI(p)).forEach(p => {
+            const nome = p.nome || 'Senza nome';
+            this.MILESTONES.forEach(m => {
+                const v = p[m.key];
+                if (!v) return;
+                const d = dayjs(v).startOf('day');
+                if (!d.isValid() || d.isBefore(today) || d.isAfter(horizon)) return;
+                if (prefs[`ms_${p.id}_${m.key}`] === 'hide') return;
+                items.push({ kind: 'milestone', title: `${nome} — ${m.label}`, date: d, days: d.diff(today, 'day') });
+            });
+            (p.customMilestones || []).forEach(cm => {
+                if (!cm || !cm.date) return;
+                const d = dayjs(cm.date).startOf('day');
+                if (!d.isValid() || d.isBefore(today) || d.isAfter(horizon)) return;
+                if (prefs[`custom_${p.id}_${this._hashString(cm.label)}`] === 'hide') return;
+                items.push({ kind: 'milestone', title: `${nome} — ${cm.label || 'Milestone'}`, date: d, days: d.diff(today, 'day') });
+            });
+        });
+
+        items.sort((a, b) => a.date.valueOf() - b.date.valueOf()
+            || a.kind.localeCompare(b.kind)
+            || a.title.localeCompare(b.title));
+        return items;
+    },
+
+    _bannerDismissedToday: function() {
+        try { return localStorage.getItem('pm-banner-dismissed') === dayjs(this._today).format('YYYY-MM-DD'); }
+        catch (e) { return false; }
+    },
+
+    // Chiude il banner per il resto della giornata (si riapre domani).
+    dismissBanner: function() {
+        try { localStorage.setItem('pm-banner-dismissed', dayjs(this._today).format('YYYY-MM-DD')); } catch (e) {}
+        const el = document.getElementById('pmBanner');
+        if (el) { el.hidden = true; el.innerHTML = ''; }
+    },
+
+    bannerGo: function(target) {
+        if (target === 'reminders') {
+            const tab = document.getElementById('reminders-tab');
+            if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+            return;
+        }
+        this.openAgenda();
+    },
+
+    renderBanner: function() {
+        const el = document.getElementById('pmBanner');
+        if (!el) return;
+        const items = this._bannerItems();
+        if (!items.length || this._bannerDismissedToday()) {
+            el.hidden = true;
+            el.innerHTML = '';
+            return;
+        }
+
+        const rem      = items.filter(i => i.kind === 'reminder');
+        const ms       = items.filter(i => i.kind === 'milestone');
+        const late     = rem.filter(i => i.days > 0).length;
+        const dueToday = rem.length - late;
+        const lead     = this._bannerLeadDays();
+
+        const parts = [];
+        if (late) parts.push(`${late} promemoria scadut${late === 1 ? 'o' : 'i'}`);
+        if (dueToday) parts.push(`${dueToday} promemoria per oggi`);
+        if (ms.length) parts.push(lead === 0
+            ? `${ms.length} scadenz${ms.length === 1 ? 'a' : 'e'} oggi`
+            : `${ms.length} scadenz${ms.length === 1 ? 'a' : 'e'} entro ${lead} giorn${lead === 1 ? 'o' : 'i'}`);
+
+        const preview = items.slice(0, 2).map(i => `«${this._escapeHtml(i.title)}»`).join(' · ');
+        const rest    = items.length - 2;
+        const more    = rest > 0 ? ` e altr${rest === 1 ? 'a' : 'e'} ${rest}` : '';
+        const alert   = late > 0;
+        const icon    = alert ? 'alert' : rem.length ? 'bell' : 'calendar';
+
+        el.className = `pm-banner${alert ? ' pm-banner--alert' : ''}`;
+        el.hidden = false;
+        el.innerHTML = `
+            <span class="pm-banner__icon">${this._icon(icon)}</span>
+            <div class="pm-banner__body">
+                <strong class="pm-banner__title">${parts.join(' · ')}</strong>
+                <span class="pm-banner__text">${preview}${more}</span>
+            </div>
+            <div class="pm-banner__actions">
+                ${rem.length ? `<button type="button" class="btn btn-sm pm-banner__cta" onclick="app.bannerGo('reminders')">Promemoria</button>` : ''}
+                ${ms.length ? `<button type="button" class="btn btn-sm pm-banner__cta pm-banner__cta--ghost" onclick="app.bannerGo('agenda')">Agenda</button>` : ''}
+                <button type="button" class="pm-banner__close" onclick="app.dismissBanner()" aria-label="Chiudi avviso" title="Chiudi per oggi">${this._icon('close')}</button>
+            </div>`;
+    },
+
     _updateNotificationStatus: function() {
         const el = document.getElementById('notificationStatus');
         if (!el) return;
@@ -2275,8 +2397,11 @@ const app = {
         this._notifyTimers = [];
     },
 
-    // Programma un avviso per ogni evento la cui data di preavviso è oggi o
-    // nel futuro. Un evento viene notificato al massimo una volta al giorno.
+    // Programma un avviso per ogni evento nella finestra di preavviso: se il
+    // preavviso è già passato (app chiusa quel giorno) l'avviso non viene
+    // perso, ma slitta al primo avvio successivo. Un evento viene avvisato
+    // una sola volta; i promemoria scaduti ancora aperti producono un
+    // riepilogo al giorno.
     _scheduleNotifications: function() {
         this._clearNotificationTimers();
         if (!this._notificationEnabled()) return;
@@ -2288,16 +2413,45 @@ const app = {
         const stamp = today.format('YYYY-MM-DD');
         const now   = Date.now();
 
+        // Le chiavi più vecchie di 60 giorni non servono più.
+        const cutoff = today.subtract(60, 'day').format('YYYY-MM-DD');
+        let pruned = false;
+        Object.keys(sent).forEach(k => { if (sent[k] < cutoff) { delete sent[k]; pruned = true; } });
+        if (pruned) { try { localStorage.setItem('pm-tracker-notified', JSON.stringify(sent)); } catch (e) {} }
+
         this._agendaEvents({ days: lead + 1, respectFilters: false }).forEach(ev => {
-            const dueDate = dayjs(ev.date).subtract(lead, 'day');
-            if (dueDate.isBefore(today)) return; // finestra di preavviso già passata
+            const evDay   = dayjs(ev.date).startOf('day');
+            const leadDay = evDay.subtract(lead, 'day');
+            if (evDay.isBefore(today)) return; // evento passato
+            // Se la finestra di preavviso è già aperta si avvisa oggi, non si salta.
+            const target  = leadDay.isBefore(today) ? today : leadDay;
             const key = `${ev.date}|${ev.kind}|${this._hashString(ev.title)}`;
-            if (sent[key] === stamp) return;
-            const due   = dueDate.hour(9).minute(0).second(0).millisecond(0).valueOf();
+            if (sent[key] === stamp) return;               // già avvisato oggi
+            if (sent[key] && sent[key] !== stamp) return;  // già avvisato in un giorno precedente
+            const due   = target.hour(9).minute(0).second(0).millisecond(0).valueOf();
             const delay = due > now ? due - now : 3000;
             if (delay > 2147483647) return;
             this._notifyTimers.push(setTimeout(() => this._fireNotification(ev, key), delay));
         });
+
+        // Promemoria scaduti ancora aperti: un solo riepilogo al giorno,
+        // indipendente dalla finestra di preavviso.
+        const overdue = (this.getMeta().manualReminders || []).filter(r =>
+            r && !r.done && r.date && dayjs(r.date).startOf('day').isBefore(today)
+        );
+        if (overdue.length) {
+            const key = 'overdue|digest';
+            if (sent[key] !== stamp) {
+                const titles = overdue.slice(0, 3).map(r => r.title || 'Promemoria');
+                const extra  = overdue.length > 3 ? ` e altri ${overdue.length - 3}` : '';
+                const digest = {
+                    label: overdue.length === 1 ? 'Promemoria scaduto' : `${overdue.length} promemoria scaduti`,
+                    title: titles.join(' · ') + extra,
+                    date: stamp
+                };
+                this._notifyTimers.push(setTimeout(() => this._fireNotification(digest, key), 3000));
+            }
+        }
     },
 
     _fireNotification: function(ev, key) {

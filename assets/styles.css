@@ -464,6 +464,121 @@ a:hover { color: var(--tp-blu-autostrada); }
 .tp-iconbtn svg { width: 18px; height: 18px; }
 
 /* ════════════════════════════════════════════════════════════════════════
+   BANNER IN-APP (promemoria aperti + scadenze nella finestra di preavviso)
+   Non dipende dai permessi di notifica: è sempre visibile, si chiude per oggi.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.pm-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px 12px 18px;
+  margin: 0 0 14px;
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-border);
+  border-radius: var(--tp-r-lg);
+  box-shadow: var(--tp-elev-4);
+  overflow: hidden;
+}
+.pm-banner[hidden] { display: none; }
+.pm-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--tp-brand-secondario);
+}
+.pm-banner--alert::before { background: var(--tp-rosso); }
+
+.pm-banner__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--tp-r-pill);
+  background: var(--tp-blu-neve);
+  color: var(--tp-brand-primario);
+}
+.pm-banner--alert .pm-banner__icon { background: rgba(238, 1, 37, .12); color: var(--tp-rosso); }
+.pm-banner__icon svg { width: 18px; height: 18px; }
+
+.pm-banner__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pm-banner__title {
+  font-family: var(--tp-font-display);
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--tp-testo);
+  line-height: 1.25;
+}
+.pm-banner__text {
+  font-size: .8rem;
+  color: var(--tp-testo-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pm-banner__actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pm-banner__cta {
+  border: 0;
+  border-radius: var(--tp-r-pill);
+  background: var(--tp-blu-periferia);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+}
+.pm-banner__cta:hover { background: var(--tp-blu-autostrada); color: #fff; }
+.pm-banner__cta--ghost {
+  background: transparent;
+  color: var(--tp-blu-casello);
+  border: 1px solid var(--tp-border-strong);
+}
+.pm-banner__cta--ghost:hover { background: var(--tp-blu-ghiaccio); color: var(--tp-blu-casello); }
+
+.pm-banner__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--tp-r-pill);
+  background: transparent;
+  color: var(--tp-testo-subtle);
+  cursor: pointer;
+}
+.pm-banner__close:hover { background: var(--tp-surface-alt); color: var(--tp-testo); }
+.pm-banner__close svg { width: 16px; height: 16px; }
+
+html[data-theme="dark"] .pm-banner__icon { background: var(--tp-blu-ghiaccio); color: var(--tp-blu-cielo); }
+html[data-theme="dark"] .pm-banner--alert .pm-banner__icon { background: rgba(238, 1, 37, .2); color: #ff8d9c; }
+html[data-theme="dark"] .pm-banner__cta { background: var(--tp-blu-casello); }
+html[data-theme="dark"] .pm-banner__cta:hover { background: var(--tp-blu-strisce); }
+html[data-theme="dark"] .pm-banner__cta--ghost { background: transparent; color: var(--tp-blu-cielo); }
+
+@media (max-width: 575.98px) {
+  .pm-banner { flex-wrap: wrap; gap: 10px; }
+  .pm-banner__body { flex: 1 1 calc(100% - 46px); }
+  .pm-banner__text { white-space: normal; }
+  .pm-banner__actions { width: 100%; justify-content: flex-end; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
    BARRA FILTRI GLOBALE (sopra le tab: vale per Elenco, Gantt e Calendario)
    ════════════════════════════════════════════════════════════════════════ */
 
